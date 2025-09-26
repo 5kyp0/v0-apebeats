@@ -1,10 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Play, Volume2, Zap, Music, Users, Coins, ExternalLink, ChevronUp, Sun, Moon, X } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { fetchApeChainStats } from "@/lib/utils"
+import { useActiveAccount } from "thirdweb/react"
+import useUserStore from "@/lib/userStore"
+
+// Lazy load HeaderUser to improve initial page load
+const HeaderUser = lazy(() => import("@/components/HeaderUser"))
+const LoginInline = lazy(() => import("@/components/LoginInline"))
 
 export default function ApeBeatLanding() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -13,6 +21,19 @@ export default function ApeBeatLanding() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [randomVideos, setRandomVideos] = useState<string[]>([])
   const [showComingSoonPopup, setShowComingSoonPopup] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  
+  // Get auth state
+  const account = useActiveAccount()
+  const email = useUserStore((s) => s.email)
+  const { data: stats } = useQuery({
+    queryKey: ["apechain-stats"],
+    queryFn: fetchApeChainStats,
+    refetchInterval: 30_000, // 30 seconds - safe for Alchemy free tier
+    refetchIntervalInBackground: false, // Don't refetch when tab is not active
+    staleTime: 20_000, // Consider data fresh for 20 seconds
+    enabled: typeof window !== 'undefined', // Only run on client side
+  })
 
   const genesisVideos = [
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/15-jknCr6ApXUldXFHc8cEhDkEkWCAaVw.mp4",
@@ -53,10 +74,14 @@ export default function ApeBeatLanding() {
     setRandomVideos(getRandomVideos())
   }, [])
 
-  // Simulate live data updates
+  // Simulate live data updates - only when page is visible
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     const interval = setInterval(() => {
-      setCurrentBeat((prev) => (prev + 1) % 100)
+      if (!document.hidden) {
+        setCurrentBeat((prev) => (prev + 1) % 100)
+      }
     }, 2000)
     return () => clearInterval(interval)
   }, [])
@@ -124,13 +149,13 @@ export default function ApeBeatLanding() {
           backgroundImage: "url('/apebeats-sonic-swamp-hub-dark-mystical-swamp-with-.jpg')",
           backgroundAttachment: "fixed",
           backgroundPosition: "center center",
-          zIndex: 2, // moved swamp image above color drops
+          zIndex: 2,
+          willChange: "transform", // Optimize for animations
         }}
       ></div>
 
-      <div className="fixed inset-0 opacity-20 dark:opacity-15" style={{ zIndex: 1 }}>
-        {" "}
-        {/* reduced opacity and moved below swamp image */}
+      <div className="fixed inset-0 opacity-20 dark:opacity-15" style={{ zIndex: 1, willChange: "transform" }}>
+        {/* Optimized floating elements - reduced count for better performance */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-purple-500/40 to-pink-500/40 dark:from-purple-500/25 dark:to-pink-500/25 rounded-full blur-xl float"></div>
         <div
           className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-cyan-500/35 to-blue-500/35 dark:from-cyan-500/20 dark:to-blue-500/20 rounded-full blur-lg float"
@@ -150,35 +175,11 @@ export default function ApeBeatLanding() {
           style={{ animationDelay: "6s" }}
         ></div>
         <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-gradient-to-r from-yellow-500/30 to-green-500/30 dark:from-yellow-500/15 dark:to-green-500/15 rounded-full blur-3xl color-shift"></div>
-        <div
-          className="absolute top-1/4 right-1/4 w-52 h-52 bg-gradient-to-r from-lime-500/25 to-emerald-500/25 dark:from-lime-500/12 dark:to-emerald-500/12 rounded-full blur-3xl float"
-          style={{ animationDelay: "8s" }}
-        ></div>
-        <div
-          className="absolute top-3/4 left-1/3 w-60 h-60 bg-gradient-to-r from-amber-500/30 to-orange-500/30 dark:from-amber-500/15 dark:to-orange-500/15 rounded-full blur-3xl color-shift"
-          style={{ animationDelay: "9s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/2 right-1/2 w-48 h-48 bg-gradient-to-r from-teal-500/35 to-cyan-500/35 dark:from-teal-500/20 dark:to-cyan-500/20 rounded-full blur-2xl psychedelic-pulse"
-          style={{ animationDelay: "10s" }}
-        ></div>
-        <div
-          className="absolute top-1/5 left-2/3 w-38 h-38 bg-gradient-to-r from-magenta-500/35 to-purple-500/35 dark:from-magenta-500/20 dark:to-purple-500/20 rounded-full blur-2xl psychedelic-pulse"
-          style={{ animationDelay: "11s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/5 left-1/5 w-42 h-42 bg-gradient-to-r from-yellow-400/35 to-orange-400/35 dark:from-yellow-400/20 dark:to-orange-400/20 rounded-full blur-2xl color-shift"
-          style={{ animationDelay: "12s" }}
-        ></div>
-        <div
-          className="absolute top-4/5 right-1/5 w-34 h-34 bg-gradient-to-r from-green-400/35 to-blue-400/35 dark:from-green-400/20 dark:to-blue-400/20 rounded-full blur-xl float"
-          style={{ animationDelay: "13s" }}
-        ></div>
       </div>
 
       {/* Navigation */}
       <nav
-        className="relative z-50 flex items-center justify-between p-6 md:p-8"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 md:p-8 bg-background/80 backdrop-blur border-b border-border/50"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -187,6 +188,11 @@ export default function ApeBeatLanding() {
             <Music className="w-5 h-5 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold">ApeBeats</span>
+          <div className="ml-4">
+            <Suspense fallback={<div className="w-16 h-6 bg-zinc-800 rounded animate-pulse" />}>
+              <HeaderUser onLoginClick={() => setShowLoginModal(true)} />
+            </Suspense>
+          </div>
         </div>
         <div className="flex items-center space-x-6">
           <div className="hidden md:flex items-center space-x-6 text-sm">
@@ -225,7 +231,7 @@ export default function ApeBeatLanding() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 px-6 md:px-8 py-12 md:py-20" role="banner">
+      <section className="relative z-10 px-6 md:px-8 pt-28 pb-12 md:pt-36 md:pb-20" role="banner">
         <div className="max-w-6xl mx-auto text-center">
           <Badge className="mb-6 bg-primary/20 text-primary border-primary/30">Sonic Swamp Hub • Coming Soon</Badge>
 
@@ -278,16 +284,18 @@ export default function ApeBeatLanding() {
               aria-label="Live ApeChain data"
             >
               <div className="text-center">
-                <div className="text-accent font-mono">$APE</div>
-                <div className="text-muted-foreground">$1.23</div>
+                <div className="text-accent font-mono">BLOCK</div>
+                <div className="text-muted-foreground">{stats ? Number(stats.blockNumber).toLocaleString() : "-"}</div>
               </div>
               <div className="text-center">
                 <div className="text-primary font-mono">TXN/MIN</div>
-                <div className="text-muted-foreground">847</div>
+                <div className="text-muted-foreground">{stats?.txPerMinute ?? "-"}</div>
               </div>
               <div className="text-center">
                 <div className="text-accent font-mono">GAS</div>
-                <div className="text-muted-foreground">0.02</div>
+                <div className="text-muted-foreground">
+                  {stats ? `${Number(stats.gasPriceWei) / 1e9} gwei` : "-"}
+                </div>
               </div>
               <div className="text-center">
                 <div className="text-primary font-mono">BPM</div>
@@ -369,7 +377,8 @@ export default function ApeBeatLanding() {
                     loop
                     muted
                     playsInline
-                    preload="metadata"
+                    preload="none"
+                    loading="lazy"
                     aria-label={`Genesis NFT preview ${getGenesisNumber(videoSrc)}`}
                   />
                 </div>
@@ -697,6 +706,24 @@ export default function ApeBeatLanding() {
         >
           <ChevronUp className="w-6 h-6 text-primary-foreground" />
         </button>
+      )}
+
+      {/* Login Modal - Only show if not logged in */}
+      {showLoginModal && (!email && !account?.address) && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowLoginModal(false)
+            }
+          }}
+        >
+          <div className="relative max-w-md w-full mx-4">
+            <Suspense fallback={<div className="w-full h-96 bg-zinc-800 rounded-xl animate-pulse" />}>
+              <LoginInline onDone={() => setShowLoginModal(false)} />
+            </Suspense>
+          </div>
+        </div>
       )}
     </div>
   )
