@@ -327,7 +327,7 @@ export default function ApeBeatLanding() {
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Where Voyagers discover Koda artifacts pulsing with ApeChain data, creating eternal lo-fi rhythms in the
-              Otherside ecosystem. Experience the future of ApeSounds, ApeWaves, and Ape Music.
+              Otherside ecosystem.
             </p>
           </div>
 
@@ -357,8 +357,7 @@ export default function ApeBeatLanding() {
               Genesis Collection Preview
             </h2>
             <p className="text-lg text-muted-foreground">
-              Experience the first artifacts from the Sonic Swamp - each one unique, each one eternal. Preview ApeSounds
-              and ApeWaves from the Genesis collection.
+              Experience the first artifacts from the Sonic Swamp - each one unique, each one eternal. 
             </p>
           </div>
 
@@ -420,8 +419,7 @@ export default function ApeBeatLanding() {
               Two Collections
             </h2>
             <p className="text-lg text-muted-foreground">
-              Genesis artifacts and infinite echoes from the Sonic Swamp. Discover ApeSounds, ApeWaves, and Ape Music
-              NFTs.
+              Genesis artifacts and infinite echoes from the Sonic Swamp.
             </p>
           </div>
 
@@ -498,8 +496,7 @@ export default function ApeBeatLanding() {
               Voyager's Quest
             </h2>
             <p className="text-lg text-muted-foreground">
-              The journey through the Sonic Swamp unfolds in phases. Follow the evolution of ApeSounds, ApeWaves, and
-              Ape Music.
+              The journey through the Sonic Swamp unfolds in phases. 
             </p>
           </div>
 
@@ -584,7 +581,6 @@ export default function ApeBeatLanding() {
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
             Join the waitlist to be among the first Voyagers to discover the Genesis Apechain Beats collection.
-            Experience the future of ApeSounds, ApeWaves, and Ape Music NFTs.
           </p>
           <Button
             size="lg"
@@ -691,8 +687,7 @@ export default function ApeBeatLanding() {
 
           <div className="mt-8 pt-8 border-t border-border/50 text-center text-sm text-muted-foreground">
             <p>
-              Inspired by the BAYC ecosystem. Built with respect for Yuga Labs and the ape community. Discover
-              ApeSounds, ApeWaves, and Ape Music NFTs on ApeChain.
+              Inspired by the BAYC ecosystem. Built with respect for Yuga Labs and the ape community.
             </p>
           </div>
         </div>
