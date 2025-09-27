@@ -1,13 +1,10 @@
 "use client"
 import { useState } from "react"
-import { inAppWallet, createWallet, walletConnect } from "thirdweb/wallets"
-import { preAuthenticate } from "thirdweb/wallets/in-app"
-import { useConnect } from "thirdweb/react"
-import { thirdwebClient } from "@/lib/thirdweb"
-import { deploySmartAccount } from "thirdweb/wallets"
+import { useWalletService } from "@/lib/walletService"
+import { GlyphIcon, MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon, EmailIcon, GoogleIcon, AppleIcon, XIcon, FacebookIcon } from "./WalletIcons"
 
 export default function LoginInline({ onDone }: { onDone?: () => void }) {
-  const { connect } = useConnect()
+  const walletService = useWalletService()
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")
   const [step, setStep] = useState<"idle"|"email"|"code"|"done">("idle")
@@ -17,7 +14,7 @@ export default function LoginInline({ onDone }: { onDone?: () => void }) {
   async function sendCode() {
     setError(null); setLoading(true)
     try {
-      await preAuthenticate({ client: thirdwebClient, strategy: "email", email })
+      await walletService.sendEmailCode(email)
       setStep("code")
     } catch (e: any) {
       setError(e?.message || "Failed to send code")
@@ -27,79 +24,39 @@ export default function LoginInline({ onDone }: { onDone?: () => void }) {
   async function verifyCode() {
     setError(null); setLoading(true)
     try {
-      const wallet = inAppWallet()
-      const w = await connect(async () => {
-        await wallet.connect({ client: thirdwebClient, strategy: "email", email, verificationCode: code })
-        return wallet
-      })
-      // Deploy smart account only if we have a valid account
-      if (w && w.account) {
-        try { 
-          await deploySmartAccount({ client: thirdwebClient, account: w.account }) 
-        } catch (deployError) {
-          console.warn('Smart account deployment failed:', deployError)
-        }
-      }
-      
+      await walletService.connectEmailWallet(email, code)
       setStep("done"); onDone?.()
     } catch (e: any) {
       setError(e?.message || "Failed to verify code")
     } finally { setLoading(false) }
   }
 
+  async function connectGlyphWallet() {
+    setError(null); setLoading(true)
+    try {
+      await walletService.connectGlyphWallet()
+      setStep("done"); onDone?.()
+    } catch (e: any) { 
+      console.error("Failed to connect Glyph wallet:", e)
+      setError(e?.message || "Failed to connect Glyph wallet. Please try again.") 
+    } finally { setLoading(false) }
+  }
+
   async function connectInjected(rdns: string) {
     setError(null); setLoading(true)
     try {
-      let w = null as any
-      try {
-        w = await connect(async () => {
-          const wallet = createWallet(rdns)
-          await wallet.connect({ client: thirdwebClient })
-          return wallet
-        })
-      } catch (injectedErr) {
-        if (rdns === "app.glyph") {
-          w = await connect(async () => {
-            const wc = walletConnect()
-            await wc.connect({ client: thirdwebClient })
-            return wc
-          })
-        } else {
-          throw injectedErr
-        }
-      }
-      
-      // Deploy smart account only if we have a valid account
-      if (w && w.account) {
-        try { 
-          await deploySmartAccount({ client: thirdwebClient, account: w.account }) 
-        } catch (deployError) {
-          console.warn('Smart account deployment failed:', deployError)
-        }
-      }
-      
+      await walletService.connectInjectedWallet(rdns)
       setStep("done"); onDone?.()
-    } catch (e: any) { setError(e?.message || "Failed to connect") } finally { setLoading(false) }
+    } catch (e: any) { 
+      console.error(`Failed to connect ${rdns}:`, e)
+      setError(e?.message || "Failed to connect wallet. Please try again or use a different wallet.") 
+    } finally { setLoading(false) }
   }
 
   async function connectWC() {
     setError(null); setLoading(true)
     try {
-      const w = await connect(async () => {
-        const wallet = walletConnect()
-        await wallet.connect({ client: thirdwebClient })
-        return wallet
-      })
-      
-      // Deploy smart account only if we have a valid account
-      if (w && w.account) {
-        try { 
-          await deploySmartAccount({ client: thirdwebClient, account: w.account }) 
-        } catch (deployError) {
-          console.warn('Smart account deployment failed:', deployError)
-        }
-      }
-      
+      await walletService.connectWalletConnect()
       setStep("done"); onDone?.()
     } catch (e: any) { setError(e?.message || "Failed to connect") } finally { setLoading(false) }
   }
@@ -107,65 +64,74 @@ export default function LoginInline({ onDone }: { onDone?: () => void }) {
   async function connectSocial(strategy: "google"|"x"|"facebook") {
     setError(null); setLoading(true)
     try {
-      const wallet = inAppWallet()
-      const w = await connect(async () => {
-        await wallet.connect({ client: thirdwebClient, strategy })
-        return wallet
-      })
-      
-      // Deploy smart account only if we have a valid account
-      if (w && w.account) {
-        try { 
-          await deploySmartAccount({ client: thirdwebClient, account: w.account }) 
-        } catch (deployError) {
-          console.warn('Smart account deployment failed:', deployError)
-          // Don't fail the entire flow if smart account deployment fails
-        }
-      }
-      
+      await walletService.connectSocialWallet(strategy)
       setStep("done"); onDone?.()
     } catch (e: any) { setError(e?.message || "Failed to connect with social") } finally { setLoading(false) }
   }
 
   return (
-    <div className="w-full max-w-md rounded-xl border border-zinc-800 p-6 bg-black/90 backdrop-blur shadow-2xl">
+    <div className="w-full max-w-md rounded-xl border border-border p-6 bg-card/90 backdrop-blur shadow-2xl">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-lg font-semibold">Sign in to ApeBeats</div>
+        <div className="text-lg font-semibold text-foreground">Sign in to ApeBeats</div>
         <button
           onClick={() => onDone?.()}
-          className="text-zinc-400 hover:text-white transition-colors"
+          className="text-muted-foreground hover:text-foreground transition-colors"
         >
           ✕
         </button>
       </div>
       <div className="grid grid-cols-2 gap-2 mb-3">
-        <button disabled={loading} onClick={() => connectSocial("google")} className="rounded-md bg-zinc-900 hover:bg-zinc-800 px-3 py-2 text-sm">Google</button>
-        <button disabled={loading} onClick={() => connectSocial("x")} className="rounded-md bg-zinc-900 hover:bg-zinc-800 px-3 py-2 text-sm">X</button>
-        <button disabled={loading} onClick={() => connectSocial("facebook")} className="rounded-md bg-zinc-900 hover:bg-zinc-800 px-3 py-2 text-sm col-span-2">Facebook</button>
+        <button disabled={loading} onClick={() => connectSocial("google")} className="rounded-md bg-secondary hover:bg-secondary/80 px-3 py-2 text-sm flex items-center gap-2 text-secondary-foreground">
+          <GoogleIcon />
+          Google
+        </button>
+        <button disabled={loading} onClick={() => connectSocial("x")} className="rounded-md bg-secondary hover:bg-secondary/80 px-3 py-2 text-sm flex items-center gap-2 text-secondary-foreground">
+          <XIcon />
+          X
+        </button>
+        <button disabled={loading} onClick={() => connectSocial("facebook")} className="rounded-md bg-secondary hover:bg-secondary/80 px-3 py-2 text-sm col-span-2 flex items-center gap-2 text-secondary-foreground">
+          <FacebookIcon />
+          Facebook
+        </button>
       </div>
-      <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Or email</div>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Or email</div>
       {step !== "code" && (
         <div className="space-y-2 mb-2">
-          <input className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm" placeholder="you@example.com" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} />
-          <button disabled={!email || loading} onClick={sendCode} className="w-full rounded-md bg-lime-600 hover:bg-lime-500 disabled:opacity-50 px-3 py-2 text-sm">Send Code</button>
+          <input className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground" placeholder="you@example.com" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} />
+          <button disabled={!email || loading} onClick={sendCode} className="w-full rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 px-3 py-2 text-sm text-primary-foreground">Send Code</button>
         </div>
       )}
       {step === "code" && (
         <div className="space-y-2 mb-2">
-          <input className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm tracking-widest" placeholder="123456" value={code} onChange={(e)=>setCode(e.target.value)} />
-          <button disabled={!code || loading} onClick={verifyCode} className="w-full rounded-md bg-lime-600 hover:bg-lime-500 disabled:opacity-50 px-3 py-2 text-sm">Verify & Connect</button>
+          <input className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm tracking-widest text-foreground placeholder:text-muted-foreground" placeholder="123456" value={code} onChange={(e)=>setCode(e.target.value)} />
+          <button disabled={!code || loading} onClick={verifyCode} className="w-full rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 px-3 py-2 text-sm text-primary-foreground">Verify & Connect</button>
         </div>
       )}
-      <div className="my-3 h-px bg-zinc-800" />
-      <div className="text-xs uppercase tracking-wider text-zinc-500 mb-2">Or connect a wallet</div>
+      <div className="my-3 h-px bg-border" />
+      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Or connect a wallet</div>
       <div className="grid grid-cols-2 gap-2">
-        <button disabled={loading} onClick={() => connectInjected("app.glyph")} className="rounded-md bg-zinc-900 hover:bg-zinc-800 px-3 py-2 text-sm">Glyph</button>
-        <button disabled={loading} onClick={() => connectInjected("io.rabby")} className="rounded-md bg-zinc-900 hover:bg-zinc-800 px-3 py-2 text-sm">Rabby</button>
-        <button disabled={loading} onClick={() => connectInjected("io.metamask")} className="rounded-md bg-zinc-900 hover:bg-zinc-800 px-3 py-2 text-sm">MetaMask</button>
-        <button disabled={loading} onClick={() => connectInjected("me.rainbow")} className="rounded-md bg-zinc-900 hover:bg-zinc-800 px-3 py-2 text-sm">Rainbow</button>
-        <button disabled={loading} onClick={connectWC} className="col-span-2 rounded-md bg-lime-600 hover:bg-lime-500 px-3 py-2 text-sm">WalletConnect</button>
+        <button disabled={loading} onClick={connectGlyphWallet} className="rounded-md bg-secondary hover:bg-secondary/80 px-3 py-2 text-sm flex items-center gap-2 text-secondary-foreground" title="Glyph wallet by Yuga Labs - opens Glyph wallet directly">
+          <GlyphIcon />
+          Glyph
+        </button>
+        <button disabled={loading} onClick={() => connectInjected("io.rabby")} className="rounded-md bg-secondary hover:bg-secondary/80 px-3 py-2 text-sm flex items-center gap-2 text-secondary-foreground">
+          <RabbyIcon />
+          Rabby
+        </button>
+        <button disabled={loading} onClick={() => connectInjected("io.metamask")} className="rounded-md bg-secondary hover:bg-secondary/80 px-3 py-2 text-sm flex items-center gap-2 text-secondary-foreground">
+          <MetaMaskIcon />
+          MetaMask
+        </button>
+        <button disabled={loading} onClick={() => connectInjected("me.rainbow")} className="rounded-md bg-secondary hover:bg-secondary/80 px-3 py-2 text-sm flex items-center gap-2 text-secondary-foreground">
+          <RainbowIcon />
+          Rainbow
+        </button>
+        <button disabled={loading} onClick={connectWC} className="col-span-2 rounded-md bg-primary hover:bg-primary/90 px-3 py-2 text-sm flex items-center gap-2 text-primary-foreground">
+          <WalletConnectIcon />
+          WalletConnect
+        </button>
       </div>
-      {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-3 text-xs text-destructive">{error}</p>}
     </div>
   )
 }

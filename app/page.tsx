@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,10 +9,14 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchApeChainStats } from "@/lib/utils"
 import { useActiveAccount } from "thirdweb/react"
 import useUserStore from "@/lib/userStore"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { ApeChainDataSkeleton, VideoThumbnailSkeleton } from "@/components/LoadingStates"
+import { useVideoPreviews } from "@/lib/useVideoPreviews"
 
 // Lazy load HeaderUser to improve initial page load
 const HeaderUser = lazy(() => import("@/components/HeaderUser"))
 const LoginInline = lazy(() => import("@/components/LoginInline"))
+const NetworkSwitcher = lazy(() => import("@/components/NetworkSwitcher"))
 
 export default function ApeBeatLanding() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -22,20 +26,23 @@ export default function ApeBeatLanding() {
   const [randomVideos, setRandomVideos] = useState<string[]>([])
   const [showComingSoonPopup, setShowComingSoonPopup] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null)
   
   // Get auth state
   const account = useActiveAccount()
-  const email = useUserStore((s) => s.email)
+  const email = useUserStore((s: any) => s.email)
   const { data: stats } = useQuery({
     queryKey: ["apechain-stats"],
     queryFn: fetchApeChainStats,
-    refetchInterval: 30_000, // 30 seconds - safe for Alchemy free tier
+    refetchInterval: 60_000, // 60 seconds - reduced frequency
     refetchIntervalInBackground: false, // Don't refetch when tab is not active
-    staleTime: 20_000, // Consider data fresh for 20 seconds
+    staleTime: 30_000, // Consider data fresh for 30 seconds
     enabled: typeof window !== 'undefined', // Only run on client side
+    retry: 1, // Reduce retries
+    retryDelay: 5000, // 5 second delay between retries
   })
 
-  const genesisVideos = [
+  const genesisVideos = useMemo(() => [
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/15-jknCr6ApXUldXFHc8cEhDkEkWCAaVw.mp4",
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/15-LfgmCMLL4WE8nSYKx8iAvp0zZLkpJ1.mp4",
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/35-t1WlZsXxyxYPWH30MXGBFspz5kUKLd.mp4",
@@ -46,21 +53,27 @@ export default function ApeBeatLanding() {
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/25-VAuntrCY9BoMzOvJDUCKHvdk1Ds7Pl.mp4",
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/16-iK78dPYs6y4DYkVLKB5TOVqqcxsqeC.mp4",
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/10-ePllyvB0TWKrCSXOJmGknFX59BsaKq.mp4",
-  ]
+  ], [])
+
+  // Use video preview hook to generate preview images - only load when needed
+  const { getPreview, loading: previewsLoading } = useVideoPreviews(
+    typeof window !== 'undefined' ? genesisVideos : [] // Only load on client side
+  )
 
   const getGenesisNumber = (videoSrc: string) => {
-    const match = videoSrc.match(/genesis-(\d+)/)
+    const match = videoSrc.match(/\/(\d+)-/)
     return match ? match[1] : "1"
   }
 
-  const getRandomVideos = () => {
+
+  const getRandomVideos = useCallback(() => {
     const shuffled = [...genesisVideos]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
       ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
     return shuffled.slice(0, 4)
-  }
+  }, [genesisVideos])
 
   useEffect(() => {
     if (isDarkMode) {
@@ -71,8 +84,13 @@ export default function ApeBeatLanding() {
   }, [isDarkMode])
 
   useEffect(() => {
-    setRandomVideos(getRandomVideos())
-  }, [])
+    // Delay video loading to prevent blocking initial page load
+    const timer = setTimeout(() => {
+      setRandomVideos(getRandomVideos())
+    }, 1000) // 1 second delay
+    
+    return () => clearTimeout(timer)
+  }, [getRandomVideos])
 
   // Simulate live data updates - only when page is visible
   useEffect(() => {
@@ -113,7 +131,7 @@ export default function ApeBeatLanding() {
     }
   }
 
-  const features = [
+  const features = useMemo(() => [
     {
       icon: <Music className="w-6 h-6" />,
       title: "24/7 Onchain Beats",
@@ -135,11 +153,52 @@ export default function ApeBeatLanding() {
       title: "True Ownership",
       description: "100% onchain music and video generation. Verifiable, immutable, and owned by you forever.",
     },
-  ]
+  ], [])
 
   const handlePlayClick = () => {
     setShowComingSoonPopup(true)
   }
+
+  const handleVideoPlay = useCallback((videoSrc: string) => {
+    // Pause any currently playing video
+    if (playingVideo && playingVideo !== videoSrc) {
+      const currentVideo = document.querySelector(`video[src="${playingVideo}"]`) as HTMLVideoElement
+      if (currentVideo) {
+        currentVideo.pause()
+        currentVideo.muted = true
+        currentVideo.style.display = 'none'
+        // Show the image again
+        const currentImg = currentVideo.previousElementSibling as HTMLImageElement
+        if (currentImg) currentImg.style.display = 'block'
+      }
+    }
+    
+    const video = document.querySelector(`video[src="${videoSrc}"]`) as HTMLVideoElement
+    const img = video?.previousElementSibling as HTMLImageElement
+    
+    if (video && img) {
+      if (video.paused) {
+        // Show video, hide image
+        img.style.display = 'none'
+        video.style.display = 'block'
+        
+        // Load video if not already loaded
+        if (video.readyState < 2) {
+          video.load()
+        }
+        video.muted = false
+        setPlayingVideo(videoSrc)
+        video.play().catch(console.error)
+      } else {
+        // Hide video, show image
+        video.pause()
+        video.muted = true
+        video.style.display = 'none'
+        img.style.display = 'block'
+        setPlayingVideo(null)
+      }
+    }
+  }, [playingVideo])
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden transition-colors duration-300">
@@ -155,7 +214,7 @@ export default function ApeBeatLanding() {
       ></div>
 
       <div className="fixed inset-0 opacity-20 dark:opacity-15" style={{ zIndex: 1, willChange: "transform" }}>
-        {/* Optimized floating elements - reduced count for better performance */}
+        {/* Optimized floating elements - reduced count and complexity for better performance */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-purple-500/40 to-pink-500/40 dark:from-purple-500/25 dark:to-pink-500/25 rounded-full blur-xl float"></div>
         <div
           className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-cyan-500/35 to-blue-500/35 dark:from-cyan-500/20 dark:to-blue-500/20 rounded-full blur-lg float"
@@ -170,12 +229,12 @@ export default function ApeBeatLanding() {
           className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-gradient-to-r from-cyan-500/35 to-blue-500/35 dark:from-cyan-500/20 dark:to-blue-500/20 rounded-full blur-2xl psychedelic-pulse"
           style={{ animationDelay: "3s" }}
         ></div>
-        <div
-          className="absolute top-1/2 right-1/3 w-56 h-56 bg-gradient-to-r from-orange-500/35 to-red-500/35 dark:from-orange-500/20 dark:to-red-500/20 rounded-full blur-3xl color-shift"
-          style={{ animationDelay: "6s" }}
-        ></div>
-        <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-gradient-to-r from-yellow-500/30 to-green-500/30 dark:from-yellow-500/15 dark:to-green-500/15 rounded-full blur-3xl color-shift"></div>
       </div>
+
+      {/* Network Switcher Banner */}
+      <Suspense fallback={null}>
+        <NetworkSwitcher />
+      </Suspense>
 
       {/* Navigation */}
       <nav
@@ -188,10 +247,17 @@ export default function ApeBeatLanding() {
             <Music className="w-5 h-5 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold">ApeBeats</span>
-          <div className="ml-4">
-            <Suspense fallback={<div className="w-16 h-6 bg-zinc-800 rounded animate-pulse" />}>
-              <HeaderUser onLoginClick={() => setShowLoginModal(true)} />
-            </Suspense>
+          <div className="ml-4 flex items-center space-x-4">
+            <ErrorBoundary>
+              <Suspense fallback={<div className="w-16 h-6 bg-zinc-800 rounded animate-pulse" />}>
+                <HeaderUser onLoginClick={() => setShowLoginModal(true)} />
+              </Suspense>
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <Suspense fallback={null}>
+                <NetworkSwitcher showAlways={true} className="hidden md:flex" />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
         <div className="flex items-center space-x-6">
@@ -278,30 +344,36 @@ export default function ApeBeatLanding() {
               </div>
             </div>
 
-            <div
-              className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"
-              role="region"
-              aria-label="Live ApeChain data"
-            >
-              <div className="text-center">
-                <div className="text-accent font-mono">BLOCK</div>
-                <div className="text-muted-foreground">{stats ? Number(stats.blockNumber).toLocaleString() : "-"}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-primary font-mono">TXN/MIN</div>
-                <div className="text-muted-foreground">{stats?.txPerMinute ?? "-"}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-accent font-mono">GAS</div>
-                <div className="text-muted-foreground">
-                  {stats ? `${Number(stats.gasPriceWei) / 1e9} gwei` : "-"}
+            <ErrorBoundary>
+              {stats ? (
+                <div
+                  className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"
+                  role="region"
+                  aria-label="Live ApeChain data"
+                >
+                  <div className="text-center">
+                    <div className="text-accent font-mono">BLOCK</div>
+                    <div className="text-muted-foreground">{Number(stats.blockNumber).toLocaleString()}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-primary font-mono">BLOCK TIME</div>
+                    <div className="text-muted-foreground">{stats.blockTimeSeconds ? `${stats.blockTimeSeconds}s` : "-"}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-accent font-mono">GAS</div>
+                    <div className="text-muted-foreground">
+                      {`${Number(stats.gasPriceWei) / 1e9} gwei`}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-primary font-mono">BPM</div>
+                    <div className="text-muted-foreground">87</div>
+                  </div>
                 </div>
-              </div>
-              <div className="text-center">
-                <div className="text-primary font-mono">BPM</div>
-                <div className="text-muted-foreground">87</div>
-              </div>
-            </div>
+              ) : (
+                <ApeChainDataSkeleton />
+              )}
+            </ErrorBoundary>
           </Card>
 
           <div className="max-w-md mx-auto">
@@ -362,32 +434,216 @@ export default function ApeBeatLanding() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {randomVideos.map((videoSrc, index) => (
+            {previewsLoading ? (
+              // Show loading skeletons while previews are being generated
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card key={`loading-${index}`} className="p-4 bg-card/50 backdrop-blur-sm border-primary/20">
+                  <VideoThumbnailSkeleton />
+                  <div className="mt-4 text-center">
+                    <div className="h-6 w-24 mx-auto bg-secondary/20 rounded animate-pulse" />
+                  </div>
+                </Card>
+              ))
+            ) : randomVideos.length > 0 ? randomVideos.map((videoSrc, index) => (
               <Card
                 key={`${videoSrc}-${index}`} // Use videoSrc in key to ensure proper re-rendering
                 className="p-4 bg-card/50 backdrop-blur-sm border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105"
                 role="article"
               >
-                <div className="aspect-square rounded-lg overflow-hidden bg-secondary/20">
+                <div 
+                  className="aspect-square rounded-lg overflow-hidden bg-secondary/20 relative group genesis-protected"
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    return false
+                  }}
+                  onDragStart={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    return false
+                  }}
+                  style={{ 
+                    userSelect: 'none', 
+                    WebkitUserSelect: 'none',
+                    MozUserSelect: 'none',
+                    msUserSelect: 'none',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Image fallback - always visible by default */}
+                  <img
+                    src={getPreview(videoSrc)}
+                    alt={`Genesis NFT preview ${getGenesisNumber(videoSrc)}`}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onDragStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    style={{ 
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserDrag: 'none'
+                    } as any}
+                  />
+                  
+                  {/* Video overlay - only shows when playing */}
                   <video
                     src={videoSrc}
-                    className="w-full h-full object-cover"
-                    controls
+                    className="w-full h-full object-cover absolute inset-0 hidden"
+                    controls={false}
                     loop
-                    muted
+                    muted={true}
                     playsInline
-                    preload="none"
-                    loading="lazy"
+                    preload="metadata"
                     aria-label={`Genesis NFT preview ${getGenesisNumber(videoSrc)}`}
+                    onLoadedData={(e) => {
+                      // Video is ready but stays hidden until play is clicked
+                      console.log('Video loaded for', getGenesisNumber(videoSrc))
+                    }}
+                    onError={(e) => {
+                      console.warn('Video failed to load for', getGenesisNumber(videoSrc))
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onDragStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onPause={(e) => {
+                      if (playingVideo === videoSrc) {
+                        // Hide video, show image
+                        const target = e.target as HTMLVideoElement
+                        target.style.display = 'none'
+                        const img = target.previousElementSibling as HTMLImageElement
+                        if (img) img.style.display = 'block'
+                        setPlayingVideo(null)
+                      }
+                    }}
+                    onEnded={(e) => {
+                      if (playingVideo === videoSrc) {
+                        // Hide video, show image
+                        const target = e.target as HTMLVideoElement
+                        target.style.display = 'none'
+                        const img = target.previousElementSibling as HTMLImageElement
+                        if (img) img.style.display = 'block'
+                        setPlayingVideo(null)
+                      }
+                    }}
+                    style={{ 
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserDrag: 'none'
+                    } as any}
+                  />
+                  
+                  {/* Custom Play Button Overlay */}
+                  <div 
+                    className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer"
+                    onClick={() => handleVideoPlay(videoSrc)}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onDragStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    style={{ 
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserDrag: 'none'
+                    } as any}
+                  >
+                    <div className="bg-black/40 backdrop-blur-sm rounded-full p-4 hover:bg-black/60 transition-all duration-200 group-hover:scale-110">
+                      {playingVideo === videoSrc ? (
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          <div className="w-2 h-4 bg-white rounded-sm mr-1"></div>
+                          <div className="w-2 h-4 bg-white rounded-sm"></div>
+                        </div>
+                      ) : (
+                        <Play className="w-6 h-6 text-white ml-1" />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Watermark overlay */}
+                  <div className="absolute top-2 left-2 z-30 pointer-events-none">
+                    <div className="bg-black/20 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-white/80 font-medium">
+                      Genesis #{getGenesisNumber(videoSrc)}
+                    </div>
+                  </div>
+                  
+                  {/* Protection overlay - prevents right-click and drag on video element */}
+                  <div 
+                    className="absolute inset-0 z-10"
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onDragStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onMouseDown={(e) => {
+                      // Prevent text selection
+                      e.preventDefault()
+                    }}
+                    style={{ 
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserDrag: 'none'
+                    } as any}
                   />
                 </div>
                 <div className="mt-4 text-center">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                    Genesis #{getGenesisNumber(videoSrc)} {/* This now correctly shows the number from the filename */}
+                    Genesis #{getGenesisNumber(videoSrc)}
                   </Badge>
                 </div>
               </Card>
-            ))}
+            )) : (
+              // Show loading skeletons while videos are being loaded
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card
+                  key={`loading-${index}`}
+                  className="p-4 bg-card/50 backdrop-blur-sm border-primary/20"
+                  role="article"
+                >
+                  <VideoThumbnailSkeleton />
+                  <div className="mt-4 text-center">
+                    <div className="h-6 w-24 bg-muted rounded animate-pulse mx-auto" />
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
 
           <div className="text-center mt-12">
@@ -706,7 +962,7 @@ export default function ApeBeatLanding() {
       {/* Login Modal - Only show if not logged in */}
       {showLoginModal && (!email && !account?.address) && (
         <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-md"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowLoginModal(false)
@@ -714,7 +970,7 @@ export default function ApeBeatLanding() {
           }}
         >
           <div className="relative max-w-md w-full mx-4">
-            <Suspense fallback={<div className="w-full h-96 bg-zinc-800 rounded-xl animate-pulse" />}>
+            <Suspense fallback={<div className="w-full h-96 bg-card rounded-xl animate-pulse" />}>
               <LoginInline onDone={() => setShowLoginModal(false)} />
             </Suspense>
           </div>

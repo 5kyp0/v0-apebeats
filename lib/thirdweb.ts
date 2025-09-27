@@ -25,22 +25,36 @@ export const apeChain = APECHAIN_CHAIN_ID && APECHAIN_RPC
   ? defineChain({
       id: APECHAIN_CHAIN_ID,
       name: "ApeChain",
-      rpc: APECHAIN_RPC,
+      rpc: [APECHAIN_RPC],
       nativeCurrency: {
         name: "APE",
         symbol: "APE",
         decimals: 18,
       },
+      blockExplorers: [
+        {
+          name: "ApeChain Explorer",
+          url: "https://explorer.apechain.com",
+        },
+      ],
+      testnet: false,
     })
   : defineChain({
       id: FALLBACK_CHAIN_ID,
       name: "Ethereum (Fallback)",
-      rpc: FALLBACK_RPC,
+      rpc: [FALLBACK_RPC],
       nativeCurrency: {
         name: "Ether",
         symbol: "ETH",
         decimals: 18,
       },
+      blockExplorers: [
+        {
+          name: "Etherscan",
+          url: "https://etherscan.io",
+        },
+      ],
+      testnet: false,
     })
 
 // Preferred wallets for Connect UI
@@ -49,7 +63,7 @@ export const preferredWallets = [
   createWallet("io.metamask"),
   createWallet("io.rabby"),
   createWallet("me.rainbow"),
-  createWallet("app.glyph"),
+  // Note: Glyph wallet is now handled by the native Glyph SDK, not thirdweb
   // Fallback WalletConnect to support these on mobile
   walletConnect(),
   // In-app wallet with socials

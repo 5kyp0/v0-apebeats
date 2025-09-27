@@ -5,6 +5,8 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
 import QueryProvider from "@/components/QueryProvider"
+import GlyphProvider from "@/components/GlyphProvider"
+import { ErrorBoundary, AsyncErrorBoundary } from "@/components/ErrorBoundary"
 import { ThirdwebProvider } from "thirdweb/react"
 import { thirdwebClient } from "@/lib/thirdweb"
 import "./globals.css"
@@ -133,14 +135,80 @@ export default function RootLayout({
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content="ApeBeats - Sonic Swamp Hub - Lo-Fi Hip-Hop NFTs on ApeChain" />
         <meta name="twitter:image:alt" content="ApeBeats - Sonic Swamp Hub - Lo-Fi Hip-Hop NFTs on ApeChain" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Download protection for Genesis content
+              document.addEventListener('DOMContentLoaded', function() {
+                // Disable right-click context menu globally
+                document.addEventListener('contextmenu', function(e) {
+                  if (e.target.closest('.genesis-protected')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                  }
+                });
+                
+                // Disable drag and drop
+                document.addEventListener('dragstart', function(e) {
+                  if (e.target.closest('.genesis-protected')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                  }
+                });
+                
+                // Disable text selection
+                document.addEventListener('selectstart', function(e) {
+                  if (e.target.closest('.genesis-protected')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                  }
+                });
+                
+                // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S
+                document.addEventListener('keydown', function(e) {
+                  if (e.target.closest('.genesis-protected')) {
+                    if (e.key === 'F12' || 
+                        (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                        (e.ctrlKey && e.key === 'u') ||
+                        (e.ctrlKey && e.key === 's')) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      return false;
+                    }
+                  }
+                });
+                
+                // Disable print screen (limited effectiveness)
+                document.addEventListener('keyup', function(e) {
+                  if (e.target.closest('.genesis-protected')) {
+                    if (e.key === 'PrintScreen') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      return false;
+                    }
+                  }
+                });
+              });
+            `,
+          }}
+        />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThirdwebProvider client={thirdwebClient}>
-          <QueryProvider>
-            <Suspense fallback={null}>{children}</Suspense>
-            <Analytics />
-          </QueryProvider>
-        </ThirdwebProvider>
+        <ErrorBoundary>
+          <AsyncErrorBoundary>
+            <ThirdwebProvider>
+              <GlyphProvider>
+                <QueryProvider>
+                  <Suspense fallback={null}>{children}</Suspense>
+                  <Analytics />
+                </QueryProvider>
+              </GlyphProvider>
+            </ThirdwebProvider>
+          </AsyncErrorBoundary>
+        </ErrorBoundary>
       </body>
     </html>
   )

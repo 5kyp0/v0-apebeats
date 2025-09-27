@@ -11,10 +11,10 @@ export function cn(...inputs: ClassValue[]) {
 export type ApeChainStats = {
   blockNumber: bigint
   gasPriceWei: bigint
-  txPerMinute: number | null
+  blockTimeSeconds: number | null
 }
 
-// Store previous block data for TXN/min calculation
+// Store previous block data for block time calculation
 let previousBlockData: { blockNumber: bigint; timestamp: number } | null = null
 
 export async function fetchApeChainStats(): Promise<ApeChainStats | null> {
@@ -36,27 +36,24 @@ export async function fetchApeChainStats(): Promise<ApeChainStats | null> {
     
     const rpc = getRpcClient({ client: thirdwebClient, chain: apeChain })
     // Fetch current block number first to use in subsequent calls
-    const blockHex = await rpc({ method: 'eth_blockNumber', params: [] }) as string
+    const blockHex = await rpc({ method: 'eth_blockNumber', params: [] as any }) as string
     const [gasHex, blockDetails] = await Promise.all([
-      rpc({ method: 'eth_gasPrice', params: [] }) as Promise<string>,
-      rpc({ method: 'eth_getBlockByNumber', params: [blockHex, false] }) as Promise<any>,
+      rpc({ method: 'eth_gasPrice', params: [] as any }) as Promise<string>,
+      rpc({ method: 'eth_getBlockByNumber', params: [blockHex, false] as any }) as Promise<any>,
     ])
     const blockNumber = BigInt(blockHex)
     const gasPriceWei = BigInt(gasHex)
     const currentTimestamp = parseInt(blockDetails.timestamp, 16)
     
-    // Calculate TXN/min
-    let txPerMinute: number | null = null
+    // Calculate block time
+    let blockTimeSeconds: number | null = null
     if (previousBlockData && previousBlockData.blockNumber !== blockNumber) {
       const blockDiff = Number(blockNumber - previousBlockData.blockNumber)
       const timeDiff = currentTimestamp - previousBlockData.timestamp
-      const txCount = blockDetails.transactions?.length || 0
       
       if (timeDiff > 0 && blockDiff > 0) {
-        // Calculate transactions per minute based on block time
-        const avgBlockTime = timeDiff / blockDiff
-        const txPerBlock = txCount / blockDiff
-        txPerMinute = Math.round((txPerBlock * 60) / avgBlockTime)
+        // Calculate average block time in seconds
+        blockTimeSeconds = Math.round(timeDiff / blockDiff)
       }
     }
     
@@ -68,12 +65,12 @@ export async function fetchApeChainStats(): Promise<ApeChainStats | null> {
         blockNumber: Number(blockNumber), 
         gasPriceWei: Number(gasPriceWei),
         gasPriceGwei: Number(gasPriceWei) / 1e9,
-        txPerMinute,
+        blockTimeSeconds,
         txCount: blockDetails.transactions?.length || 0
       })
     }
     
-    return { blockNumber, gasPriceWei, txPerMinute }
+    return { blockNumber, gasPriceWei, blockTimeSeconds }
   } catch (e) {
     if (process.env.NODE_ENV !== 'production') {
       console.error('ApeChain stats error:', e)

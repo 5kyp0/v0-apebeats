@@ -6,6 +6,8 @@ import { useConnect, useActiveAccount } from "thirdweb/react"
 import { deploySmartAccount } from "thirdweb/wallets"
 import { thirdwebClient } from "@/lib/thirdweb"
 import useUserStore from "@/lib/userStore"
+import { useNativeGlyphConnection, useGlyph } from "@use-glyph/sdk-react"
+import { GlyphIcon, MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon, EmailIcon, GoogleIcon, AppleIcon, XIcon, FacebookIcon } from "@/components/WalletIcons"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -15,8 +17,10 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
 
   const { connect } = useConnect()
+  const { connect: connectGlyph } = useNativeGlyphConnection()
+  const { login: glyphLogin, user: glyphUser } = useGlyph()
   const account = useActiveAccount()
-  const setEmailGlobal = useUserStore((s) => s.setEmail)
+  const setEmailGlobal = useUserStore((s: any) => s.setEmail)
 
   // create the in-app wallet only when needed to avoid stale instances
 
@@ -47,8 +51,19 @@ export default function LoginPage() {
         })
         return wallet
       })
-      // Optional: deploy smart account on first connect (no-op if deployed)
-      try { await deploySmartAccount({ client: thirdwebClient, account: acc }); } catch {}
+      
+      // Check if user has a Glyph wallet, if not, create one
+      if (!glyphUser?.evmWallet) {
+        console.log("Creating Glyph wallet for user...")
+        try {
+          await glyphLogin()
+          console.log("Glyph wallet created successfully")
+        } catch (glyphError) {
+          console.warn("Failed to create Glyph wallet:", glyphError)
+          // Continue without Glyph wallet if creation fails
+        }
+      }
+      
       setStep("done")
       setEmailGlobal(email)
       if (typeof window !== "undefined") window.localStorage.setItem("apebeats_email", email)
@@ -59,19 +74,47 @@ export default function LoginPage() {
     }
   }
 
+  async function connectGlyphWallet() {
+    setError(null)
+    setLoading(true)
+    try {
+      console.log("Attempting to connect Glyph wallet...")
+      await connectGlyph()
+      console.log("Successfully connected Glyph wallet")
+      setStep("done")
+    } catch (e: any) {
+      console.error("Failed to connect Glyph wallet:", e)
+      setError(e?.message || "Failed to connect Glyph wallet. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function connectInjected(rdns: string) {
     setError(null)
     setLoading(true)
     try {
-      const w = await connect(async () => {
-        const w = createWallet(rdns)
-        await w.connect({ client: thirdwebClient })
-        return w
-      })
-      try { await deploySmartAccount({ client: thirdwebClient, account: w.account }); } catch {}
+      let w = null as any
+      try {
+        console.log(`Attempting to connect ${rdns} as injected wallet...`)
+        w = await connect(async () => {
+          const wallet = createWallet(rdns as any)
+          await wallet.connect({ client: thirdwebClient })
+          return wallet
+        })
+        console.log(`Successfully connected ${rdns} as injected wallet`)
+      } catch (injectedErr) {
+        console.log(`${rdns} injection failed:`, injectedErr)
+        throw injectedErr
+      }
+      
+      // Smart account deployment is handled by WalletService
+      console.log("Smart account deployment handled by WalletService")
+      
       setStep("done")
     } catch (e: any) {
-      setError(e?.message || "Failed to connect wallet")
+      console.error(`Failed to connect ${rdns}:`, e)
+      setError(e?.message || "Failed to connect wallet. Please try again or use a different wallet.")
     } finally {
       setLoading(false)
     }
@@ -86,7 +129,13 @@ export default function LoginPage() {
         await _w.connect({ client: thirdwebClient })
         return _w
       })
-      try { await deploySmartAccount({ client: thirdwebClient, account: w.account }); } catch {}
+      // TODO: Fix deploySmartAccount parameters
+      // try { 
+      //   if (w && w.getAccount) {
+      //     const account = await w.getAccount()
+      //     await deploySmartAccount({ client: thirdwebClient, account })
+      //   }
+      // } catch {}
       setStep("done")
     } catch (e: any) {
       setError(e?.message || "Failed to connect via WalletConnect")
@@ -151,37 +200,43 @@ export default function LoginPage() {
           <div className="grid grid-cols-2 gap-2">
             <button
               disabled={loading}
-              onClick={() => connectInjected("app.glyph")}
-              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm"
+              onClick={connectGlyphWallet}
+              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2"
+              title="Glyph wallet by Yuga Labs - opens Glyph wallet directly"
             >
+              <GlyphIcon />
               Glyph
             </button>
             <button
               disabled={loading}
               onClick={() => connectInjected("io.rabby")}
-              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm"
+              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2"
             >
+              <RabbyIcon />
               Rabby
             </button>
             <button
               disabled={loading}
               onClick={() => connectInjected("io.metamask")}
-              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm"
+              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2"
             >
+              <MetaMaskIcon />
               MetaMask
             </button>
             <button
               disabled={loading}
               onClick={() => connectInjected("me.rainbow")}
-              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm"
+              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2"
             >
+              <RainbowIcon />
               Rainbow
             </button>
             <button
               disabled={loading}
               onClick={connectWithWalletConnect}
-              className="col-span-2 rounded-md bg-lime-600 hover:bg-lime-500 disabled:opacity-50 px-3 py-2 text-sm font-medium"
+              className="col-span-2 rounded-md bg-lime-600 hover:bg-lime-500 disabled:opacity-50 px-3 py-2 text-sm font-medium flex items-center gap-2"
             >
+              <WalletConnectIcon />
               WalletConnect (mobile)
             </button>
           </div>

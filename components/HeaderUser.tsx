@@ -10,8 +10,8 @@ interface HeaderUserProps {
 
 export default function HeaderUser({ onLoginClick }: HeaderUserProps) {
   const account = useActiveAccount()
-  const email = useUserStore((s) => s.email)
-  const setEmail = useUserStore((s) => s.setEmail)
+  const email = useUserStore((s: any) => s.email)
+  const setEmail = useUserStore((s: any) => s.setEmail)
 
   useEffect(() => {
     const saved = typeof window !== "undefined" ? window.localStorage.getItem("apebeats_email") : null
@@ -23,7 +23,7 @@ export default function HeaderUser({ onLoginClick }: HeaderUserProps) {
     return (
       <button
         onClick={onLoginClick}
-        className="text-sm text-zinc-300 hover:text-white transition-colors underline"
+        className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
       >
         Login
       </button>
