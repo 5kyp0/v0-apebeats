@@ -24,80 +24,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.2] - 2025-01-27
 
 ### Release Notes
-This is a UI/UX enhancement release focusing on improving the batch operations landing page. The release includes a complete redesign of the `/batch` page with beautiful mystical swamp background, floating animations, and enhanced user experience. All changes are backward compatible and maintain existing functionality.
+This is a UI/UX consistency release focusing on fixing background display issues across the application. The release ensures all pages display the same mystical swamp background with floating elements, providing a consistent visual experience throughout the application.
 
 **Key Highlights:**
-- 🎨 **Enhanced Batch Landing Page**: Complete redesign with mystical swamp background
-- ✨ **Floating Animations**: Beautiful floating elements with psychedelic effects
-- 🖼️ **Background Image Fix**: Properly displays the ApeBeats sonic swamp hub image
-- 🎭 **Professional Branding**: Enhanced ApeBeats branding with gradient text effects
-- 🎯 **Improved UX**: Better call-to-action buttons and feature highlights
-- 📱 **Mobile Responsive**: Optimized design for all device sizes
-- 🎪 **Visual Effects**: Glow effects, ripple animations, and color-shifting elements
+- 🎨 **Background Consistency**: Fixed background display across dashboard, stake, and transfers pages
+- ✨ **Visual Uniformity**: All pages now display the same mystical swamp background with floating elements
+- 🖼️ **Background Image Fix**: Properly displays the ApeBeats sonic swamp hub background image
+- 🎭 **Enhanced User Experience**: Consistent visual experience across the entire application
+- 🎪 **Floating Elements**: Added consistent floating gradient elements with animations
+- 🎯 **Z-index Layering**: Proper layering for background elements and content
+- 🚀 **Performance Optimization**: Optimized background rendering with hardware acceleration
 
-### Added
-- **Enhanced Batch Landing Page**: Complete redesign of `/batch` page with professional layout
-- **Mystical Background**: Beautiful swamp background image with proper display and overlays
-- **Floating Animations**: Multiple floating elements with different animation delays
-- **Psychedelic Effects**: Color-shifting and ripple animations for visual appeal
-- **Gradient Text Effects**: Professional gradient text styling for headlines
-- **Glow Effects**: Enhanced glow effects for buttons and interactive elements
-- **Hero Section**: Professional hero section with announcement badge and feature highlights
-- **Enhanced Navigation**: Improved navigation with proper branding and icons
+### Fixed
+- **Dashboard Page Background**: Fixed missing background image and floating elements on `/dashboard` page
+- **Stake Page Background**: Updated `/stake` page to use consistent background styling
+- **Transfers Page Background**: Fixed missing background image and floating elements on `/transfers` page
+- **Background Image Display**: Ensured proper display of the ApeBeats sonic swamp hub background image
+- **Floating Elements**: Added consistent floating gradient elements across all pages
+- **Z-index Issues**: Fixed layering issues with background elements and content
 
 ### Enhanced
-- **Visual Design**: Complete visual overhaul with ApeBeats branding consistency
-- **Animation System**: Enhanced animation classes with proper timing and effects
-- **Background Display**: Fixed background image display issues
-- **User Experience**: Improved user flow with better call-to-action placement
-- **Branding**: Enhanced ApeBeats branding throughout the batch operations page
-- **Responsive Design**: Better mobile and tablet experience
-- **Performance**: Optimized animations with proper CSS transforms and will-change properties
+- **Visual Consistency**: All pages now have the same background styling and visual effects
+- **User Experience**: Consistent visual experience across the entire application
+- **Background Rendering**: Optimized background rendering with proper CSS properties
+- **Animation Performance**: Enhanced floating element animations with hardware acceleration
+- **Component Architecture**: Improved component structure for consistent background handling
 
 ### Technical
-- **CSS Animations**: Enhanced animation system with oklch color support
-- **Background Styling**: Fixed background image display with proper CSS properties
-- **Animation Classes**: Added new utility classes for branding and effects
-- **Performance**: Optimized animations with hardware acceleration
-- **Accessibility**: Maintained accessibility standards with proper contrast and focus states
+- **Background Styling**: Standardized background styling across all page components
+- **CSS Properties**: Added proper background image, attachment, and positioning properties
+- **Floating Elements**: Implemented consistent floating gradient elements with animations
+- **Z-index Management**: Proper layering system for background elements and content
+- **Performance**: Optimized background rendering with `will-change` and hardware acceleration
+- **Component Updates**: Updated page components to remove conflicting background styles
 
-### New Files & Components
-- Enhanced `app/batch/page.tsx` - Complete redesign with hero section and animations
-- Enhanced `app/globals.css` - Added new animation classes and utility functions
-- Updated component imports and styling throughout the batch page
+### Files Modified
+- `app/dashboard/page.tsx` - Added consistent background styling and floating elements
+- `app/transfers/page.tsx` - Added consistent background styling and floating elements
+- `app/stake/page.tsx` - Updated to use consistent background styling
+- `components/dashboard/DashboardPage.tsx` - Removed conflicting background styles
+- `components/transfers/BatchTransferPage.tsx` - Removed conflicting background styles
 
 ### Migration Guide
 - **No Breaking Changes**: This version is fully backward compatible
-- **Visual Updates**: The `/batch` page now has enhanced visual design
-- **New Animations**: New CSS animation classes available for use
-- **Background Fix**: Background image now displays correctly
-- **API**: All existing APIs remain unchanged
+- **Visual Updates**: All pages now have consistent background styling
+- **No API Changes**: All existing APIs remain unchanged
+- **No Environment Changes**: No new environment variables required
 - **Testing**: Run `npm test` to verify all functionality
 
 ### Performance Improvements
-- **Animation Performance**: Optimized CSS animations with hardware acceleration
-- **Background Loading**: Improved background image loading and display
+- **Background Rendering**: Optimized background image loading and display
+- **Animation Performance**: Enhanced floating element animations with hardware acceleration
+- **CSS Optimization**: Improved CSS properties for better rendering performance
 - **Bundle Size**: No significant changes to bundle size
-- **Rendering**: Optimized rendering with proper CSS transforms
+- **Memory Usage**: Optimized memory usage for background elements
 
 ### Visual Enhancements
-- **Background Image**: Fixed display of mystical swamp background image
-- **Floating Elements**: Added multiple floating animated elements
-- **Gradient Effects**: Enhanced gradient text and background effects
-- **Glow Effects**: Improved glow effects for interactive elements
-- **Color Scheme**: Enhanced color scheme with proper oklch color support
-- **Typography**: Improved typography with better contrast and readability
+- **Background Image**: Consistent display of mystical swamp background across all pages
+- **Floating Elements**: Added consistent floating animated elements with proper timing
+- **Gradient Effects**: Enhanced gradient effects for floating elements
+- **Z-index Layering**: Proper layering system for visual depth
+- **Animation Timing**: Optimized animation delays and durations for smooth effects
 
 ### Contributors
-- Development Team - UI/UX design and implementation
-- AI Assistant - Code review and visual enhancements
-- Community - Feedback and testing
+- Development Team - Background styling consistency and visual improvements
+- AI Assistant - Code review and implementation
+- Community - Issue reporting and feedback
 
 ### Release Information
 - **Release Date**: January 27, 2025
 - **Version**: 0.3.2
-- **Type**: UI/UX Enhancement (Backward Compatible)
-- **Size**: Enhanced with visual improvements
+- **Type**: Bug Fix / UI Consistency (Backward Compatible)
+- **Size**: No significant changes to bundle size
 - **Testing**: 70% coverage maintained
 
 ### Installation & Upgrade
@@ -116,20 +114,20 @@ pnpm dev
 ```
 
 ### Upgrade from v0.3.1
-No breaking changes. Simply update your dependencies and enjoy the enhanced visual design:
+No breaking changes. Simply update your dependencies and enjoy the consistent background styling:
 ```bash
 pnpm install
 pnpm test  # Verify everything works
 ```
 
-### Visual Improvements
-This release includes significant visual enhancements:
-- **Background Fix**: The mystical swamp background now displays correctly
-- **Floating Animations**: Beautiful floating elements with different animation timings
-- **Professional Design**: Enhanced professional appearance with proper branding
-- **Smooth Animations**: Optimized animations with proper CSS transforms
-- **Responsive Layout**: Better mobile and tablet experience
-- **Brand Consistency**: Enhanced ApeBeats branding throughout the interface
+### Background Styling Details
+This release ensures all pages display the same background styling:
+- **Background Image**: ApeBeats sonic swamp hub image with proper opacity and positioning
+- **Floating Elements**: Multiple floating gradient elements with different animation delays
+- **Z-index Layering**: Proper layering system with background at z-index 1-2, content at z-index 10+
+- **Animation Performance**: Hardware-accelerated animations with `will-change` properties
+- **Responsive Design**: Background elements work correctly on all device sizes
+
 
 ## [0.3.1] - 2025-01-27
 

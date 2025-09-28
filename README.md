@@ -578,6 +578,15 @@ v0-apebeats/
 - ✅ **Enhanced Batch Landing Page**: Beautiful mystical swamp background with floating animations
 - ✅ **Improved UI/UX**: Professional landing page design with proper branding and animations
 
+### v0.3.2 - Background Styling Consistency Fix
+- ✅ **Background Consistency**: Fixed background display across all pages (dashboard, stake, transfers)
+- ✅ **Visual Uniformity**: All pages now display the same mystical swamp background with floating elements
+- ✅ **Enhanced User Experience**: Consistent visual experience across the entire application
+- ✅ **Background Image Fix**: Properly displays the ApeBeats sonic swamp hub background image
+- ✅ **Floating Elements**: Added consistent floating gradient elements with animations
+- ✅ **Z-index Layering**: Proper layering for background elements and content
+- ✅ **Performance Optimization**: Optimized background rendering with hardware acceleration
+
 ### Build Status
 - ✅ **Production Build**: Working perfectly with optimized output
 - ✅ **Test Coverage**: 70% minimum threshold maintained
@@ -645,10 +654,19 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.3.1
+### Current Version: v0.3.2
 **Latest Release**: January 27, 2025
 
-**Key Features in v0.3.1:**
+**Key Features in v0.3.2:**
+- 🎨 **Background Consistency**: Fixed background display across all pages (dashboard, stake, transfers)
+- ✨ **Visual Uniformity**: All pages now display the same mystical swamp background with floating elements
+- 🖼️ **Background Image Fix**: Properly displays the ApeBeats sonic swamp hub background image
+- 🎭 **Enhanced User Experience**: Consistent visual experience across the entire application
+- 🎪 **Floating Elements**: Added consistent floating gradient elements with animations
+- 🎯 **Z-index Layering**: Proper layering for background elements and content
+- 🚀 **Performance Optimization**: Optimized background rendering with hardware acceleration
+
+**Previous Features (v0.3.1):**
 - 💸 **Batch Transfer System**: Complete APE token batch transfer functionality
 - 📊 **Multiple Transfer Modes**: Equal amounts, custom amounts, and random distribution
 - 📁 **CSV Upload Support**: Bulk recipient management via CSV file upload

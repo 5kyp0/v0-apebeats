@@ -97,7 +97,7 @@ export default function BatchPage() {
             </div>
 
             {/* Main Headline */}
-            <h1 className="mb-6 text-4xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
+            <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
               <span className="text-balance">
                 Send{" "}
                 <span className="text-gradient-primary drop-shadow-lg">ApeCoin</span>{" "}
@@ -106,7 +106,7 @@ export default function BatchPage() {
             </h1>
 
             {/* Subtitle */}
-            <p className="mx-auto mb-10 max-w-2xl text-lg text-white/90 sm:text-xl text-balance drop-shadow-md">
+            <p className="mx-auto mb-10 max-w-2xl text-lg text-foreground/90 sm:text-xl text-balance drop-shadow-md">
               Batch send ApeCoin to multiple addresses in a single, gas-efficient transaction. Configure equal, random, or custom amounts per recipient with built-in transparency.
             </p>
 
@@ -136,8 +136,8 @@ export default function BatchPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 pulse-glow backdrop-blur-sm border border-primary/30">
                   <Send className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-white drop-shadow-md">Gas Efficient</h3>
-                <p className="text-sm text-white/80 text-center drop-shadow-sm">
+                <h3 className="font-semibold text-foreground drop-shadow-md">Gas Efficient</h3>
+                <p className="text-sm text-foreground/80 text-center drop-shadow-sm">
                   Send to multiple addresses in a single transaction
                 </p>
               </div>
@@ -145,15 +145,15 @@ export default function BatchPage() {
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 float backdrop-blur-sm border border-primary/30">
                   <Users className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-white drop-shadow-md">Flexible Amounts</h3>
-                <p className="text-sm text-white/80 text-center drop-shadow-sm">Equal, random, or custom amounts per recipient</p>
+                <h3 className="font-semibold text-foreground drop-shadow-md">Flexible Amounts</h3>
+                <p className="text-sm text-foreground/80 text-center drop-shadow-sm">Equal, random, or custom amounts per recipient</p>
               </div>
               <div className="flex flex-col items-center space-y-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 swamp-ripple backdrop-blur-sm border border-primary/30">
                   <Zap className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-semibold text-white drop-shadow-md">Transparent Fees</h3>
-                <p className="text-sm text-white/80 text-center drop-shadow-sm">Built-in transparency with minimal developer fees</p>
+                <h3 className="font-semibold text-foreground drop-shadow-md">Transparent Fees</h3>
+                <p className="text-sm text-foreground/80 text-center drop-shadow-sm">Built-in transparency with minimal developer fees</p>
               </div>
             </div>
           </div>
