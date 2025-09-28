@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Clear distinction between Genesis ApeBeats and ApeChain Live Beats collections in documentation
+
+### Fixed
+- Corrected Genesis collection description to accurately reflect original Ableton Live compositions
+- Updated all references to clarify Genesis collection is based on 4 layers of 10-second loops, not ApeChain data
+- Fixed misleading descriptions in mint page, NFT metadata generator, and integration documentation
+
+### Changed
+- Genesis collection now correctly described as hand-crafted Ableton compositions
+- ApeChain Live Beats collection maintains accurate blockchain data generation description
+- Updated collection naming from "Genesis Apechain Beats" to "Genesis ApeBeats" for clarity
+
 ### Planned
 - Playwright E2E testing integration
 - Visual regression testing

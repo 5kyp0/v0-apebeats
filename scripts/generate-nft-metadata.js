@@ -104,7 +104,7 @@ function generateTokenMetadata(tokenId, seed) {
   return {
     tokenId,
     name: `ApeBeats Genesis #${tokenId}`,
-    description: `A unique generative music NFT from the ApeBeats Genesis collection. Each NFT contains procedurally generated audio-visual combinations created from ApeChain data.`,
+    description: `A unique generative music NFT from the ApeBeats Genesis collection. Each NFT contains procedurally generated audio-visual combinations created from 4 layers of 10-second loops crafted in Ableton Live.`,
     image: `https://ipfs.io/ipfs/QmWaveform${tokenId}`,
     animation_url: `https://ipfs.io/ipfs/QmAudio${tokenId}`,
     attributes: [

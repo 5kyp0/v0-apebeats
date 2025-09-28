@@ -23,6 +23,19 @@ A Next.js app that integrates Thirdweb for:
 - **NEW**: NFT Creation and Video Visualization system
 - **NEW**: Batch Transfer System for efficient APE token distribution
 
+## Collections Overview
+
+### Genesis ApeBeats Collection (420 NFTs)
+- **Source**: 4 layers of 10-second loops crafted in Ableton Live
+- **Type**: Hand-crafted, original compositions
+- **Supply**: Limited edition of 420 NFTs
+- **Features**: Procedurally generated audio-visual combinations from original Ableton loops
+
+### ApeChain Live Beats Collection
+- **Source**: Real-time blockchain data from ApeChain network
+- **Type**: Generative music created from live blockchain activity
+- **Features**: 24/7 streaming engine that generates music from transaction data, gas prices, and network activity
+
 ## Tech
 
 - Next.js 14.2.16 App Router
@@ -507,7 +520,7 @@ v0-apebeats/
 - `lib/thirdweb.ts` — Thirdweb client, ApeChain config, preferred wallets
 - `app/login/page.tsx` — Social + wallet login UI and smart wallet deployment
 - `components/HeaderUser.tsx` — Quick connect/disconnect and email display
-- `app/page.tsx` — Landing page with live ApeChain metrics and Genesis previews
+- `app/page.tsx` — Landing page with live ApeChain metrics and Genesis collection previews
 - `lib/utils.ts` — `fetchApeChainStats` via Thirdweb RPC
 
 ### **NEW**: Enhanced Components

@@ -237,7 +237,7 @@ export default function MintPage() {
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto text-balance">
               Enter the Sonic Swamp Hub and claim your unique Genesis Beat artifact. 
-              Each NFT contains procedurally generated audio-visual combinations from ApeChain data.
+              Each NFT contains procedurally generated audio-visual combinations from 4 layers of 10-second loops crafted in Ableton Live.
             </p>
           </div>
 

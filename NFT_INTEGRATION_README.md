@@ -6,7 +6,7 @@ This document outlines the complete NFT integration for ApeBeats Genesis, includ
 
 ApeBeats Genesis is a generative music NFT collection that combines:
 - **Smart Contracts**: ERC721 NFTs with multi-phase minting
-- **Generative Music**: Procedurally generated audio from ApeChain data
+- **Generative Music**: Procedurally generated audio from 4 layers of 10-second loops crafted in Ableton Live
 - **Visual Art**: Dynamic waveforms and visualizations
 - **Royalty System**: Community-driven royalty distribution
 

@@ -704,7 +704,7 @@ export default function ApeBeatLanding() {
           <div className="grid md:grid-cols-2 gap-8">
             <Card className="p-8 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30" role="article">
               <Badge className="mb-4 bg-primary/20 text-primary">Limited Edition</Badge>
-              <h3 className="text-2xl font-bold mb-4">Genesis Apechain Beats</h3>
+              <h3 className="text-2xl font-bold mb-4">Genesis ApeBeats</h3>
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Supply</span>
@@ -792,7 +792,7 @@ export default function ApeBeatLanding() {
                   title: "Genesis Discovery",
                   status: "Coming Soon",
                   items: [
-                    "Genesis Apechain Beats mint (420 NFTs)",
+                    "Genesis ApeBeats mint (420 NFTs)",
                     "Founding Echo chapter release",
                     "Royalty share on all related drops",
                   ],
@@ -858,7 +858,7 @@ export default function ApeBeatLanding() {
             Ready to Enter the Swamp?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join the waitlist to be among the first Voyagers to discover the Genesis Apechain Beats collection.
+            Join the waitlist to be among the first Voyagers to discover the Genesis ApeBeats collection.
           </p>
           <Button
             size="lg"
