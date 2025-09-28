@@ -121,17 +121,7 @@
   }
 }
 
-/* Custom animations for ApeBeat */
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(101, 163, 13, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(101, 163, 13, 0.6);
-  }
-}
-
+/* ApeBeats Custom Animations - Sonic Swamp Hub */
 @keyframes float {
   0%,
   100% {
@@ -142,30 +132,42 @@
   }
 }
 
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px oklch(0.7 0.16 140 / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px oklch(0.7 0.16 140 / 0.6);
+  }
+}
+
 @keyframes swamp-ripple {
   0% {
     transform: scale(1);
     opacity: 1;
   }
   100% {
-    transform: scale(1.5);
+    transform: scale(1.2);
     opacity: 0;
   }
 }
 
 @keyframes psychedelic-pulse {
-  0%,
+  0% {
+    filter: hue-rotate(0deg) saturate(1);
+  }
+  25% {
+    filter: hue-rotate(90deg) saturate(1.2);
+  }
+  50% {
+    filter: hue-rotate(180deg) saturate(1.4);
+  }
+  75% {
+    filter: hue-rotate(270deg) saturate(1.2);
+  }
   100% {
-    opacity: 0.15;
-    transform: scale(1) rotate(0deg);
-  }
-  33% {
-    opacity: 0.4;
-    transform: scale(1.2) rotate(120deg);
-  }
-  66% {
-    opacity: 0.25;
-    transform: scale(0.8) rotate(240deg);
+    filter: hue-rotate(360deg) saturate(1);
   }
 }
 
@@ -173,44 +175,18 @@
   0% {
     filter: hue-rotate(0deg);
   }
-  25% {
-    filter: hue-rotate(90deg);
-  }
-  50% {
-    filter: hue-rotate(180deg);
-  }
-  75% {
-    filter: hue-rotate(270deg);
-  }
   100% {
     filter: hue-rotate(360deg);
   }
 }
 
-@keyframes pulse-glow-light {
-  0%,
-  100% {
-    box-shadow: 0 0 15px rgba(101, 163, 13, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(101, 163, 13, 0.4);
-  }
+/* Animation Classes */
+.float {
+  animation: float 3s ease-in-out infinite;
 }
 
 .pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.dark .pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-:root .pulse-glow {
-  animation: pulse-glow-light 2s ease-in-out infinite;
-}
-
-.float {
-  animation: float 3s ease-in-out infinite;
 }
 
 .swamp-ripple {
@@ -218,11 +194,38 @@
 }
 
 .psychedelic-pulse {
-  animation: psychedelic-pulse 8s ease-in-out infinite;
+  animation: psychedelic-pulse 4s ease-in-out infinite;
 }
 
 .color-shift {
-  animation: color-shift 12s linear infinite;
+  animation: color-shift 8s linear infinite;
+}
+
+/* Utility Classes for ApeBeats Branding */
+.bg-gradient-primary {
+  background: linear-gradient(to right, oklch(0.7 0.16 140), oklch(0.8 0.2 45), oklch(0.7 0.16 140));
+}
+
+.text-gradient-primary {
+  background: linear-gradient(to right, oklch(0.7 0.16 140), oklch(0.8 0.2 45), oklch(0.7 0.16 140));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card-backdrop {
+  background: oklch(0.08 0.02 120 / 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid oklch(0.7 0.16 140 / 0.2);
+}
+
+/* Glow Effects */
+.glow-primary {
+  box-shadow: 0 0 20px oklch(0.7 0.16 140 / 0.3);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px oklch(0.8 0.2 45 / 0.3);
 }
 
 /* Performance optimizations */
