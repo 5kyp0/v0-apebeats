@@ -101,7 +101,14 @@ export default function MenuDropdown({ className = "" }: MenuDropdownProps) {
       icon: <Coins className="w-4 h-4" />,
       label: "Staking",
       description: "Stake your NFTs",
-      href: "/stake"
+      href: "/stake",
+      subsections: [
+        {
+          label: "Dashboard",
+          description: "View your staking portfolio",
+          href: "/stake/dashboard"
+        }
+      ]
     }
   ]
 
