@@ -1,0 +1,187 @@
+"use client"
+
+import { useState } from "react"
+import { useActiveAccount } from "thirdweb/react"
+import HeaderUser from "@/components/HeaderUser"
+import NetworkSwitcher from "@/components/NetworkSwitcher"
+import MenuDropdown from "@/components/MenuDropdown"
+import { BatchTransferForm } from "./BatchTransferForm"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { 
+  ArrowLeft, 
+  ExternalLink, 
+  CheckCircle, 
+  Clock,
+  Users,
+  Coins
+} from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
+
+export function BatchTransferPage() {
+  const account = useActiveAccount()
+  const [lastReceipt, setLastReceipt] = useState<any>(null)
+
+  const handleTransferComplete = (receipt: any) => {
+    setLastReceipt(receipt)
+    toast.success("Batch transfer completed successfully!")
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 md:p-8 bg-background/80 backdrop-blur border-b border-border/50">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center pulse-glow" aria-hidden="true">
+            <Coins className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <span className="text-xl font-bold">ApeBeats</span>
+          <span className="text-sm text-muted-foreground">Batch Transfer</span>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <MenuDropdown />
+          <NetworkSwitcher />
+          <HeaderUser />
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="relative z-10 px-6 md:px-8 pt-28 pb-12 md:pt-36 md:pb-20">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+                <Coins className="w-8 h-8 text-primary" />
+              </div>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold mb-4">
+              Batch Transfer APE
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Send APE tokens to multiple addresses in a single transaction
+            </p>
+          </div>
+
+          {/* Success Message */}
+          {lastReceipt && (
+            <Card className="mb-6 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                  <CheckCircle className="h-5 w-5" />
+                  Transfer Successful!
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <p className="text-green-700 dark:text-green-300">
+                    Your batch transfer has been completed successfully.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-green-600 dark:text-green-400">
+                      Transaction Hash:
+                    </span>
+                    <code className="text-sm bg-green-100 dark:bg-green-900 px-2 py-1 rounded">
+                      {lastReceipt.transactionHash?.slice(0, 10)}...
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const explorerUrl = `https://explorer.apechain.com/tx/${lastReceipt.transactionHash}`
+                        window.open(explorerUrl, '_blank')
+                      }}
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      View
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Wallet Connection Status */}
+          {!account?.address && (
+            <Card className="mb-6 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
+                  <Clock className="h-5 w-5" />
+                  Connect Your Wallet
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-orange-700 dark:text-orange-300">
+                  Please connect your wallet to start batch transferring APE tokens.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Features Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Multiple Recipients
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Send to up to 100 addresses in a single transaction
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Coins className="h-5 w-5" />
+                  Gas Efficient
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Save up to 70% on gas fees compared to individual transfers
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  Transparent Fees
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Clear 0.5% fee structure with no hidden costs
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Transfer Form */}
+          <BatchTransferForm onTransferComplete={handleTransferComplete} />
+
+          {/* Back to Home */}
+          <div className="text-center mt-12">
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/'}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}

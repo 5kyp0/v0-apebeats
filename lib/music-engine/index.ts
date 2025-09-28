@@ -32,33 +32,68 @@ export class ApeBeatsMusicEngine {
   private state: GenerationState;
 
   constructor(config: MusicConfig, nftConfig?: NFTSnapshotConfig) {
-    this.config = config;
-    this.state = {
-      status: 'idle',
-      progress: 0,
-      currentStep: 'Initialized'
-    };
+    try {
+      this.config = config;
+      this.state = {
+        status: 'idle',
+        progress: 0,
+        currentStep: 'Initialized'
+      };
 
-    // Initialize components
-    const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
-    if (!alchemyApiKey) {
-      console.warn('[ApeBeatsMusicEngine] NEXT_PUBLIC_ALCHEMY_API_KEY not found. Using mock data for development.');
-      // Create a mock data collector for development
-      this.dataCollector = new MockBlockchainDataCollector();
-      console.log('[ApeBeatsMusicEngine] Mock data collector initialized');
-    } else {
-      console.log('[ApeBeatsMusicEngine] Using real Alchemy API');
-      this.dataCollector = new BlockchainDataCollector(alchemyApiKey, config.chainId);
-    }
-    this.musicGenerator = new MusicGenerator(config);
-    this.lofiGenerator = new LoFiHipHopGenerator(config);
-    
-    if (nftConfig && config.enableNFT) {
-      this.nftSnapshotManager = new NFTSnapshotManager(nftConfig);
-    }
-    
-    if (config.streaming?.enabled) {
-      this.streamingEngine = new StreamingEngine(config, nftConfig);
+      // Initialize components with better error handling
+      const alchemyApiKey = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
+      if (!alchemyApiKey) {
+        console.warn('[ApeBeatsMusicEngine] NEXT_PUBLIC_ALCHEMY_API_KEY not found. Using mock data for development.');
+        // Create a mock data collector for development
+        this.dataCollector = new MockBlockchainDataCollector(config.chainId);
+        console.log('[ApeBeatsMusicEngine] Mock data collector initialized');
+      } else {
+        console.log('[ApeBeatsMusicEngine] Using real Alchemy API');
+        this.dataCollector = new BlockchainDataCollector(alchemyApiKey, config.chainId);
+      }
+      
+      // Initialize music generators with error handling
+      try {
+        this.musicGenerator = new MusicGenerator(config);
+        this.lofiGenerator = new LoFiHipHopGenerator(config);
+        console.log('[ApeBeatsMusicEngine] Music generators initialized successfully');
+      } catch (error) {
+        console.error('[ApeBeatsMusicEngine] Error initializing music generators:', error);
+        throw new Error(`Failed to initialize music generators: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      
+      if (nftConfig && config.enableNFT) {
+        try {
+          this.nftSnapshotManager = new NFTSnapshotManager(nftConfig);
+          console.log('[ApeBeatsMusicEngine] NFT snapshot manager initialized');
+        } catch (error) {
+          console.error('[ApeBeatsMusicEngine] Error initializing NFT snapshot manager:', error);
+          // Don't throw here, just disable NFT functionality
+          this.config.enableNFT = false;
+        }
+      }
+      
+      if (config.streaming?.enabled) {
+        try {
+          this.streamingEngine = new StreamingEngine(config, nftConfig);
+          console.log('[ApeBeatsMusicEngine] Streaming engine initialized');
+        } catch (error) {
+          console.error('[ApeBeatsMusicEngine] Error initializing streaming engine:', error);
+          // Don't throw here, just disable streaming
+          this.config.streaming = { ...config.streaming, enabled: false };
+        }
+      }
+      
+      console.log('[ApeBeatsMusicEngine] Engine initialized successfully');
+    } catch (error) {
+      console.error('[ApeBeatsMusicEngine] Critical error during initialization:', error);
+      this.state = {
+        status: 'error',
+        progress: 0,
+        currentStep: 'Initialization failed',
+        error: error instanceof Error ? error.message : String(error)
+      };
+      throw error;
     }
   }
 
@@ -405,12 +440,12 @@ export const defaultMusicConfig: MusicConfig = {
     lowpassFilter: 0.4 // More aggressive filtering for LoFi character
   },
   streaming: {
-    enabled: true,
+    enabled: false, // Disabled by default to prevent issues
     continuousMode: true,
     updateInterval: 15, // 15 seconds for more frequent updates
     fadeTransition: true
   },
-  enableNFT: true,
+  enableNFT: false, // Disabled by default to prevent issues
   autoMint: false
 };
 

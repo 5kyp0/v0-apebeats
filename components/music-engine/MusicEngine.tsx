@@ -56,6 +56,36 @@ export function MusicEngine({ className }: MusicEngineProps) {
     nftConfig: defaultNFTSnapshotConfig
   });
 
+  // Handle initialization errors
+  if (state.status === 'error' && state.error) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="text-red-600">
+              <strong>Music Engine Error:</strong> {state.error}
+            </div>
+            <div className="mt-4 text-sm text-red-500">
+              <p>The music engine failed to initialize. This might be due to:</p>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Missing environment variables</li>
+                <li>Network connectivity issues</li>
+                <li>Browser compatibility problems</li>
+              </ul>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline" 
+                className="mt-4"
+              >
+                Refresh Page
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const handleGenerateRecent = async () => {
     try {
       console.log('Starting music generation...');

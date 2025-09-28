@@ -140,7 +140,48 @@ export default function MusicPage() {
           </div>
 
           {isClient ? (
-            <ErrorBoundary>
+            <ErrorBoundary
+              fallback={({ error, retry }) => (
+                <div className="text-center py-20">
+                  <div className="text-red-500 mb-4">
+                    <h2 className="text-2xl font-bold mb-2">Music Engine Unavailable</h2>
+                    <p className="text-lg mb-4">
+                      The music engine is currently experiencing issues. This might be due to:
+                    </p>
+                    <ul className="text-left max-w-md mx-auto mb-6 space-y-2">
+                      <li>• Missing environment configuration</li>
+                      <li>• Network connectivity issues</li>
+                      <li>• Browser compatibility problems</li>
+                    </ul>
+                    {error && (
+                      <div className="text-sm text-red-400 mb-4 p-3 bg-red-50 rounded">
+                        <strong>Error:</strong> {error.message}
+                      </div>
+                    )}
+                    <div className="space-x-4">
+                      <Button 
+                        onClick={retry} 
+                        variant="outline"
+                      >
+                        Try Again
+                      </Button>
+                      <Button 
+                        onClick={() => window.location.reload()} 
+                        variant="outline"
+                      >
+                        Refresh Page
+                      </Button>
+                      <Button 
+                        onClick={() => router.push('/')} 
+                        variant="default"
+                      >
+                        Back to Home
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            >
               <MusicEngine />
             </ErrorBoundary>
           ) : (

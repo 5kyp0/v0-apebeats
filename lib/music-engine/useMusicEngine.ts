@@ -72,6 +72,7 @@ export function useMusicEngine(options: UseMusicEngineOptions): UseMusicEngineRe
   // Initialize engine
   useEffect(() => {
     try {
+      console.log('[useMusicEngine] Initializing music engine...');
       engineRef.current = new ApeBeatsMusicEngine(currentConfig, nftConfig);
       setState({
         status: 'idle',
@@ -79,17 +80,32 @@ export function useMusicEngine(options: UseMusicEngineOptions): UseMusicEngineRe
         currentStep: 'Ready'
       });
       setError(null);
+      console.log('[useMusicEngine] Music engine initialized successfully');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to initialize music engine');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize music engine';
+      console.error('[useMusicEngine] Error initializing music engine:', err);
+      setError(errorMessage);
+      setState({
+        status: 'error',
+        progress: 0,
+        currentStep: 'Initialization failed',
+        error: errorMessage
+      });
     }
   }, [currentConfig, nftConfig]);
   
   // Auto-start if enabled
   useEffect(() => {
     if (autoStart && engineRef.current && state.status === 'idle') {
-      generateFromRecent();
+      // Use a direct call to avoid circular dependency
+      engineRef.current.generateFromRecentActivity(10).then(result => {
+        setMusic(result);
+      }).catch(err => {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to generate music';
+        setError(errorMessage);
+      });
     }
-  }, [autoStart, state.status, generateFromRecent]);
+  }, [autoStart, state.status]);
   
   // Poll engine state
   useEffect(() => {
