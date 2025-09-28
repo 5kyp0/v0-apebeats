@@ -17,7 +17,7 @@ import { useVideoPreviews } from "@/lib/useVideoPreviews"
 const HeaderUser = lazy(() => import("@/components/HeaderUser"))
 const LoginInline = lazy(() => import("@/components/LoginInline"))
 const NetworkSwitcher = lazy(() => import("@/components/NetworkSwitcher"))
-const MenuDropdown = lazy(() => import("@/components/SimpleMenuDropdown"))
+const MenuDropdown = lazy(() => import("@/components/MenuDropdown"))
 
 export default function ApeBeatLanding() {
   const [isPlaying, setIsPlaying] = useState(false)

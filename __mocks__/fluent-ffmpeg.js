@@ -1,0 +1,23 @@
+// Mock for fluent-ffmpeg module
+module.exports = jest.fn().mockImplementation(() => ({
+  input: jest.fn().mockReturnThis(),
+  output: jest.fn().mockReturnThis(),
+  on: jest.fn().mockReturnThis(),
+  run: jest.fn().mockReturnThis(),
+  ffprobe: jest.fn().mockReturnThis(),
+  screenshots: jest.fn().mockReturnThis(),
+  format: jest.fn().mockReturnThis(),
+  size: jest.fn().mockReturnThis(),
+  fps: jest.fn().mockReturnThis(),
+  duration: jest.fn().mockReturnThis(),
+  seek: jest.fn().mockReturnThis(),
+  videoBitrate: jest.fn().mockReturnThis(),
+  audioBitrate: jest.fn().mockReturnThis(),
+  audioCodec: jest.fn().mockReturnThis(),
+  videoCodec: jest.fn().mockReturnThis(),
+  outputOptions: jest.fn().mockReturnThis(),
+  complexFilter: jest.fn().mockReturnThis(),
+  addInput: jest.fn().mockReturnThis(),
+  addOutput: jest.fn().mockReturnThis(),
+  mergeToFile: jest.fn().mockReturnThis(),
+}));

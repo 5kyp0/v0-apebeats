@@ -17,6 +17,7 @@ export const MemoizedCard = memo(({ children, className, ...props }: any) => (
     {children}
   </div>
 ))
+MemoizedCard.displayName = 'MemoizedCard'
 
 export const MemoizedButton = memo(({ children, className, ...props }: any) => (
   <button 
@@ -26,6 +27,7 @@ export const MemoizedButton = memo(({ children, className, ...props }: any) => (
     {children}
   </button>
 ))
+MemoizedButton.displayName = 'MemoizedButton'
 
 // Loading skeletons
 export const CardSkeleton = memo(() => (
@@ -35,16 +37,19 @@ export const CardSkeleton = memo(() => (
     <Skeleton className="h-3 w-2/3" />
   </div>
 ))
+CardSkeleton.displayName = 'CardSkeleton'
 
 export const ButtonSkeleton = memo(() => (
   <Skeleton className="h-10 w-24 rounded-md" />
 ))
+ButtonSkeleton.displayName = 'ButtonSkeleton'
 
 export const VideoThumbnailSkeleton = memo(() => (
   <div className="aspect-square rounded-lg overflow-hidden bg-secondary/20">
     <Skeleton className="w-full h-full" />
   </div>
 ))
+VideoThumbnailSkeleton.displayName = 'VideoThumbnailSkeleton'
 
 // Performance-optimized video component
 export const OptimizedVideo = memo(({ 
@@ -82,6 +87,7 @@ export const OptimizedVideo = memo(({
     />
   )
 })
+OptimizedVideo.displayName = 'OptimizedVideo'
 
 // Performance-optimized image component
 export const OptimizedImage = memo(({ 
@@ -128,6 +134,7 @@ export const OptimizedImage = memo(({
     </div>
   )
 })
+OptimizedImage.displayName = 'OptimizedImage'
 
 // Intersection Observer hook for lazy loading
 export const useIntersectionObserver = (
@@ -160,7 +167,7 @@ export const useIntersectionObserver = (
 }
 
 // Debounced hook for performance
-export const useDebounce = <T>(value: T, delay: number): T => {
+export const useDebounce = <T,>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = React.useState<T>(value)
 
   React.useEffect(() => {

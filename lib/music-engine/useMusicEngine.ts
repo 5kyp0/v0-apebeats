@@ -89,7 +89,7 @@ export function useMusicEngine(options: UseMusicEngineOptions): UseMusicEngineRe
     if (autoStart && engineRef.current && state.status === 'idle') {
       generateFromRecent();
     }
-  }, [autoStart, state.status]);
+  }, [autoStart, state.status, generateFromRecent]);
   
   // Poll engine state
   useEffect(() => {

@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 // Lazy load HeaderUser to improve initial page load
 const HeaderUser = lazy(() => import("@/components/HeaderUser"))
 const NetworkSwitcher = lazy(() => import("@/components/NetworkSwitcher"))
-const MenuDropdown = lazy(() => import("@/components/SimpleMenuDropdown"))
+const MenuDropdown = lazy(() => import("@/components/MenuDropdown"))
 
 export default function MusicPage() {
   const [isDarkMode, setIsDarkMode] = useState(true)
