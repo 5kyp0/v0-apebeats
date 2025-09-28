@@ -6,18 +6,17 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Play, Volume2, Zap, Music, Users, Coins, ExternalLink, ChevronUp, Sun, Moon, X } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
-import { fetchApeChainStats } from "@/lib/utils"
+import { fetchApeChainStats } from "@/lib/utils/utils"
 import { useActiveAccount } from "thirdweb/react"
-import useUserStore from "@/lib/userStore"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
-import { ApeChainDataSkeleton, VideoThumbnailSkeleton } from "@/components/LoadingStates"
-import { useVideoPreviews } from "@/lib/useVideoPreviews"
+import useUserStore from "@/stores/userStore"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
+import { ApeChainDataSkeleton, VideoThumbnailSkeleton } from "@/components/layout/LoadingStates"
+import { useVideoPreviews } from "@/hooks/useVideoPreviews"
 
 // Lazy load HeaderUser to improve initial page load
-const HeaderUser = lazy(() => import("@/components/HeaderUser"))
-const LoginInline = lazy(() => import("@/components/LoginInline"))
-const NetworkSwitcher = lazy(() => import("@/components/NetworkSwitcher"))
-const MenuDropdown = lazy(() => import("@/components/SimpleMenuDropdown"))
+const HeaderUser = lazy(() => import("@/components/features/auth/HeaderUser"))
+const LoginInline = lazy(() => import("@/components/features/auth/LoginInline"))
+const NetworkSwitcher = lazy(() => import("@/components/features/wallet/NetworkSwitcher"))
 
 export default function ApeBeatLanding() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -28,6 +27,7 @@ export default function ApeBeatLanding() {
   const [showComingSoonPopup, setShowComingSoonPopup] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [playingVideo, setPlayingVideo] = useState<string | null>(null)
+  const [isClient, setIsClient] = useState(false)
   
   // Get auth state
   const account = useActiveAccount()
@@ -77,6 +77,7 @@ export default function ApeBeatLanding() {
   }, [genesisVideos])
 
   useEffect(() => {
+    setIsClient(true)
     if (isDarkMode) {
       document.documentElement.classList.add("dark")
     } else {
@@ -285,11 +286,6 @@ export default function ApeBeatLanding() {
               Roadmap
             </button>
           </div>
-          <ErrorBoundary>
-            <Suspense fallback={<div className="w-16 h-8 bg-zinc-800 rounded animate-pulse" />}>
-              <MenuDropdown />
-            </Suspense>
-          </ErrorBoundary>
           <Button
             variant="outline"
             size="sm"
@@ -450,7 +446,17 @@ export default function ApeBeatLanding() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {previewsLoading ? (
+            {!isClient ? (
+              // Show loading skeletons while client is hydrating
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card key={`loading-${index}`} className="p-4 bg-card/50 backdrop-blur-sm border-primary/20">
+                  <VideoThumbnailSkeleton />
+                  <div className="mt-4 text-center">
+                    <div className="h-6 w-24 mx-auto bg-secondary/20 rounded animate-pulse" />
+                  </div>
+                </Card>
+              ))
+            ) : previewsLoading ? (
               // Show loading skeletons while previews are being generated
               Array.from({ length: 4 }).map((_, index) => (
                 <Card key={`loading-${index}`} className="p-4 bg-card/50 backdrop-blur-sm border-primary/20">

@@ -14,7 +14,7 @@ const customJestConfig = {
   },
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
   transformIgnorePatterns: [
-    'node_modules/(?!(uint8arrays|@walletconnect|thirdweb|@use-glyph|viem|wagmi|@hey-api)/)',
+    'node_modules/(?!(uint8arrays|@walletconnect|thirdweb|@use-glyph|viem|wagmi|@hey-api|@tanstack|zustand)/)',
   ],
   globals: {
     'ts-jest': {
