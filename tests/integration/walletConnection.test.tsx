@@ -22,7 +22,7 @@ jest.mock('thirdweb/react', () => ({
 }))
 
 // Mock user store
-jest.mock('@/lib/userStore', () => ({
+jest.mock('@/src/stores/userStore', () => ({
   __esModule: true,
   default: () => ({
     email: null,

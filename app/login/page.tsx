@@ -5,7 +5,7 @@ import { preAuthenticate } from "thirdweb/wallets/in-app"
 import { useConnect, useActiveAccount } from "thirdweb/react"
 import { deploySmartAccount } from "thirdweb/wallets"
 import { thirdwebClient } from "@/lib/thirdweb"
-import useUserStore from "@/lib/userStore"
+import useUserStore from "@/src/stores/userStore"
 import { useNativeGlyphConnection, useGlyph } from "@use-glyph/sdk-react"
 import { GlyphIcon, MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon, EmailIcon, GoogleIcon, AppleIcon, XIcon, FacebookIcon } from "@/components/WalletIcons"
 

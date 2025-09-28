@@ -8,7 +8,7 @@ import { Play, Volume2, Zap, Music, Users, Coins, ExternalLink, ChevronUp, Sun, 
 import { useQuery } from "@tanstack/react-query"
 import { fetchApeChainStats } from "@/lib/utils"
 import { useActiveAccount } from "thirdweb/react"
-import useUserStore from "@/lib/userStore"
+import useUserStore from "@/src/stores/userStore"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { ApeChainDataSkeleton, VideoThumbnailSkeleton } from "@/components/LoadingStates"
 import { useVideoPreviews } from "@/lib/useVideoPreviews"

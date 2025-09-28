@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { useActiveAccount, useWalletDetailsModal } from "thirdweb/react"
 import { useWalletService } from "@/lib/walletService"
-import useUserStore from "@/lib/userStore"
+import useUserStore from "@/src/stores/userStore"
 import { thirdwebClient, apeChain } from "@/lib/thirdweb"
 import { ChevronDown, User, LogOut, Plus, Wifi, WifiOff, RefreshCw } from "lucide-react"
 import { GlyphIcon, MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon } from "./WalletIcons"

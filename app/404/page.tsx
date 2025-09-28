@@ -25,7 +25,7 @@ import {
 } from "lucide-react"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { useActiveAccount } from "thirdweb/react"
-import useUserStore from "@/lib/userStore"
+import useUserStore from "@/src/stores/userStore"
 
 // Lazy load components to improve initial page load
 const HeaderUser = lazy(() => import("@/components/HeaderUser"))

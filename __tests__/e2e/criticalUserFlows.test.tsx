@@ -17,7 +17,7 @@ jest.mock('thirdweb/react', () => ({
   useDisconnect: () => ({ disconnect: jest.fn() }),
 }))
 
-jest.mock('@/lib/userStore', () => ({
+jest.mock('@/src/stores/userStore', () => ({
   __esModule: true,
   default: () => ({
     email: null,

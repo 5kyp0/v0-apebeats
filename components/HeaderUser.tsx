@@ -1,7 +1,7 @@
 "use client"
 import { useEffect } from "react"
 import { useActiveAccount } from "thirdweb/react"
-import useUserStore from "@/lib/userStore"
+import useUserStore from "@/src/stores/userStore"
 import ProfileDropdown from "@/components/ProfileDropdown"
 
 interface HeaderUserProps {
