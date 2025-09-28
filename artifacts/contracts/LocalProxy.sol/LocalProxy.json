@@ -1,0 +1,71 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "LocalProxy",
+  "sourceName": "contracts/LocalProxy.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_logic",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        }
+      ],
+      "name": "AddressEmptyCode",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "name": "ERC1967InvalidImplementation",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ERC1967NonPayable",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "FailedCall",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "implementation",
+          "type": "address"
+        }
+      ],
+      "name": "Upgraded",
+      "type": "event"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    }
+  ],
+  "bytecode": "0x60806040523461016d576102806020813803918261001c81610172565b93849283398101031261016d57516001600160a01b03811680820361016d576040516001600160401b0392906020810190848211818310176101575781604052600093848252833b1561013f577f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc80546001600160a01b031916821790557fbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b8580a2519081156101355783918291845af4903d15610127573d93841161011357610103936100f3601f8201601f1916602001610172565b908152809360203d92013e610197565b505b604051608590816101fb8239f35b634e487b7160e01b83526041600452602483fd5b610103935060609250610197565b5050505050610105565b60249060405190634c9c8ce360e01b82526004820152fd5b634e487b7160e01b600052604160045260246000fd5b600080fd5b6040519190601f01601f191682016001600160401b0381118382101761015757604052565b906101be57508051156101ac57602081519101fd5b60405163d6bda27560e01b8152600490fd5b815115806101f1575b6101cf575090565b604051639996b31560e01b81526001600160a01b039091166004820152602490fd5b50803b156101c756fe60806040527f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc54600090819081906001600160a01b0316368280378136915af43d82803e15604b573d90f35b3d90fdfea2646970667358221220fe2f974edf276bcc474e2d941f967e24c9877a3d845ff6f8546ef597ff0e13c564736f6c63430008180033",
+  "deployedBytecode": "0x60806040527f360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc54600090819081906001600160a01b0316368280378136915af43d82803e15604b573d90f35b3d90fdfea2646970667358221220fe2f974edf276bcc474e2d941f967e24c9877a3d845ff6f8546ef597ff0e13c564736f6c63430008180033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

@@ -1,0 +1,27 @@
+# PNPM USAGE REMINDER
+# ===================
+
+This project uses PNPM as the package manager instead of npm.
+
+## Why PNPM?
+- Faster installation and updates
+- More efficient disk usage through hard linking
+- Better dependency resolution
+- Already configured with pnpm-lock.yaml
+
+## Commands to use:
+- `pnpm install` (instead of npm install)
+- `pnpm add <package>` (instead of npm install <package>)
+- `pnpm run <script>` (instead of npm run <script>)
+- `pnpm dev` (instead of npm run dev)
+- `pnpm build` (instead of npm run build)
+
+## Always use PNPM for:
+- Installing dependencies
+- Adding new packages
+- Running scripts
+- Building the project
+- Any package management operations
+
+## Created: $(date)
+## Project: ApeBeats v0 - Generative Music Engine with NFT Integration

@@ -1,10 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Play, Volume2, Zap, Music, Users, Coins, ExternalLink, ChevronUp, Sun, Moon, X } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { fetchApeChainStats } from "@/lib/utils"
+import { useActiveAccount } from "thirdweb/react"
+import useUserStore from "@/lib/userStore"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { ApeChainDataSkeleton, VideoThumbnailSkeleton } from "@/components/LoadingStates"
+import { useVideoPreviews } from "@/lib/useVideoPreviews"
+
+// Lazy load HeaderUser to improve initial page load
+const HeaderUser = lazy(() => import("@/components/HeaderUser"))
+const LoginInline = lazy(() => import("@/components/LoginInline"))
+const NetworkSwitcher = lazy(() => import("@/components/NetworkSwitcher"))
+const MenuDropdown = lazy(() => import("@/components/MenuDropdown"))
 
 export default function ApeBeatLanding() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -13,8 +26,24 @@ export default function ApeBeatLanding() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [randomVideos, setRandomVideos] = useState<string[]>([])
   const [showComingSoonPopup, setShowComingSoonPopup] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [playingVideo, setPlayingVideo] = useState<string | null>(null)
+  
+  // Get auth state
+  const account = useActiveAccount()
+  const email = useUserStore((s: any) => s.email)
+  const { data: stats } = useQuery({
+    queryKey: ["apechain-stats"],
+    queryFn: fetchApeChainStats,
+    refetchInterval: 60_000, // 60 seconds - reduced frequency
+    refetchIntervalInBackground: false, // Don't refetch when tab is not active
+    staleTime: 30_000, // Consider data fresh for 30 seconds
+    enabled: typeof window !== 'undefined', // Only run on client side
+    retry: 1, // Reduce retries
+    retryDelay: 5000, // 5 second delay between retries
+  })
 
-  const genesisVideos = [
+  const genesisVideos = useMemo(() => [
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/15-jknCr6ApXUldXFHc8cEhDkEkWCAaVw.mp4",
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/15-LfgmCMLL4WE8nSYKx8iAvp0zZLkpJ1.mp4",
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/35-t1WlZsXxyxYPWH30MXGBFspz5kUKLd.mp4",
@@ -25,21 +54,27 @@ export default function ApeBeatLanding() {
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/25-VAuntrCY9BoMzOvJDUCKHvdk1Ds7Pl.mp4",
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/16-iK78dPYs6y4DYkVLKB5TOVqqcxsqeC.mp4",
     "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/10-ePllyvB0TWKrCSXOJmGknFX59BsaKq.mp4",
-  ]
+  ], [])
+
+  // Use video preview hook to generate preview images - only load when needed
+  const { getPreview, loading: previewsLoading } = useVideoPreviews(
+    typeof window !== 'undefined' ? genesisVideos : [] // Only load on client side
+  )
 
   const getGenesisNumber = (videoSrc: string) => {
-    const match = videoSrc.match(/genesis-(\d+)/)
+    const match = videoSrc.match(/\/(\d+)-/)
     return match ? match[1] : "1"
   }
 
-  const getRandomVideos = () => {
+
+  const getRandomVideos = useCallback(() => {
     const shuffled = [...genesisVideos]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
       ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
     return shuffled.slice(0, 4)
-  }
+  }, [genesisVideos])
 
   useEffect(() => {
     if (isDarkMode) {
@@ -50,13 +85,22 @@ export default function ApeBeatLanding() {
   }, [isDarkMode])
 
   useEffect(() => {
-    setRandomVideos(getRandomVideos())
-  }, [])
+    // Delay video loading to prevent blocking initial page load
+    const timer = setTimeout(() => {
+      setRandomVideos(getRandomVideos())
+    }, 1000) // 1 second delay
+    
+    return () => clearTimeout(timer)
+  }, [getRandomVideos])
 
-  // Simulate live data updates
+  // Simulate live data updates - only when page is visible
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     const interval = setInterval(() => {
-      setCurrentBeat((prev) => (prev + 1) % 100)
+      if (!document.hidden) {
+        setCurrentBeat((prev) => (prev + 1) % 100)
+      }
     }, 2000)
     return () => clearInterval(interval)
   }, [])
@@ -88,7 +132,7 @@ export default function ApeBeatLanding() {
     }
   }
 
-  const features = [
+  const features = useMemo(() => [
     {
       icon: <Music className="w-6 h-6" />,
       title: "24/7 Onchain Beats",
@@ -110,11 +154,52 @@ export default function ApeBeatLanding() {
       title: "True Ownership",
       description: "100% onchain music and video generation. Verifiable, immutable, and owned by you forever.",
     },
-  ]
+  ], [])
 
   const handlePlayClick = () => {
     setShowComingSoonPopup(true)
   }
+
+  const handleVideoPlay = useCallback((videoSrc: string) => {
+    // Pause any currently playing video
+    if (playingVideo && playingVideo !== videoSrc) {
+      const currentVideo = document.querySelector(`video[src="${playingVideo}"]`) as HTMLVideoElement
+      if (currentVideo) {
+        currentVideo.pause()
+        currentVideo.muted = true
+        currentVideo.style.display = 'none'
+        // Show the image again
+        const currentImg = currentVideo.previousElementSibling as HTMLImageElement
+        if (currentImg) currentImg.style.display = 'block'
+      }
+    }
+    
+    const video = document.querySelector(`video[src="${videoSrc}"]`) as HTMLVideoElement
+    const img = video?.previousElementSibling as HTMLImageElement
+    
+    if (video && img) {
+      if (video.paused) {
+        // Show video, hide image
+        img.style.display = 'none'
+        video.style.display = 'block'
+        
+        // Load video if not already loaded
+        if (video.readyState < 2) {
+          video.load()
+        }
+        video.muted = false
+        setPlayingVideo(videoSrc)
+        video.play().catch(console.error)
+      } else {
+        // Hide video, show image
+        video.pause()
+        video.muted = true
+        video.style.display = 'none'
+        img.style.display = 'block'
+        setPlayingVideo(null)
+      }
+    }
+  }, [playingVideo])
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden transition-colors duration-300">
@@ -124,13 +209,13 @@ export default function ApeBeatLanding() {
           backgroundImage: "url('/apebeats-sonic-swamp-hub-dark-mystical-swamp-with-.jpg')",
           backgroundAttachment: "fixed",
           backgroundPosition: "center center",
-          zIndex: 2, // moved swamp image above color drops
+          zIndex: 2,
+          willChange: "transform", // Optimize for animations
         }}
       ></div>
 
-      <div className="fixed inset-0 opacity-20 dark:opacity-15" style={{ zIndex: 1 }}>
-        {" "}
-        {/* reduced opacity and moved below swamp image */}
+      <div className="fixed inset-0 opacity-20 dark:opacity-15" style={{ zIndex: 1, willChange: "transform" }}>
+        {/* Optimized floating elements - reduced count and complexity for better performance */}
         <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-purple-500/40 to-pink-500/40 dark:from-purple-500/25 dark:to-pink-500/25 rounded-full blur-xl float"></div>
         <div
           className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-cyan-500/35 to-blue-500/35 dark:from-cyan-500/20 dark:to-blue-500/20 rounded-full blur-lg float"
@@ -145,40 +230,16 @@ export default function ApeBeatLanding() {
           className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-gradient-to-r from-cyan-500/35 to-blue-500/35 dark:from-cyan-500/20 dark:to-blue-500/20 rounded-full blur-2xl psychedelic-pulse"
           style={{ animationDelay: "3s" }}
         ></div>
-        <div
-          className="absolute top-1/2 right-1/3 w-56 h-56 bg-gradient-to-r from-orange-500/35 to-red-500/35 dark:from-orange-500/20 dark:to-red-500/20 rounded-full blur-3xl color-shift"
-          style={{ animationDelay: "6s" }}
-        ></div>
-        <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-gradient-to-r from-yellow-500/30 to-green-500/30 dark:from-yellow-500/15 dark:to-green-500/15 rounded-full blur-3xl color-shift"></div>
-        <div
-          className="absolute top-1/4 right-1/4 w-52 h-52 bg-gradient-to-r from-lime-500/25 to-emerald-500/25 dark:from-lime-500/12 dark:to-emerald-500/12 rounded-full blur-3xl float"
-          style={{ animationDelay: "8s" }}
-        ></div>
-        <div
-          className="absolute top-3/4 left-1/3 w-60 h-60 bg-gradient-to-r from-amber-500/30 to-orange-500/30 dark:from-amber-500/15 dark:to-orange-500/15 rounded-full blur-3xl color-shift"
-          style={{ animationDelay: "9s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/2 right-1/2 w-48 h-48 bg-gradient-to-r from-teal-500/35 to-cyan-500/35 dark:from-teal-500/20 dark:to-cyan-500/20 rounded-full blur-2xl psychedelic-pulse"
-          style={{ animationDelay: "10s" }}
-        ></div>
-        <div
-          className="absolute top-1/5 left-2/3 w-38 h-38 bg-gradient-to-r from-magenta-500/35 to-purple-500/35 dark:from-magenta-500/20 dark:to-purple-500/20 rounded-full blur-2xl psychedelic-pulse"
-          style={{ animationDelay: "11s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/5 left-1/5 w-42 h-42 bg-gradient-to-r from-yellow-400/35 to-orange-400/35 dark:from-yellow-400/20 dark:to-orange-400/20 rounded-full blur-2xl color-shift"
-          style={{ animationDelay: "12s" }}
-        ></div>
-        <div
-          className="absolute top-4/5 right-1/5 w-34 h-34 bg-gradient-to-r from-green-400/35 to-blue-400/35 dark:from-green-400/20 dark:to-blue-400/20 rounded-full blur-xl float"
-          style={{ animationDelay: "13s" }}
-        ></div>
       </div>
+
+      {/* Network Switcher Banner */}
+      <Suspense fallback={null}>
+        <NetworkSwitcher />
+      </Suspense>
 
       {/* Navigation */}
       <nav
-        className="relative z-50 flex items-center justify-between p-6 md:p-8"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 md:p-8 bg-background/80 backdrop-blur border-b border-border/50"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -187,6 +248,18 @@ export default function ApeBeatLanding() {
             <Music className="w-5 h-5 text-primary-foreground" />
           </div>
           <span className="text-xl font-bold">ApeBeats</span>
+          <div className="ml-4 flex items-center space-x-4">
+            <ErrorBoundary>
+              <Suspense fallback={<div className="w-16 h-6 bg-zinc-800 rounded animate-pulse" />}>
+                <HeaderUser onLoginClick={() => setShowLoginModal(true)} />
+              </Suspense>
+            </ErrorBoundary>
+            <ErrorBoundary>
+              <Suspense fallback={null}>
+                <NetworkSwitcher showAlways={true} className="hidden md:flex" />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
         </div>
         <div className="flex items-center space-x-6">
           <div className="hidden md:flex items-center space-x-6 text-sm">
@@ -212,6 +285,11 @@ export default function ApeBeatLanding() {
               Roadmap
             </button>
           </div>
+          <ErrorBoundary>
+            <Suspense fallback={<div className="w-16 h-8 bg-zinc-800 rounded animate-pulse" />}>
+              <MenuDropdown />
+            </Suspense>
+          </ErrorBoundary>
           <Button
             variant="outline"
             size="sm"
@@ -225,7 +303,7 @@ export default function ApeBeatLanding() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative z-10 px-6 md:px-8 py-12 md:py-20" role="banner">
+      <section className="relative z-10 px-6 md:px-8 pt-28 pb-12 md:pt-36 md:pb-20" role="banner">
         <div className="max-w-6xl mx-auto text-center">
           <Badge className="mb-6 bg-primary/20 text-primary border-primary/30">Sonic Swamp Hub • Coming Soon</Badge>
 
@@ -272,31 +350,39 @@ export default function ApeBeatLanding() {
               </div>
             </div>
 
-            <div
-              className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"
-              role="region"
-              aria-label="Live ApeChain data"
-            >
-              <div className="text-center">
-                <div className="text-accent font-mono">$APE</div>
-                <div className="text-muted-foreground">$1.23</div>
-              </div>
-              <div className="text-center">
-                <div className="text-primary font-mono">TXN/MIN</div>
-                <div className="text-muted-foreground">847</div>
-              </div>
-              <div className="text-center">
-                <div className="text-accent font-mono">GAS</div>
-                <div className="text-muted-foreground">0.02</div>
-              </div>
-              <div className="text-center">
-                <div className="text-primary font-mono">BPM</div>
-                <div className="text-muted-foreground">87</div>
-              </div>
-            </div>
+            <ErrorBoundary>
+              {stats ? (
+                <div
+                  className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm"
+                  role="region"
+                  aria-label="Live ApeChain data"
+                >
+                  <div className="text-center">
+                    <div className="text-accent font-mono">BLOCK</div>
+                    <div className="text-muted-foreground">{Number(stats.blockNumber).toLocaleString()}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-primary font-mono">BLOCK TIME</div>
+                    <div className="text-muted-foreground">{stats.blockTimeSeconds ? `${stats.blockTimeSeconds}s` : "-"}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-accent font-mono">GAS</div>
+                    <div className="text-muted-foreground">
+                      {`${Number(stats.gasPriceWei) / 1e9} gwei`}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-primary font-mono">BPM</div>
+                    <div className="text-muted-foreground">87</div>
+                  </div>
+                </div>
+              ) : (
+                <ApeChainDataSkeleton />
+              )}
+            </ErrorBoundary>
           </Card>
 
-          <div className="max-w-md mx-auto">
+          <div className="max-w-md mx-auto space-y-4">
             <Button
               size="lg"
               className="w-full px-12 py-6 text-lg pulse-glow bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
@@ -305,6 +391,16 @@ export default function ApeBeatLanding() {
             >
               <ExternalLink className="w-5 h-5 mr-2" aria-hidden="true" />
               Join the Waitlist
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full px-12 py-6 text-lg bg-card/50 backdrop-blur-sm border-primary/30 hover:border-primary/50"
+              onClick={() => window.location.href = '/music'}
+              aria-label="Try the Music Engine"
+            >
+              <Music className="w-5 h-5 mr-2" aria-hidden="true" />
+              Try the Music Engine
             </Button>
           </div>
         </div>
@@ -349,37 +445,221 @@ export default function ApeBeatLanding() {
               Genesis Collection Preview
             </h2>
             <p className="text-lg text-muted-foreground">
-              Experience the first artifacts from the Sonic Swamp - each one unique, each one eternal. Preview Sound and
-              Waveforms from the Genesis collection.
+              Experience the first artifacts from the Sonic Swamp - each one unique, each one eternal. 
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {randomVideos.map((videoSrc, index) => (
+            {previewsLoading ? (
+              // Show loading skeletons while previews are being generated
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card key={`loading-${index}`} className="p-4 bg-card/50 backdrop-blur-sm border-primary/20">
+                  <VideoThumbnailSkeleton />
+                  <div className="mt-4 text-center">
+                    <div className="h-6 w-24 mx-auto bg-secondary/20 rounded animate-pulse" />
+                  </div>
+                </Card>
+              ))
+            ) : randomVideos.length > 0 ? randomVideos.map((videoSrc, index) => (
               <Card
                 key={`${videoSrc}-${index}`} // Use videoSrc in key to ensure proper re-rendering
                 className="p-4 bg-card/50 backdrop-blur-sm border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105"
                 role="article"
               >
-                <div className="aspect-square rounded-lg overflow-hidden bg-secondary/20">
+                <div 
+                  className="aspect-square rounded-lg overflow-hidden bg-secondary/20 relative group genesis-protected"
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    return false
+                  }}
+                  onDragStart={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    return false
+                  }}
+                  style={{ 
+                    userSelect: 'none', 
+                    WebkitUserSelect: 'none',
+                    MozUserSelect: 'none',
+                    msUserSelect: 'none',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Image fallback - always visible by default */}
+                  <img
+                    src={getPreview(videoSrc)}
+                    alt={`Genesis NFT preview ${getGenesisNumber(videoSrc)}`}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onDragStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    style={{ 
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserDrag: 'none'
+                    } as any}
+                  />
+                  
+                  {/* Video overlay - only shows when playing */}
                   <video
                     src={videoSrc}
-                    className="w-full h-full object-cover"
-                    controls
+                    className="w-full h-full object-cover absolute inset-0 hidden"
+                    controls={false}
                     loop
-                    muted
+                    muted={true}
                     playsInline
                     preload="metadata"
                     aria-label={`Genesis NFT preview ${getGenesisNumber(videoSrc)}`}
+                    onLoadedData={(e) => {
+                      // Video is ready but stays hidden until play is clicked
+                      console.log('Video loaded for', getGenesisNumber(videoSrc))
+                    }}
+                    onError={(e) => {
+                      console.warn('Video failed to load for', getGenesisNumber(videoSrc))
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onDragStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onPause={(e) => {
+                      if (playingVideo === videoSrc) {
+                        // Hide video, show image
+                        const target = e.target as HTMLVideoElement
+                        target.style.display = 'none'
+                        const img = target.previousElementSibling as HTMLImageElement
+                        if (img) img.style.display = 'block'
+                        setPlayingVideo(null)
+                      }
+                    }}
+                    onEnded={(e) => {
+                      if (playingVideo === videoSrc) {
+                        // Hide video, show image
+                        const target = e.target as HTMLVideoElement
+                        target.style.display = 'none'
+                        const img = target.previousElementSibling as HTMLImageElement
+                        if (img) img.style.display = 'block'
+                        setPlayingVideo(null)
+                      }
+                    }}
+                    style={{ 
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserDrag: 'none'
+                    } as any}
+                  />
+                  
+                  {/* Custom Play Button Overlay */}
+                  <div 
+                    className="absolute inset-0 z-20 flex items-center justify-center cursor-pointer"
+                    onClick={() => handleVideoPlay(videoSrc)}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onDragStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    style={{ 
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserDrag: 'none'
+                    } as any}
+                  >
+                    <div className="bg-black/40 backdrop-blur-sm rounded-full p-4 hover:bg-black/60 transition-all duration-200 group-hover:scale-110">
+                      {playingVideo === videoSrc ? (
+                        <div className="w-6 h-6 flex items-center justify-center">
+                          <div className="w-2 h-4 bg-white rounded-sm mr-1"></div>
+                          <div className="w-2 h-4 bg-white rounded-sm"></div>
+                        </div>
+                      ) : (
+                        <Play className="w-6 h-6 text-white ml-1" />
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Watermark overlay */}
+                  <div className="absolute top-2 left-2 z-30 pointer-events-none">
+                    <div className="bg-black/20 backdrop-blur-sm rounded-lg px-2 py-1 text-xs text-white/80 font-medium">
+                      Genesis #{getGenesisNumber(videoSrc)}
+                    </div>
+                  </div>
+                  
+                  {/* Protection overlay - prevents right-click and drag on video element */}
+                  <div 
+                    className="absolute inset-0 z-10"
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onDragStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      return false
+                    }}
+                    onMouseDown={(e) => {
+                      // Prevent text selection
+                      e.preventDefault()
+                    }}
+                    style={{ 
+                      pointerEvents: 'none',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      MozUserSelect: 'none',
+                      msUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitUserDrag: 'none'
+                    } as any}
                   />
                 </div>
                 <div className="mt-4 text-center">
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                    Genesis #{getGenesisNumber(videoSrc)} {/* This now correctly shows the number from the filename */}
+                    Genesis #{getGenesisNumber(videoSrc)}
                   </Badge>
                 </div>
               </Card>
-            ))}
+            )) : (
+              // Show loading skeletons while videos are being loaded
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card
+                  key={`loading-${index}`}
+                  className="p-4 bg-card/50 backdrop-blur-sm border-primary/20"
+                  role="article"
+                >
+                  <VideoThumbnailSkeleton />
+                  <div className="mt-4 text-center">
+                    <div className="h-6 w-24 bg-muted rounded animate-pulse mx-auto" />
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
 
           <div className="text-center mt-12">
@@ -410,7 +690,9 @@ export default function ApeBeatLanding() {
             <h2 id="collections-heading" className="text-3xl md:text-5xl font-bold mb-6">
               Two Collections
             </h2>
-            <p className="text-lg text-muted-foreground">Genesis artifacts and infinite echoes from the Sonic Swamp.</p>
+            <p className="text-lg text-muted-foreground">
+              Genesis artifacts and infinite echoes from the Sonic Swamp.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -486,7 +768,7 @@ export default function ApeBeatLanding() {
               Voyager's Quest
             </h2>
             <p className="text-lg text-muted-foreground">
-              The journey through the Sonic Swamp unfolds in phases. Follow the evolution of ApeBeats.
+              The journey through the Sonic Swamp unfolds in phases. 
             </p>
           </div>
 
@@ -497,66 +779,68 @@ export default function ApeBeatLanding() {
               aria-hidden="true"
             ></div>
 
-            {[
-              {
-                phase: "Phase 1",
-                title: "Genesis Discovery",
-                status: "Coming Soon",
-                items: [
-                  "Genesis Apechain Beats mint (420 NFTs)",
-                  "Founding Echo chapter release",
-                  "Royalty share on all related drops",
-                ],
-              },
-              {
-                phase: "Phase 2",
-                title: "Infinite Rhythm",
-                status: "Q? 2026",
-                items: ["24/7 live stream launch", "Apechain Live Beats collection", "Real-time data integration"],
-              },
-              {
-                phase: "Phase 3",
-                title: "Swamp Evolution",
-                status: "?",
-                items: ["Redacted", "Redacted", "Redacted"],
-              },
-            ].map((phase, index) => (
-              <Card
-                key={index}
-                className="relative p-8 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-primary/20 hover:border-primary/40 transition-all duration-300 ml-12"
-                role="article"
-              >
-                <div
-                  className="absolute -left-12 top-8 w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center border-4 border-background pulse-glow"
-                  aria-hidden="true"
+            <div className="space-y-8">
+              {[
+                {
+                  phase: "Phase 1",
+                  title: "Genesis Discovery",
+                  status: "Coming Soon",
+                  items: [
+                    "Genesis Apechain Beats mint (420 NFTs)",
+                    "Founding Echo chapter release",
+                    "Royalty share on all related drops",
+                  ],
+                },
+                {
+                  phase: "Phase 2",
+                  title: "Infinite Rhythm",
+                  status: "Q? 2026",
+                  items: ["24/7 live stream launch", "Apechain Live Beats collection", "Real-time data integration"],
+                },
+                {
+                  phase: "Phase 3",
+                  title: "Swamp Evolution",
+                  status: "?",
+                  items: ["Redacted", "Redacted", "Redacted"],
+                },
+              ].map((phase, index) => (
+                <Card
+                  key={index}
+                  className="relative p-8 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border-primary/20 hover:border-primary/40 transition-all duration-300 ml-12"
+                  role="article"
                 >
-                  <span className="text-primary-foreground font-bold">{index + 1}</span>
-                </div>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                  <div>
-                    <div className="text-sm text-primary font-semibold mb-1">{phase.phase}</div>
-                    <h3 className="text-2xl font-bold">{phase.title}</h3>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="self-start md:self-center mt-2 md:mt-0 bg-accent/10 text-accent border-accent/30"
+                  <div
+                    className="absolute -left-12 top-8 w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center border-4 border-background pulse-glow"
+                    aria-hidden="true"
                   >
-                    {phase.status}
-                  </Badge>
-                </div>
-                <ul className="space-y-2 text-muted-foreground">
-                  {phase.items.map((item, itemIndex) => (
-                    <li key={itemIndex} className="flex items-start">
-                      <div
-                        className="w-1.5 h-1.5 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"
-                        aria-hidden="true"
-                      ></div>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ))}
+                    <span className="text-primary-foreground font-bold">{index + 1}</span>
+                  </div>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                    <div>
+                      <div className="text-sm text-primary font-semibold mb-1">{phase.phase}</div>
+                      <h3 className="text-2xl font-bold">{phase.title}</h3>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="self-start md:self-center mt-2 md:mt-0 bg-accent/10 text-accent border-accent/30"
+                    >
+                      {phase.status}
+                    </Badge>
+                  </div>
+                  <ul className="space-y-2 text-muted-foreground">
+                    {phase.items.map((item, itemIndex) => (
+                      <li key={itemIndex} className="flex items-start">
+                        <div
+                          className="w-1.5 h-1.5 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"
+                          aria-hidden="true"
+                        ></div>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -583,8 +867,9 @@ export default function ApeBeatLanding() {
           <div className="mt-8">
             <Button
               variant="outline"
+              size="lg"
               onClick={scrollToTop}
-              className="bg-card/50 backdrop-blur-sm border-primary/30 hover:border-primary/50 transition-all duration-300"
+              className="px-8 py-4 bg-card/50 backdrop-blur-sm border-primary/30 hover:border-primary/50 hover:bg-primary/10 transition-all duration-300"
               aria-label="Back to top of page"
             >
               <ChevronUp className="w-5 h-5 mr-2" aria-hidden="true" />
@@ -666,7 +951,7 @@ export default function ApeBeatLanding() {
                 aria-label="Join ApeBeats Discord community"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.3628 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0190 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0190 1.3332-.9460 2.4189-2.1568 2.4189Z" />
+                  <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0190 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.0190 1.3332-.9460 2.4189-2.1568 2.4189Z" />
                 </svg>
               </a>
             </div>
@@ -674,8 +959,7 @@ export default function ApeBeatLanding() {
 
           <div className="mt-8 pt-8 border-t border-border/50 text-center text-sm text-muted-foreground">
             <p>
-              Inspired by the BAYC ecosystem. Built with respect for Yuga Labs and the ape community. Discover
-              ApeSounds, ApeWaves, and Ape Music NFTs on ApeChain.
+              Inspired by the BAYC ecosystem. Built with respect for Yuga Labs and the ape community.
             </p>
           </div>
         </div>
@@ -689,6 +973,24 @@ export default function ApeBeatLanding() {
         >
           <ChevronUp className="w-6 h-6 text-primary-foreground" />
         </button>
+      )}
+
+      {/* Login Modal - Only show if not logged in */}
+      {showLoginModal && (!email && !account?.address) && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-md"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowLoginModal(false)
+            }
+          }}
+        >
+          <div className="relative max-w-md w-full mx-4">
+            <Suspense fallback={<div className="w-full h-96 bg-card rounded-xl animate-pulse" />}>
+              <LoginInline onDone={() => setShowLoginModal(false)} />
+            </Suspense>
+          </div>
+        </div>
       )}
     </div>
   )

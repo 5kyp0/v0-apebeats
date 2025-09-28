@@ -1,0 +1,27 @@
+{
+  "timestamp": "2025-09-28T14:53:27.161Z",
+  "network": {
+    "chainId": 33111,
+    "name": "Curtis Testnet",
+    "rpcUrl": "https://curtis.rpc.caldera.xyz/http",
+    "explorerUrl": "https://explorer.curtis.apechain.xyz"
+  },
+  "contracts": {
+    "ApeBeatsGenesis": "0x9f5961301E7c3D92A0B0E6d6EDdc9c0d68286921",
+    "ApeBeatsGenesisImpl": "0x6d9Fddd6362E2E6cA3811fc6135fDf395F3A1cf0",
+    "ApeBeatsMetadataLib": "0xc2D36F462eB97B89897E2CDEC4DF2d518dd086B2",
+    "ApeBeatsRoyalties": "0xb2B971F625759EE43FfF418fe4162607051270cD",
+    "LocalProxy": "0x9f5961301E7c3D92A0B0E6d6EDdc9c0d68286921"
+  },
+  "tests": {
+    "initialState": {
+      "totalMinted": "1",
+      "founderActive": true,
+      "gtdActive": false,
+      "fcfsActive": false,
+      "publicActive": false
+    },
+    "deployer": "0x6481Ed1233f0d03B4d97364fE184B165FaC393e0",
+    "testUser": "0x6481Ed1233f0d03B4d97364fE184B165FaC393e0"
+  }
+}
