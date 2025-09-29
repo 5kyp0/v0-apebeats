@@ -5,11 +5,11 @@ import { Skeleton } from './ui/skeleton'
 
 // Lazy load heavy components
 export const LazyMusicEngine = lazy(() => import('./music-engine/MusicEngine'))
-export const LazySnapshotTool = lazy(() => import('./SnapshotTool'))
-export const LazyHeaderUser = lazy(() => import('./HeaderUser'))
-export const LazyLoginInline = lazy(() => import('./LoginInline'))
-export const LazyNetworkSwitcher = lazy(() => import('./NetworkSwitcher'))
-export const LazyMenuDropdown = lazy(() => import('./SimpleMenuDropdown'))
+export const LazySnapshotTool = lazy(() => import('./features/SnapshotTool'))
+export const LazyHeaderUser = lazy(() => import('./auth/HeaderUser'))
+export const LazyLoginInline = lazy(() => import('./auth/LoginInline'))
+export const LazyNetworkSwitcher = lazy(() => import('./wallet/NetworkSwitcher'))
+export const LazyMenuDropdown = lazy(() => import('./features/SimpleMenuDropdown'))
 
 // Memoized components for better performance
 export const MemoizedCard = memo(({ children, className, ...props }: any) => (

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, lazy, Suspense, useMemo, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,18 +9,19 @@ import { Play, Volume2, Zap, Music, Users, Coins, ExternalLink, ChevronUp, Sun, 
 import { useQuery } from "@tanstack/react-query"
 import { fetchApeChainStats } from "@/lib/utils"
 import { useActiveAccount } from "thirdweb/react"
-import useUserStore from "@/src/stores/userStore"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
-import { ApeChainDataSkeleton, VideoThumbnailSkeleton } from "@/components/LoadingStates"
+import useUserStore from "@/stores/userStore"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
+import { ApeChainDataSkeleton, VideoThumbnailSkeleton } from "@/components/layout/LoadingStates"
 import { useVideoPreviews } from "@/lib/useVideoPreviews"
 
 // Lazy load HeaderUser to improve initial page load
-const HeaderUser = lazy(() => import("@/components/HeaderUser"))
-const LoginInline = lazy(() => import("@/components/LoginInline"))
-const NetworkSwitcher = lazy(() => import("@/components/NetworkSwitcher"))
-const MenuDropdown = lazy(() => import("@/components/MenuDropdown"))
+const HeaderUser = lazy(() => import("@/components/auth/HeaderUser"))
+const LoginInline = lazy(() => import("@/components/auth/LoginInline"))
+const NetworkSwitcher = lazy(() => import("@/components/wallet/NetworkSwitcher"))
+const MenuDropdown = lazy(() => import("@/components/features/MenuDropdown"))
 
 export default function ApeBeatLanding() {
+  const router = useRouter()
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentBeat, setCurrentBeat] = useState(0)
   const [showBackToTop, setShowBackToTop] = useState(false)
@@ -396,7 +398,7 @@ export default function ApeBeatLanding() {
               size="lg"
               variant="outline"
               className="w-full px-12 py-6 text-lg bg-card/50 backdrop-blur-sm border-primary/30 hover:border-primary/50"
-              onClick={() => window.location.href = '/music'}
+              onClick={() => router.push('/music')}
               aria-label="Try the Music Engine"
             >
               <Music className="w-5 h-5 mr-2" aria-hidden="true" />

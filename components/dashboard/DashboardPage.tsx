@@ -4,7 +4,7 @@ import { useActiveAccount } from "thirdweb/react"
 import { UserDashboard } from "./UserDashboard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CommonPageLayout } from "@/components/CommonPageLayout"
+import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { ArrowLeft, ExternalLink, BarChart3 } from "lucide-react"
 import Link from "next/link"
 

@@ -6,7 +6,7 @@ import { BatchTransferForm } from "./BatchTransferForm"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CommonPageLayout } from "@/components/CommonPageLayout"
+import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { 
   ArrowLeft, 
   ExternalLink, 

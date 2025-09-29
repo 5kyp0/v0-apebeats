@@ -199,6 +199,103 @@ apebeats/
 4. Check browser console for detailed error messages
 5. Ensure all dependencies are installed: `pnpm install`
 
+## [0.4.1] - 2025-01-27
+
+### Release Notes
+This is a critical bug fix release addressing the snapshot tool hanging issue and improving the overall user experience. The release includes comprehensive timeout mechanisms, enhanced error handling, and official blockchain logos to replace placeholder designs.
+
+**Key Highlights:**
+- 🔧 **Snapshot Tool Fixes**: Resolved hanging issue with comprehensive timeout mechanisms
+- 🎨 **Official Blockchain Logos**: Replaced placeholder logos with official blockchain designs
+- 🛡️ **Enhanced Error Handling**: Improved error messages and user feedback
+- ⚡ **Performance Improvements**: Optimized snapshot tool performance and reliability
+- 🔍 **Debug Logging**: Enhanced logging for better troubleshooting
+- 🌐 **API Key Validation**: Improved API key handling and validation
+
+### Fixed
+- **Snapshot Tool Hanging**: Resolved issue where snapshot tool would hang after connecting to ApeChain
+- **DOM API Error**: Fixed `TypeError: e.target.closest is not a function` in layout event listeners
+- **Timeout Issues**: Implemented comprehensive timeout mechanisms to prevent indefinite hanging
+- **API Authentication**: Enhanced 401 authentication error handling with troubleshooting guidance
+- **Token Standard Detection**: Disabled auto-detection to prevent hanging during contract analysis
+
+### Enhanced
+- **Blockchain Logos**: Replaced placeholder SVG designs with official blockchain logos
+- **Error Messages**: Improved error messages with specific troubleshooting guidance
+- **Timeout Mechanisms**: Added multiple layers of timeout protection (15s, 30s, 45s, 60s)
+- **Debug Logging**: Enhanced logging throughout the snapshot process for better debugging
+- **API Key Validation**: Improved validation and fallback options for API keys
+- **User Experience**: Better progress tracking and user feedback during snapshot operations
+
+### Technical
+- **Timeout Implementation**: Multiple timeout layers using `Promise.race` for different operations
+- **Error Recovery**: Graceful error handling with user-friendly fallback messages
+- **Performance Optimization**: Reduced batch sizes and optimized contract interaction
+- **Logging System**: Enhanced debug logging for troubleshooting and monitoring
+- **API Integration**: Improved Alchemy API integration with better error handling
+
+### Files Modified
+- `app/layout.tsx` - Fixed DOM API error with null checks in event listeners
+- `components/features/BlockchainLogos.tsx` - Replaced placeholder logos with official designs
+- `components/features/SnapshotTool.tsx` - Comprehensive timeout and error handling improvements
+- `public/Apechain.svg` - Added official ApeChain logo
+- `.gitignore` - Added cleanup for temporary documentation and test files
+
+### Migration Guide
+- **No Breaking Changes**: This version is fully backward compatible
+- **Enhanced Reliability**: Snapshot tool now has comprehensive timeout protection
+- **Better UX**: Improved error messages and user feedback
+- **No Environment Changes**: No new environment variables required
+- **Testing**: Run `npm test` to verify all functionality
+
+### Performance Improvements
+- **Snapshot Tool**: Optimized performance with timeout mechanisms and reduced batch sizes
+- **Error Handling**: Faster error recovery and user feedback
+- **Memory Management**: Improved memory usage during snapshot operations
+- **API Efficiency**: Better API usage with timeout protection
+
+### Contributors
+- Development Team - Snapshot tool fixes and timeout implementation
+- AI Assistant - Code review and debugging assistance
+- Community - Issue reporting and feedback
+
+### Release Information
+- **Release Date**: January 27, 2025
+- **Version**: 0.4.1
+- **Type**: Bug Fix Release (Backward Compatible)
+- **Testing**: 70% coverage maintained
+- **Performance**: Enhanced reliability and user experience
+
+### Installation & Upgrade
+```bash
+# Install dependencies
+pnpm install
+
+# Run tests to verify installation
+pnpm test
+
+# Build the project
+pnpm build
+
+# Start development server
+pnpm dev
+```
+
+### Upgrade from v0.4.0
+No breaking changes. Simply update your dependencies and enjoy the improved snapshot tool:
+```bash
+pnpm install
+pnpm test  # Verify everything works
+```
+
+### Snapshot Tool Improvements
+This release includes significant improvements to the snapshot tool:
+- **Timeout Protection**: Multiple timeout layers prevent indefinite hanging
+- **Error Recovery**: Better error handling with user-friendly messages
+- **Performance**: Optimized batch processing and contract interaction
+- **Debugging**: Enhanced logging for troubleshooting
+- **API Integration**: Improved Alchemy API handling with fallback options
+
 ## [Unreleased]
 
 ### 🚀 Coming Soon

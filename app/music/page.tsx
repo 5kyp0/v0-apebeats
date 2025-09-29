@@ -1,13 +1,15 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { MusicEngine } from '@/components/music-engine/MusicEngine'
-import { CommonPageLayout } from "@/components/CommonPageLayout"
+import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { Music } from "lucide-react"
 
 export default function MusicPage() {
+  const router = useRouter()
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -68,7 +70,7 @@ export default function MusicPage() {
                       Refresh Page
                     </Button>
                     <Button 
-                      onClick={() => window.location.href = '/'} 
+                      onClick={() => router.push('/')} 
                       variant="default"
                     >
                       Back to Home

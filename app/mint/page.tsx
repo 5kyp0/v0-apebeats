@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Music, ArrowLeft, Plus, Minus, ExternalLink } from "lucide-react"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { useRouter } from "next/navigation"
 import { useAccount, useConnect, useDisconnect, useBalance, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
 import { parseEther, formatEther } from "viem"
@@ -21,7 +21,7 @@ import {
   getTotalPrice,
   validateMintParams
 } from "@/lib/mint-config"
-import { CommonPageLayout } from "@/components/CommonPageLayout"
+import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 
 
 export default function MintPage() {

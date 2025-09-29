@@ -1,9 +1,9 @@
 "use client"
 
 import { Suspense } from "react"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { StakingDashboard } from "@/components/staking/StakingDashboard"
-import { CommonPageLayout } from "@/components/CommonPageLayout"
+import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { Coins } from "lucide-react"
 
 export default function StakeDashboardPage() {

@@ -25,3 +25,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# documentation and test reports
+SNAPSHOT_TOOL_TEST_REPORT.md
+COMMIT_MESSAGE.md
+DEPLOYMENT_SUCCESS_REPORT.md
+NFT_INTEGRATION_README.md
+STAKING_ENVIRONMENT_SETUP.md
+STAKING_INTEGRATION_GUIDE.md
+TESTING_SETUP_GUIDE.md
+TESTING_SUMMARY.md
+
+# test scripts (temporary)
+scripts/test-*.js
+scripts/verify-*.js
+
+# system files
+.DS_Store

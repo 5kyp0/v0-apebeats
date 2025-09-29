@@ -6,8 +6,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThirdwebProvider } from 'thirdweb/react'
 import { thirdwebClient } from '@/lib/thirdweb'
-import HeaderUser from '@/components/HeaderUser'
-import LoginInline from '@/components/LoginInline'
+import HeaderUser from '@/components/auth/HeaderUser'
+import LoginInline from '@/components/auth/LoginInline'
 
 // Mock thirdweb hooks
 const mockConnect = jest.fn()

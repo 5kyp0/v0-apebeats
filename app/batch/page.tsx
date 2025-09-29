@@ -1,13 +1,16 @@
 "use client"
 
 import { Suspense } from "react"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { useRouter } from "next/navigation"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Send, Users, Zap, ArrowLeft } from "lucide-react"
-import { CommonPageLayout } from "@/components/CommonPageLayout"
+import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 
 export default function BatchPage() {
+  const router = useRouter()
+  
   return (
     <CommonPageLayout
       title="ApeBeats"
@@ -65,7 +68,7 @@ export default function BatchPage() {
               <Button 
                 size="lg" 
                 className="pulse-glow text-lg px-8 py-4"
-                onClick={() => window.location.href = '/transfers'}
+                onClick={() => router.push('/transfers')}
               >
                 Start Batch Send
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -74,7 +77,7 @@ export default function BatchPage() {
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8 py-4 bg-transparent"
-                onClick={() => window.location.href = '/dashboard'}
+                onClick={() => router.push('/dashboard')}
               >
                 View Dashboard
               </Button>
@@ -114,7 +117,7 @@ export default function BatchPage() {
       <div className="relative z-10 text-center pb-12">
         <Button
           variant="outline"
-          onClick={() => window.location.href = '/'}
+          onClick={() => router.push('/')}
           className="flex items-center gap-2 mx-auto"
         >
           <ArrowLeft className="w-4 h-4" />

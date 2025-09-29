@@ -6,9 +6,9 @@ import { useState, useEffect, useRef } from "react"
 import { Suspense, lazy } from "react"
 
 // Lazy load components
-const HeaderUser = lazy(() => import("@/components/HeaderUser"))
-const NetworkSwitcher = lazy(() => import("@/components/NetworkSwitcher"))
-const MenuDropdown = lazy(() => import("@/components/MenuDropdown"))
+const HeaderUser = lazy(() => import("@/components/auth/HeaderUser"))
+const NetworkSwitcher = lazy(() => import("@/components/wallet/NetworkSwitcher"))
+const MenuDropdown = lazy(() => import("@/components/features/MenuDropdown"))
 
 export function StakingHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)

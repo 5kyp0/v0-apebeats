@@ -23,14 +23,14 @@ import {
   Copy,
   Check
 } from "lucide-react"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { useActiveAccount } from "thirdweb/react"
-import useUserStore from "@/src/stores/userStore"
+import useUserStore from "@/stores/userStore"
 
 // Lazy load components to improve initial page load
-const HeaderUser = lazy(() => import("@/components/HeaderUser"))
-const NetworkSwitcher = lazy(() => import("@/components/NetworkSwitcher"))
-const MenuDropdown = lazy(() => import("@/components/MenuDropdown"))
+const HeaderUser = lazy(() => import("@/components/auth/HeaderUser"))
+const NetworkSwitcher = lazy(() => import("@/components/wallet/NetworkSwitcher"))
+const MenuDropdown = lazy(() => import("@/components/features/MenuDropdown"))
 
 export default function Custom404Page() {
   const [isDarkMode, setIsDarkMode] = useState(true)

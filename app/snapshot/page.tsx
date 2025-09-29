@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { ErrorBoundary } from "@/components/ErrorBoundary"
-import SnapshotTool from "@/components/SnapshotTool"
-import { CommonPageLayout } from "@/components/CommonPageLayout"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
+import SnapshotTool from "@/components/features/SnapshotTool"
+import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { Users } from "lucide-react"
 
 export default function SnapshotPage() {
