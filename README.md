@@ -264,6 +264,50 @@ The heart of ApeBeats is its advanced music generation system that creates lo-fi
 3. Watch as live ApeChain data creates unique beats
 4. Capture moments as NFTs with the snapshot tool
 
+### 📸 **Token Holder Snapshot Tool**
+Professional-grade utility for capturing token holders across multiple blockchain networks.
+
+#### Features
+- **Multi-chain Support**: Works with Ethereum, Polygon, Arbitrum, Optimism, Base, and ApeChain
+- **Token Standard Detection**: Automatically detects ERC-721 and ERC-1155 tokens
+- **Batch Processing**: Efficiently processes large token collections
+- **Real-time Progress**: Live progress tracking with detailed logging
+- **Export Functionality**: Export results in JSON and CSV formats
+- **Copy to Clipboard**: Quick copy of holder addresses
+- **Vercel Optimized**: Designed for serverless deployment with timeout protection
+
+#### How to Use
+1. Navigate to `/snapshot` or use the menu
+2. Configure network and add API key
+3. Add contract addresses (one per line)
+4. Choose token standard or auto-detect
+5. Start snapshot and monitor progress
+6. Export results in JSON or CSV format
+
+#### Export Formats
+**JSON Export** includes comprehensive metadata:
+```json
+{
+  "metadata": {
+    "tool": "ApeBeats Snapshot Tool",
+    "version": "1.0.0",
+    "exportTimestamp": "2024-01-15T21:31:46.000Z",
+    "totalHolders": 45,
+    "network": "apechain-mainnet",
+    "chainId": 33139
+  },
+  "contracts": [...],
+  "holders": [...],
+  "summary": {...}
+}
+```
+
+**CSV Export** for spreadsheet compatibility:
+```csv
+"Address","Network","ChainId","SnapshotDate"
+"0x8544a547366eBfA8711ccF60667Cbf7c8b0943f1","apechain-mainnet",33139,"2024-01-15T21:31:46.000Z"
+```
+
 ### 🎨 **NFT Collections**
 
 #### Genesis ApeBeats Collection (420 NFTs)
@@ -953,7 +997,9 @@ See `TESTING.md` for detailed testing documentation, best practices, and trouble
 - **Custom Development**: Hire us for custom features
 - **Consulting**: Get help with integration and deployment
 
-## Project Structure
+## 🏗️ Project Architecture
+
+### 📁 **Project Structure**
 
 ```
 v0-apebeats/
@@ -965,24 +1011,56 @@ v0-apebeats/
 │   ├── snapshot/          # Token Holder Snapshot Tool page
 │   ├── batch/             # Batch Operations hub page
 │   ├── transfers/         # Batch Transfer page
-│   └── dashboard/         # User Dashboard page
+│   ├── dashboard/         # User Dashboard page
+│   └── stake/             # Staking page
 ├── components/            # React components
 │   ├── ui/               # Reusable UI components
+│   │   ├── button.tsx    # Button component
+│   │   ├── card.tsx      # Card component
+│   │   ├── input.tsx     # Input component
+│   │   ├── tabs.tsx      # Tabs component
+│   │   └── ...           # Other UI components
+│   ├── features/         # Feature-specific components
+│   │   ├── SnapshotTool.tsx # Token holder snapshot tool
+│   │   ├── BlockchainLogos.tsx # Blockchain logo components
+│   │   └── MenuDropdown.tsx # Menu dropdown component
 │   ├── music-engine/     # Music Engine components
+│   │   └── MusicEngine.tsx # Main music engine component
 │   ├── transfers/        # Batch Transfer components
+│   │   ├── BatchTransferPage.tsx # Batch transfer page
+│   │   └── BatchTransferForm.tsx # Batch transfer form
 │   ├── dashboard/        # Dashboard components
+│   │   ├── DashboardPage.tsx # Dashboard page
+│   │   └── UserDashboard.tsx # User dashboard content
 │   ├── staking/          # Staking components
-│   │   ├── StakingHeader.tsx
-│   │   ├── StakingHeroSection.tsx
-│   │   ├── StakingFeaturesSection.tsx
-│   │   ├── StakingTiersSection.tsx
-│   │   ├── StakingCTASection.tsx
-│   │   └── StakingFooter.tsx
-│   ├── ErrorBoundary.tsx # Error handling
-│   ├── LoadingStates.tsx # Loading components
-│   ├── NetworkSwitcher.tsx # Network detection
-│   ├── SnapshotTool.tsx  # Token holder snapshot tool
-│   └── BlockchainLogos.tsx # Blockchain logo components
+│   │   ├── StakingHeader.tsx # Staking page header
+│   │   ├── StakingHeroSection.tsx # Staking hero section
+│   │   ├── StakingFeaturesSection.tsx # Staking features
+│   │   ├── StakingTiersSection.tsx # Staking tiers
+│   │   ├── StakingCTASection.tsx # Call-to-action section
+│   │   ├── StakingFooter.tsx # Staking footer
+│   │   ├── StakingDashboard.tsx # Main staking dashboard
+│   │   ├── NFTGrid.tsx # NFT grid component
+│   │   ├── StakedNFTs.tsx # Staked NFTs display
+│   │   ├── PoolCreator.tsx # Pool creation component
+│   │   └── WalletConnect.tsx # Wallet connection
+│   ├── auth/             # Authentication components
+│   │   ├── HeaderUser.tsx # Header user component
+│   │   ├── LoginInline.tsx # Inline login component
+│   │   └── ProfileDropdown.tsx # Profile dropdown
+│   ├── layout/           # Layout components
+│   │   ├── CommonHeader.tsx # Common header
+│   │   ├── CommonFooter.tsx # Common footer
+│   │   ├── CommonPageLayout.tsx # Common page layout
+│   │   ├── ErrorBoundary.tsx # Error handling
+│   │   └── LoadingStates.tsx # Loading components
+│   ├── wallet/           # Wallet components
+│   │   ├── NetworkSwitcher.tsx # Network detection
+│   │   └── WalletIcons.tsx # Wallet icon components
+│   ├── GlyphProvider.tsx # Glyph wallet integration
+│   ├── QueryProvider.tsx # React Query provider
+│   ├── theme-provider.tsx # Theme provider
+│   └── PerformanceOptimizations.tsx # Performance optimizations
 ├── lib/                  # Utilities and services
 │   ├── music-engine/     # Music generation engine
 │   │   ├── index.ts      # Main music engine orchestrator
@@ -993,25 +1071,91 @@ v0-apebeats/
 │   │   ├── videoVisualizer.ts # Video visualization
 │   │   ├── nftSnapshot.ts # NFT creation system
 │   │   └── types.ts      # Type definitions
-│   ├── thirdweb.ts       # Thirdweb configuration with staking
+│   ├── snapshot/         # Snapshot tool utilities
+│   │   ├── vercel-utils.ts # Vercel-specific utilities
+│   │   └── retry-utils.ts # Retry and error handling
+│   ├── thirdweb.ts       # Thirdweb configuration
 │   ├── batchTransferService.ts # Batch transfer service
 │   ├── utils.ts          # General utilities
 │   ├── videoUtils.ts     # Video processing
-│   └── useVideoPreviews.ts # Video preview hook
+│   ├── useVideoPreviews.ts # Video preview hook
+│   ├── validation.ts     # Validation utilities
+│   ├── securityMonitor.ts # Security monitoring
+│   └── walletService.ts  # Wallet service utilities
 ├── hooks/                # Custom React hooks
 │   └── useStaking.ts     # Staking operations hook
+├── stores/               # State management
+│   ├── index.ts          # Store exports
+│   └── userStore.ts      # User state store
 ├── __tests__/            # Test suite
 │   ├── components/       # Component tests
 │   ├── lib/             # Utility tests
 │   ├── integration/     # Integration tests
-│   └── e2e/            # End-to-end tests
+│   ├── e2e/            # End-to-end tests
+│   └── security/        # Security tests
 ├── public/              # Static assets
+│   ├── apebeats-sonic-swamp-hub-dark-mystical-swamp-with-.jpg
+│   ├── Apechain.svg     # ApeChain logo
+│   └── ...              # Other static assets
 ├── styles/              # Global styles
-└── docs/               # Documentation
-    ├── README.md       # This file
-    ├── TESTING.md      # Testing guide
-    └── CHANGELOG.md    # Release notes
+│   └── globals.css      # Global CSS
+├── docs/               # Documentation
+│   ├── README.md       # This file
+│   ├── TESTING.md      # Testing guide
+│   ├── CHANGELOG.md    # Release notes
+│   ├── NETWORK_SETUP.md # Network setup guide
+│   └── architecture/   # Architecture documentation
+├── contracts/          # Smart contracts
+│   ├── ApeBeatsGenesis.sol # Genesis NFT contract
+│   ├── ApeBeatsMetadataLib.sol # Metadata library
+│   ├── ApeBeatsRoyalties.sol # Royalties contract
+│   └── ...            # Other contracts
+├── scripts/            # Deployment and utility scripts
+│   ├── deploy.js       # Deployment script
+│   ├── generate-assets.js # Asset generation
+│   └── ...            # Other scripts
+└── config/             # Configuration files
+    ├── next.config.mjs # Next.js configuration
+    ├── tailwind.config.js # Tailwind configuration
+    ├── tsconfig.json   # TypeScript configuration
+    └── jest.config.js  # Jest configuration
 ```
+
+### 🔧 **Technical Architecture**
+
+#### **Frontend Architecture**
+- **Next.js 14.2.16**: App Router with server-side rendering
+- **React 18**: Modern React with hooks and concurrent features
+- **TypeScript**: Strict type checking and enhanced developer experience
+- **TailwindCSS**: Utility-first CSS framework with custom components
+- **Radix UI**: Accessible component primitives
+
+#### **Web3 Integration**
+- **Thirdweb v5 SDK**: Complete Web3 infrastructure
+- **Smart Wallets**: ERC-4337 compatible smart wallet deployment
+- **Multi-chain Support**: Ethereum, Polygon, Arbitrum, Optimism, Base, ApeChain
+- **Wallet Integration**: MetaMask, Rabby, Rainbow, WalletConnect, Glyph
+
+#### **State Management**
+- **Zustand**: Lightweight state management
+- **React Query**: Server state management and caching
+- **Custom Hooks**: Specialized hooks for different features
+
+#### **Testing Architecture**
+- **Jest**: Testing framework with Next.js integration
+- **React Testing Library**: Component testing with user-centric approach
+- **70% Coverage**: Comprehensive test coverage across all features
+
+#### **Performance Optimization**
+- **Code Splitting**: Dynamic imports and lazy loading
+- **Bundle Optimization**: Tree shaking and dead code elimination
+- **Image Optimization**: Next.js Image component with optimization
+- **Caching**: Strategic caching for improved performance
+
+#### **Deployment Architecture**
+- **Vercel**: Serverless deployment with edge functions
+- **Environment Variables**: Secure configuration management
+- **CI/CD**: Automated testing and deployment pipeline
 
 ## Key Files
 
@@ -1190,10 +1334,35 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.4.0
+### Current Version: v0.4.3
 **Latest Release**: January 27, 2025
 
-**Key Features in v0.4.0:**
+**Key Features in v0.4.3:**
+- 📚 **Comprehensive Documentation Update**: Complete overhaul of CHANGELOG.md and README.md
+- 🎯 **Detailed Project Information**: Enhanced project overview with comprehensive feature descriptions
+- 🛠️ **Setup Instructions**: Detailed installation and configuration guides
+- 📊 **Feature Documentation**: Complete documentation of all current features and capabilities
+- 🚀 **Developer Experience**: Improved developer onboarding and contribution guidelines
+- 📈 **Project Status**: Clear project status and roadmap information
+- 🔧 **Technical Specifications**: Detailed technical documentation and architecture overview
+
+**Previous Features (v0.4.2):**
+- 🔧 **Snapshot Tool Result Processing**: Fixed critical issue where holders were found but not displayed in results
+- 📊 **Enhanced Export Functionality**: Added dual-format export (JSON + CSV) with comprehensive data
+- 📋 **Improved Copy Functionality**: Fixed clipboard functionality for holder addresses
+- 🎯 **Sequential Processing**: Replaced complex chunked processor with reliable sequential processing
+- 🛡️ **Better Error Handling**: Enhanced error handling and user feedback throughout the process
+- 🚀 **Performance Optimization**: Streamlined processing for better reliability and speed
+
+**Previous Features (v0.4.1):**
+- 🔧 **Snapshot Tool Fixes**: Resolved hanging issue with comprehensive timeout mechanisms
+- 🎨 **Official Blockchain Logos**: Replaced placeholder logos with official blockchain designs
+- 🛡️ **Enhanced Error Handling**: Improved error messages and user feedback
+- ⚡ **Performance Improvements**: Optimized snapshot tool performance and reliability
+- 🔍 **Debug Logging**: Enhanced logging for better troubleshooting
+- 🌐 **API Key Validation**: Improved API key handling and validation
+
+**Previous Features (v0.4.0):**
 - 🎯 **Complete Staking System**: Professional staking interface with NFT grid and staked NFTs display
 - 🏆 **Multi-Tier Staking**: Partner, Standard, Premium, and OSS staking tiers with different APY rates
 - 🎨 **Staking Dashboard**: Beautiful staking page with mystical swamp background and floating animations
@@ -1298,7 +1467,7 @@ docs/
 - **Security**: ✅ Comprehensive security audit completed
 
 ### 📈 **Version Information**
-- **Current Version**: v0.4.0
+- **Current Version**: v0.4.3
 - **Release Date**: January 27, 2025
 - **Next.js Version**: 14.2.16
 - **TypeScript**: Latest with strict mode
@@ -1308,6 +1477,7 @@ docs/
 - **Multi-chain Support**: 6 supported networks
 - **Batch Transfer**: Complete APE token batch transfer system
 - **Staking System**: Multi-tier staking with NFT grid and pool creation
+- **Snapshot Tool**: Professional token holder capture with export functionality
 
 ### 🎯 **Feature Status**
 - ✅ **Core Features**: All implemented and tested
@@ -1315,6 +1485,7 @@ docs/
 - ✅ **NFT Collections**: Genesis and Live Beats collections ready
 - ✅ **Batch Transfers**: Complete with CSV upload and multiple modes
 - ✅ **Staking System**: Multi-tier staking with governance integration
+- ✅ **Snapshot Tool**: Professional token holder capture with dual-format export
 - ✅ **Wallet Integration**: Smart wallets with social login
 - ✅ **Testing Suite**: Comprehensive test coverage
 - ✅ **Documentation**: Complete user and developer guides
@@ -1326,6 +1497,26 @@ docs/
 - **Core Web Vitals**: Optimized for LCP, FID, and CLS scores
 - **Test Coverage**: 70% minimum threshold maintained
 - **Build Time**: Fast builds with optimized Next.js configuration
+- **Snapshot Tool**: Optimized sequential processing with timeout protection
+
+### 🔧 **Technical Stack**
+- **Frontend**: Next.js 14.2.16 with App Router
+- **Styling**: TailwindCSS with custom components
+- **Web3**: Thirdweb v5 SDK with smart wallet support
+- **Blockchain**: ApeChain integration with multi-chain support
+- **Testing**: Jest + React Testing Library with 70% coverage
+- **Type Safety**: TypeScript with strict mode
+- **Performance**: Optimized with lazy loading and code splitting
+- **Deployment**: Vercel-optimized with serverless functions
+
+### 📊 **Current Capabilities**
+- **Music Generation**: 24/7 LoFi Hip Hop generation from blockchain data
+- **NFT Creation**: Genesis (420 limited) + Live Beats (unlimited) collections
+- **Batch Operations**: APE token distribution with up to 70% gas savings
+- **Staking System**: Multi-tier NFT staking with 5-15% APY
+- **Snapshot Tool**: Professional token holder capture across 6 networks
+- **Wallet Support**: Smart wallets with social login and multi-wallet support
+- **Multi-chain**: Support for Ethereum, Polygon, Arbitrum, Optimism, Base, and ApeChain
 
 ## 🤝 Contributing
 
@@ -1400,6 +1591,89 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Next.js Team**: For the amazing framework
 - **Open Source Community**: For all the amazing tools and libraries
 
+## 🗺️ Roadmap
+
+### 🚀 **Upcoming Features (v0.5.0)**
+- **Advanced Music Engine**: Enhanced LoFi generation with more blockchain data sources
+- **Mobile App**: Native iOS and Android applications for ApeBeats
+- **Real-time Collaboration**: Multi-user music creation and sharing
+- **Advanced Analytics**: Detailed staking and music generation analytics
+- **Governance Integration**: Full DAO governance for ApeBeats ecosystem
+
+### 🔧 **Planned Technical Improvements**
+- **Playwright E2E Testing**: Comprehensive end-to-end testing suite
+- **Visual Regression Testing**: Automated UI consistency testing
+- **Performance Monitoring**: Real-time performance metrics dashboard
+- **Advanced Accessibility**: Enhanced screen reader and keyboard navigation
+- **Next.js 15 Upgrade**: Latest Next.js features and performance improvements
+
+### 🎯 **Future Features**
+- **Advanced NFT Marketplace**: Integrated marketplace for ApeBeats NFTs
+- **Music Collaboration Tools**: Real-time collaborative music creation
+- **Advanced Royalty System**: Sophisticated royalty distribution mechanisms
+- **Cross-platform Integration**: Integration with major music platforms
+- **AI-Powered Curation**: AI-driven music discovery and curation
+
+### 📊 **Development Timeline**
+- **Q1 2025**: Advanced music engine and mobile app development
+- **Q2 2025**: Real-time collaboration and governance integration
+- **Q3 2025**: Advanced analytics and performance monitoring
+- **Q4 2025**: AI-powered features and cross-platform integration
+
+## 🎉 Getting Started
+
+### **For Users**
+1. **Visit the Application**: Go to the deployed ApeBeats application
+2. **Connect Your Wallet**: Use any supported wallet or social login
+3. **Explore Features**: Try the music engine, batch transfers, and staking
+4. **Join the Community**: Connect with other ApeBeats users
+
+### **For Developers**
+1. **Fork the Repository**: Create your own fork of the project
+2. **Set Up Environment**: Follow the setup instructions above
+3. **Run the Application**: Start the development server
+4. **Contribute**: Submit pull requests and help improve the project
+
+### **For Contributors**
+1. **Read the Documentation**: Familiarize yourself with the project
+2. **Check Issues**: Look for issues you can help with
+3. **Follow Guidelines**: Read the contributing guidelines
+4. **Submit PRs**: Create pull requests with your improvements
+
+## 📞 Support & Community
+
+### **Getting Help**
+- **Documentation**: Check this README and other docs
+- **Troubleshooting**: See the troubleshooting section above
+- **GitHub Issues**: Report bugs and request features
+- **Discord**: Join our community for real-time help
+
+### **Community Resources**
+- **Discord**: [Join our Discord](https://discord.gg/EAeFftJe)
+- **Twitter**: [Follow @CarquetE](https://x.com/CarquetE)
+- **GitHub**: [Star the repository](https://github.com/your-username/apebeats)
+- **Documentation**: Comprehensive guides in the repo
+
+### **Professional Support**
+- **Enterprise Support**: Custom solutions for businesses
+- **Custom Development**: Hire us for custom features
+- **Consulting**: Get help with integration and deployment
+- **Training**: Learn how to use ApeBeats effectively
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **BAYC Community**: For inspiration and support
+- **Yuga Labs**: For the amazing ecosystem
+- **Thirdweb**: For the excellent Web3 infrastructure
+- **Next.js Team**: For the amazing framework
+- **Open Source Community**: For all the amazing tools and libraries
+
 ---
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
+
+**Version**: v0.4.3 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready

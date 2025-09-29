@@ -19,7 +19,9 @@ import {
   Users,
   CheckCircle,
   AlertCircle,
-  Info
+  Info,
+  FileSpreadsheet,
+  FileJson
 } from "lucide-react"
 import { BlockchainLogo } from "@/components/features/BlockchainLogos"
 import { 
@@ -154,10 +156,21 @@ export default function SnapshotTool() {
       // Auto-detect token standard if needed
       let detectedStandard = contract.standard
       if (contract.standard === 'auto') {
-        addLog(`Auto-detection enabled, defaulting to ERC721 for faster processing`, 'info')
-        // Skip auto-detection for now to prevent hanging, default to ERC721
-        detectedStandard = 'erc721'
-        addLog(`Using ERC721 standard for contract ${contract.address}`, 'info')
+        addLog(`Auto-detection enabled, detecting token standard for ${contract.address}`, 'info')
+        // Create a basic contract instance for detection
+        const basicContractInstance = getContract({
+          client: thirdwebClient,
+          chain: chain,
+          address: contract.address as Address,
+          abi: getStandardABI('erc721') // Start with ERC721 ABI for detection
+        })
+        try {
+          detectedStandard = await detectTokenStandard(basicContractInstance)
+          addLog(`Auto-detected token standard: ${detectedStandard}`, 'success')
+        } catch (error) {
+          addLog(`Auto-detection failed, defaulting to ERC721: ${error instanceof Error ? error.message : 'Unknown error'}`, 'warning')
+          detectedStandard = 'erc721'
+        }
       } else {
         addLog(`Using specified token standard: ${detectedStandard}`, 'info')
       }
@@ -199,13 +212,19 @@ export default function SnapshotTool() {
 
       addLog(`Contract ${contract.address} has total supply: ${totalSupply.toString()}`, 'info')
 
-      // Determine token range to scan (Vercel optimized)
+      // Determine token range to scan
       let startTokenId = 0
-      let endTokenId = Math.min(Number(totalSupply) - 1, 50) // Limit to 50 tokens max for Vercel
+      let endTokenId = Number(totalSupply) - 1
+
+      // If we couldn't get total supply, scan up to 10000 tokens
+      if (totalSupply === BigInt(100)) {
+        endTokenId = 9999 // Scan up to 10000 tokens (0-9999)
+        addLog(`No total supply available, scanning up to 10000 tokens (0-9999)`, 'info')
+      }
 
       if (detectedStandard === 'erc1155') {
         startTokenId = contract.tokenIdStart || 0
-        endTokenId = contract.tokenIdEnd || 20 // Smaller limit for ERC1155
+        endTokenId = contract.tokenIdEnd || 9999 // Allow larger range for ERC1155
       }
 
       // Scan tokens to find holders
@@ -247,8 +266,8 @@ export default function SnapshotTool() {
           addLog(`Error scanning ERC1155 events: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
         }
       } else {
-        // For ERC721 and auto-detect - Vercel optimized
-        const batchSize = 3 // Very small batch size for Vercel
+        // For ERC721 and auto-detect - optimized for larger scans
+        const batchSize = Math.min(10, Math.max(3, Math.floor((endTokenId - startTokenId + 1) / 100))) // Dynamic batch size
         const totalTokens = endTokenId - startTokenId + 1
         addLog(`Starting to scan ${totalTokens} tokens (${startTokenId} to ${endTokenId}) for ${contract.address}`, 'info')
         
@@ -527,7 +546,7 @@ export default function SnapshotTool() {
     })
   }
 
-  const exportResults = () => {
+  const exportResults = (format: 'text' | 'csv' | 'json') => {
     if (results.length === 0) {
       addLog('No results to export', 'warning')
       return
@@ -543,65 +562,82 @@ export default function SnapshotTool() {
       chainId: result.chainId
     }
 
-    // Create comprehensive export data
-    const exportData = {
-      metadata: {
-        tool: "ApeBeats Snapshot Tool",
-        version: "1.0.0",
-        exportTimestamp: new Date().toISOString(),
-        totalHolders: data.totalHolders,
-        network: data.network,
-        chainId: data.chainId
-      },
-      contracts: data.contracts.map(contract => ({
-        address: contract.address,
-        standard: contract.standard,
-        holdersFound: contract.holders
-      })),
-      holders: data.holders,
-      summary: {
-        totalUniqueHolders: data.totalHolders,
-        contractsScanned: data.contracts.length,
-        network: data.network,
-        chainId: data.chainId,
-        snapshotTimestamp: data.timestamp
+    const baseFilename = 'Snapshot'
+
+    if (format === 'text') {
+      // Export as plain text (one address per line)
+      const textContent = data.holders.join('\n')
+      const textBlob = new Blob([textContent], { type: 'text/plain' })
+      const textUrl = URL.createObjectURL(textBlob)
+      const textLink = document.createElement('a')
+      textLink.href = textUrl
+      textLink.download = `${baseFilename}.txt`
+      document.body.appendChild(textLink)
+      textLink.click()
+      document.body.removeChild(textLink)
+      URL.revokeObjectURL(textUrl)
+      addLog(`Exported ${data.totalHolders} holders as text file`, 'success')
+    } else if (format === 'csv') {
+      // Export as CSV for easy spreadsheet import
+      const csvHeaders = ['Address', 'Network', 'ChainId', 'SnapshotDate']
+      const csvRows = data.holders.map(holder => [
+        holder,
+        data.network,
+        data.chainId,
+        data.timestamp
+      ])
+      const csvContent = [csvHeaders, ...csvRows]
+        .map(row => row.map(cell => `"${cell}"`).join(','))
+        .join('\n')
+      
+      const csvBlob = new Blob([csvContent], { type: 'text/csv' })
+      const csvUrl = URL.createObjectURL(csvBlob)
+      const csvLink = document.createElement('a')
+      csvLink.href = csvUrl
+      csvLink.download = `${baseFilename}.csv`
+      document.body.appendChild(csvLink)
+      csvLink.click()
+      document.body.removeChild(csvLink)
+      URL.revokeObjectURL(csvUrl)
+      addLog(`Exported ${data.totalHolders} holders as CSV file`, 'success')
+    } else if (format === 'json') {
+      // Create comprehensive export data
+      const exportData = {
+        metadata: {
+          tool: "ApeBeats Snapshot Tool",
+          version: "1.0.0",
+          exportTimestamp: new Date().toISOString(),
+          totalHolders: data.totalHolders,
+          network: data.network,
+          chainId: data.chainId
+        },
+        contracts: data.contracts.map(contract => ({
+          address: contract.address,
+          standard: contract.standard,
+          holdersFound: contract.holders
+        })),
+        holders: data.holders,
+        summary: {
+          totalUniqueHolders: data.totalHolders,
+          contractsScanned: data.contracts.length,
+          network: data.network,
+          chainId: data.chainId,
+          snapshotTimestamp: data.timestamp
+        }
       }
+
+      // Export as JSON
+      const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+      const jsonUrl = URL.createObjectURL(jsonBlob)
+      const jsonLink = document.createElement('a')
+      jsonLink.href = jsonUrl
+      jsonLink.download = `${baseFilename}.json`
+      document.body.appendChild(jsonLink)
+      jsonLink.click()
+      document.body.removeChild(jsonLink)
+      URL.revokeObjectURL(jsonUrl)
+      addLog(`Exported ${data.totalHolders} holders as JSON file`, 'success')
     }
-
-    // Export as JSON
-    const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-    const jsonUrl = URL.createObjectURL(jsonBlob)
-    const jsonLink = document.createElement('a')
-    jsonLink.href = jsonUrl
-    jsonLink.download = `apebeats-snapshot-${data.network}-${Date.now()}.json`
-    document.body.appendChild(jsonLink)
-    jsonLink.click()
-    document.body.removeChild(jsonLink)
-    URL.revokeObjectURL(jsonUrl)
-
-    // Also export as CSV for easy spreadsheet import
-    const csvHeaders = ['Address', 'Network', 'ChainId', 'SnapshotDate']
-    const csvRows = data.holders.map(holder => [
-      holder,
-      data.network,
-      data.chainId,
-      data.timestamp
-    ])
-    const csvContent = [csvHeaders, ...csvRows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n')
-    
-    const csvBlob = new Blob([csvContent], { type: 'text/csv' })
-    const csvUrl = URL.createObjectURL(csvBlob)
-    const csvLink = document.createElement('a')
-    csvLink.href = csvUrl
-    csvLink.download = `apebeats-holders-${data.network}-${Date.now()}.csv`
-    document.body.appendChild(csvLink)
-    csvLink.click()
-    document.body.removeChild(csvLink)
-    URL.revokeObjectURL(csvUrl)
-
-    addLog(`Exported ${data.totalHolders} holders in JSON and CSV formats`, 'success')
   }
 
   const startSnapshot = async () => {
@@ -1053,15 +1089,35 @@ export default function SnapshotTool() {
                     >
                       <Square className="w-4 h-4" />
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={exportResults}
-                      disabled={results.length === 0}
-                      title="Export results as JSON and CSV files"
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportResults('text')}
+                        disabled={results.length === 0}
+                        title="Export as text file"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportResults('csv')}
+                        disabled={results.length === 0}
+                        title="Export as CSV file"
+                      >
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportResults('json')}
+                        disabled={results.length === 0}
+                        title="Export as JSON file"
+                      >
+                        <FileJson className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
