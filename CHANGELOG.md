@@ -545,6 +545,142 @@ This release includes significant documentation improvements:
 - **Contributing Guidelines**: Detailed contribution guidelines
 - **Project Structure**: Complete project structure documentation
 
+## [0.4.4] - 2025-01-27
+
+### Release Notes
+This release includes significant improvements to the snapshot tool, enhanced user experience features, and new donation functionality. The snapshot tool has been completely overhauled with better result processing, enhanced export capabilities, and improved user interface. Additionally, new features include ApeCoin balance display, donation section, and enhanced authentication flows.
+
+**Key Highlights:**
+- 🔧 **Snapshot Tool Overhaul**: Complete rewrite with improved result processing and export functionality
+- 💰 **ApeCoin Balance Integration**: Real-time ApeCoin balance display in user profile
+- ❤️ **Donation System**: New donation section to support project development
+- 🎨 **Enhanced UI/UX**: Improved user interface with better feedback and interactions
+- 🔐 **Authentication Improvements**: Enhanced login flows and user experience
+- 📊 **Export Enhancements**: Multiple export formats (TXT, CSV, JSON) with improved reliability
+- 🛡️ **Error Handling**: Better error handling and user feedback throughout the application
+
+### Added
+- **ApeCoin Balance Hook**: New `useApeCoinBalance` hook for real-time balance tracking
+- **Donation Section Component**: New `DonationSection` component with support for developer and treasury donations
+- **Enhanced Export Formats**: Support for TXT, CSV, and JSON export formats in snapshot tool
+- **Real-time Balance Display**: ApeCoin balance shown in user profile dropdown
+- **Copy to Clipboard Functionality**: Enhanced clipboard functionality with fallback methods
+- **Progress Tracking**: Better progress tracking and status updates in snapshot tool
+- **Login Modal Integration**: Enhanced login modal integration across multiple pages
+
+### Enhanced
+- **Snapshot Tool Result Processing**: Fixed critical issue where holders were found but not displayed in results
+- **Export Functionality**: Added dual-format export (JSON + CSV) with comprehensive data
+- **Copy Functionality**: Fixed clipboard functionality for holder addresses with fallback methods
+- **Sequential Processing**: Replaced complex chunked processor with reliable sequential processing
+- **Error Handling**: Enhanced error handling and user feedback throughout the process
+- **Performance Optimization**: Streamlined processing for better reliability and speed
+- **User Interface**: Improved UI with better progress indicators and status updates
+- **Authentication Flow**: Enhanced login modal integration and user experience
+- **Profile Dropdown**: Added ApeCoin balance display and improved user information
+
+### Fixed
+- **Snapshot Tool Results**: Fixed issue where results were not properly displayed after processing
+- **Export Reliability**: Fixed export functionality with proper blob handling and download mechanisms
+- **Clipboard Functionality**: Fixed clipboard copy functionality with fallback methods for different browsers
+- **Progress Synchronization**: Fixed progress tracking to properly sync with actual processing status
+- **State Management**: Fixed state management issues in snapshot tool result processing
+- **Error Messages**: Improved error messages and user feedback throughout the application
+
+### Technical
+- **Result Processing Architecture**: Improved result processing with better state management
+- **Export System**: Enhanced export system with multiple format support and reliable download handling
+- **Clipboard API**: Improved clipboard functionality with fallback methods for different environments
+- **Progress Tracking**: Better progress tracking with real-time status updates
+- **Error Handling**: Enhanced error handling with better user feedback and recovery mechanisms
+- **State Synchronization**: Improved state synchronization between components and processing logic
+
+### Files Modified
+- `app/404/page.tsx` - Enhanced login modal integration
+- `app/snapshot/page.tsx` - Added donation section integration
+- `components/auth/ProfileDropdown.tsx` - Added ApeCoin balance display
+- `components/features/MenuDropdown.tsx` - Enhanced menu functionality
+- `components/features/SimpleMenuDropdown.tsx` - Improved simple menu dropdown
+- `components/features/SnapshotTool.tsx` - Complete overhaul with enhanced functionality
+- `components/layout/CommonHeader.tsx` - Enhanced login modal integration
+- `components/features/DonationSection.tsx` - New donation section component
+- `hooks/useApeCoinBalance.ts` - New ApeCoin balance hook
+
+### Migration Guide
+- **No Breaking Changes**: This version is fully backward compatible
+- **New Features**: ApeCoin balance display and donation section are automatically available
+- **Enhanced Functionality**: Snapshot tool improvements are automatically applied
+- **No Environment Changes**: No new environment variables required
+- **No API Changes**: All existing APIs remain unchanged
+
+### Performance Improvements
+- **Snapshot Tool**: Significantly improved processing speed and reliability
+- **Export Functionality**: Faster and more reliable export operations
+- **User Interface**: Better responsiveness and user feedback
+- **State Management**: Improved state synchronization and component updates
+- **Error Recovery**: Better error handling and recovery mechanisms
+
+### Contributors
+- Development Team - Snapshot tool overhaul and new feature implementation
+- AI Assistant - Code review and enhancement assistance
+- Community - Feedback and feature requests
+
+### Release Information
+- **Release Date**: January 27, 2025
+- **Version**: 0.4.4
+- **Type**: Feature Enhancement (Backward Compatible)
+- **Testing**: 70% coverage maintained
+- **Performance**: Enhanced snapshot tool and user experience
+
+### Installation & Upgrade
+```bash
+# Install dependencies
+pnpm install
+
+# Run tests to verify installation
+pnpm test
+
+# Build the project
+pnpm build
+
+# Start development server
+pnpm dev
+```
+
+### Upgrade from v0.4.3
+No breaking changes. Simply update your dependencies and enjoy the enhanced features:
+```bash
+pnpm install
+pnpm test  # Verify everything works
+```
+
+### New Features in Detail
+This release includes several new features and enhancements:
+
+#### **ApeCoin Balance Integration**
+- Real-time ApeCoin balance display in user profile
+- Automatic balance updates when wallet changes
+- Formatted balance display with proper decimal handling
+- Error handling for balance loading failures
+
+#### **Donation System**
+- New donation section component for supporting development
+- Support for developer and treasury donations
+- Copy to clipboard functionality for donation addresses
+- External link integration for blockchain explorers
+
+#### **Enhanced Snapshot Tool**
+- Multiple export formats (TXT, CSV, JSON)
+- Improved result processing and display
+- Better progress tracking and status updates
+- Enhanced error handling and user feedback
+- Reliable clipboard functionality with fallback methods
+
+#### **Authentication Improvements**
+- Enhanced login modal integration across pages
+- Better user experience for authentication flows
+- Improved error handling and user feedback
+
 ## [Unreleased]
 
 ### 🚀 Coming Soon

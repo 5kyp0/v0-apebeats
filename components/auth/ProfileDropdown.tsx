@@ -4,9 +4,10 @@ import { useActiveAccount, useWalletDetailsModal } from "thirdweb/react"
 import { useWalletService } from "@/lib/walletService"
 import useUserStore from "@/stores/userStore"
 import { thirdwebClient, apeChain } from "@/lib/thirdweb"
-import { ChevronDown, User, LogOut, Plus, Wifi, WifiOff, RefreshCw } from "lucide-react"
+import { ChevronDown, User, LogOut, Plus, Wifi, WifiOff, RefreshCw, Coins } from "lucide-react"
 import { GlyphIcon, MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon } from "@/components/wallet/WalletIcons"
 import { useNetworkCheck } from "@/components/wallet/NetworkSwitcher"
+import { useApeCoinBalance } from "@/hooks/useApeCoinBalance"
 
 // Extend Window interface for ethereum
 declare global {
@@ -25,6 +26,7 @@ export default function ProfileDropdown() {
   const { open: openWalletDetails } = useWalletDetailsModal()
   const email = useUserStore((s: any) => s.email)
   const { isCorrectNetwork, currentChainId } = useNetworkCheck()
+  const { formattedBalance, loading: balanceLoading } = useApeCoinBalance()
   const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -173,6 +175,28 @@ export default function ProfileDropdown() {
                 <div className="text-xs text-muted-foreground font-mono">{account.address}</div>
               )}
             </div>
+
+            {/* ApeCoin Balance */}
+            {account?.address && (
+              <div className="space-y-2">
+                <div className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <Coins className="w-4 h-4" />
+                  ApeCoin Balance
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-lg font-bold text-primary">
+                    {balanceLoading ? (
+                      <div className="w-16 h-5 bg-muted animate-pulse rounded" />
+                    ) : (
+                      `${formattedBalance} APE`
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {isCorrectNetwork ? "ApeChain" : "Other Network"}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Network Status */}
             {account && (

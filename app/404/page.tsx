@@ -26,6 +26,7 @@ import {
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { useActiveAccount } from "thirdweb/react"
 import useUserStore from "@/stores/userStore"
+import LoginInline from "@/components/auth/LoginInline"
 
 // Lazy load components to improve initial page load
 const HeaderUser = lazy(() => import("@/components/auth/HeaderUser"))
@@ -146,7 +147,7 @@ export default function Custom404Page() {
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
             <Suspense fallback={<div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>}>
-              <HeaderUser />
+              <HeaderUser onLoginClick={() => setShowLoginModal(true)} />
             </Suspense>
             <Suspense fallback={<div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>}>
               <MenuDropdown />
@@ -332,6 +333,24 @@ export default function Custom404Page() {
       >
         <ArrowLeft className="w-5 h-5 rotate-90" />
       </Button>
+
+      {/* Login Modal - Only show if not logged in */}
+      {showLoginModal && (!email && !account?.address) && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-md"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowLoginModal(false)
+            }
+          }}
+        >
+          <div className="relative max-w-md w-full mx-4">
+            <Suspense fallback={<div className="w-full h-96 bg-card rounded-xl animate-pulse" />}>
+              <LoginInline onDone={() => setShowLoginModal(false)} />
+            </Suspense>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

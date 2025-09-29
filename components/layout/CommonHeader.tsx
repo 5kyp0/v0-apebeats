@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Music, Sun, Moon, ArrowLeft } from "lucide-react"
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { useRouter } from "next/navigation"
+import { useActiveAccount } from "thirdweb/react"
+import useUserStore from "@/stores/userStore"
 
 // Lazy load components to improve initial page load
 const HeaderUser = lazy(() => import("@/components/auth/HeaderUser"))
 const NetworkSwitcher = lazy(() => import("@/components/wallet/NetworkSwitcher"))
 const MenuDropdown = lazy(() => import("@/components/features/MenuDropdown"))
+const LoginInline = lazy(() => import("@/components/auth/LoginInline"))
 
 interface CommonHeaderProps {
   title?: string
@@ -33,6 +36,10 @@ export function CommonHeader({
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const router = useRouter()
+  
+  // Get auth state
+  const account = useActiveAccount()
+  const email = useUserStore((s: any) => s.email)
 
   useEffect(() => {
     if (isDarkMode) {
@@ -111,6 +118,24 @@ export function CommonHeader({
           </Button>
         </div>
       </nav>
+
+      {/* Login Modal - Only show if not logged in */}
+      {showLoginModal && (!email && !account?.address) && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-md"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowLoginModal(false)
+            }
+          }}
+        >
+          <div className="relative max-w-md w-full mx-4">
+            <Suspense fallback={<div className="w-full h-96 bg-card rounded-xl animate-pulse" />}>
+              <LoginInline onDone={() => setShowLoginModal(false)} />
+            </Suspense>
+          </div>
+        </div>
+      )}
     </>
   )
 }

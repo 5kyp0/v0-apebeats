@@ -1334,10 +1334,19 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.4.3
+### Current Version: v0.4.4
 **Latest Release**: January 27, 2025
 
-**Key Features in v0.4.3:**
+**Key Features in v0.4.4:**
+- 🔧 **Snapshot Tool Overhaul**: Complete rewrite with improved result processing and export functionality
+- 💰 **ApeCoin Balance Integration**: Real-time ApeCoin balance display in user profile
+- ❤️ **Donation System**: New donation section to support project development
+- 🎨 **Enhanced UI/UX**: Improved user interface with better feedback and interactions
+- 🔐 **Authentication Improvements**: Enhanced login flows and user experience
+- 📊 **Export Enhancements**: Multiple export formats (TXT, CSV, JSON) with improved reliability
+- 🛡️ **Error Handling**: Better error handling and user feedback throughout the application
+
+**Previous Features (v0.4.3):**
 - 📚 **Comprehensive Documentation Update**: Complete overhaul of CHANGELOG.md and README.md
 - 🎯 **Detailed Project Information**: Enhanced project overview with comprehensive feature descriptions
 - 🛠️ **Setup Instructions**: Detailed installation and configuration guides
@@ -1467,7 +1476,7 @@ docs/
 - **Security**: ✅ Comprehensive security audit completed
 
 ### 📈 **Version Information**
-- **Current Version**: v0.4.3
+- **Current Version**: v0.4.4
 - **Release Date**: January 27, 2025
 - **Next.js Version**: 14.2.16
 - **TypeScript**: Latest with strict mode
@@ -1485,7 +1494,7 @@ docs/
 - ✅ **NFT Collections**: Genesis and Live Beats collections ready
 - ✅ **Batch Transfers**: Complete with CSV upload and multiple modes
 - ✅ **Staking System**: Multi-tier staking with governance integration
-- ✅ **Snapshot Tool**: Professional token holder capture with dual-format export
+- ✅ **Snapshot Tool**: Professional token holder capture with multiple export formats (TXT, CSV, JSON)
 - ✅ **Wallet Integration**: Smart wallets with social login
 - ✅ **Testing Suite**: Comprehensive test coverage
 - ✅ **Documentation**: Complete user and developer guides
@@ -1497,7 +1506,7 @@ docs/
 - **Core Web Vitals**: Optimized for LCP, FID, and CLS scores
 - **Test Coverage**: 70% minimum threshold maintained
 - **Build Time**: Fast builds with optimized Next.js configuration
-- **Snapshot Tool**: Optimized sequential processing with timeout protection
+- **Snapshot Tool**: Optimized sequential processing with enhanced export functionality and timeout protection
 
 ### 🔧 **Technical Stack**
 - **Frontend**: Next.js 14.2.16 with App Router
@@ -1514,7 +1523,7 @@ docs/
 - **NFT Creation**: Genesis (420 limited) + Live Beats (unlimited) collections
 - **Batch Operations**: APE token distribution with up to 70% gas savings
 - **Staking System**: Multi-tier NFT staking with 5-15% APY
-- **Snapshot Tool**: Professional token holder capture across 6 networks
+- **Snapshot Tool**: Professional token holder capture across 6 networks with multiple export formats
 - **Wallet Support**: Smart wallets with social login and multi-wallet support
 - **Multi-chain**: Support for Ethereum, Polygon, Arbitrum, Optimism, Base, and ApeChain
 
@@ -1676,4 +1685,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
 
-**Version**: v0.4.3 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
+**Version**: v0.4.4 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready

@@ -21,7 +21,8 @@ import {
   AlertCircle,
   Info,
   FileSpreadsheet,
-  FileJson
+  FileJson,
+  ChevronDown
 } from "lucide-react"
 import { BlockchainLogo } from "@/components/features/BlockchainLogos"
 import { 
@@ -92,7 +93,10 @@ export default function SnapshotTool() {
   const [totalHolders, setTotalHolders] = useState(0)
   const [results, setResults] = useState<SnapshotResult[]>([])
   const [logs, setLogs] = useState<Array<{message: string, type: 'info' | 'success' | 'warning' | 'error'}>>([])
+  const [showLogs, setShowLogs] = useState(false)
+  const [currentStep, setCurrentStep] = useState('')
   const [provider, setProvider] = useState<any>(null)
+  const currentResultsRef = useRef<SnapshotResult[]>([])
 
   const networkConfigs = {
     ethereum: {
@@ -136,7 +140,36 @@ export default function SnapshotTool() {
   }, [isDarkMode])
 
   const addLog = (message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
-    setLogs(prev => [...prev, { message, type }])
+    setLogs(prev => {
+      const newLogs = [...prev, { message, type }]
+      
+      // Update progress based on log content for better synchronization
+      if (message.includes('% complete') && message.includes('Progress:')) {
+        const progressMatch = message.match(/(\d+)% complete/)
+        if (progressMatch) {
+          const logProgress = parseInt(progressMatch[1])
+          setProgress(logProgress)
+        }
+      }
+      
+      // Update current step based on log content
+      if (message.includes('Processing contract')) {
+        const contractMatch = message.match(/Processing contract (\d+\/\d+)/)
+        if (contractMatch) {
+          setCurrentStep(`Processing contract ${contractMatch[1]}`)
+        }
+      } else if (message.includes('Starting snapshot process')) {
+        setCurrentStep('Initializing snapshot...')
+      } else if (message.includes('Scanning tokens')) {
+        setCurrentStep('Scanning token holders...')
+      } else if (message.includes('Completed scanning')) {
+        setCurrentStep('Finalizing results...')
+      } else if (message.includes('Snapshot completed')) {
+        setCurrentStep('Complete')
+      }
+      
+      return newLogs
+    })
   }
 
   // Function to fetch holders from a contract
@@ -146,9 +179,9 @@ export default function SnapshotTool() {
     // DEBUG: This should appear in logs if changes are applied
     addLog(`🔧 DEBUG: Starting fetchContractHolders for ${contract.address}`, 'info')
     
-    // Add Vercel-compatible timeout wrapper
+    // Add Vercel-compatible timeout wrapper - increased timeout for large collections
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Contract processing timeout after 8 seconds')), getEnvironmentTimeout())
+      setTimeout(() => reject(new Error('Contract processing timeout after 30 seconds')), 30000) // 30 second timeout
     })
     
     const processPromise = (async () => {
@@ -267,7 +300,7 @@ export default function SnapshotTool() {
         }
       } else {
         // For ERC721 and auto-detect - optimized for larger scans
-        const batchSize = Math.min(10, Math.max(3, Math.floor((endTokenId - startTokenId + 1) / 100))) // Dynamic batch size
+        const batchSize = Math.min(5, Math.max(2, Math.floor((endTokenId - startTokenId + 1) / 200))) // Smaller batch size for better performance
         const totalTokens = endTokenId - startTokenId + 1
         addLog(`Starting to scan ${totalTokens} tokens (${startTokenId} to ${endTokenId}) for ${contract.address}`, 'info')
         
@@ -302,8 +335,13 @@ export default function SnapshotTool() {
             const progress = Math.round(((i - startTokenId + batchSize) / totalTokens) * 100)
             addLog(`Scanned tokens ${i}-${batchEnd} for ${contract.address} (${foundInBatch} found in batch, ${holders.size} unique holders total) - ${progress}% complete`, 'info')
             
+            // Add periodic progress updates for large collections
+            if (progress % 10 === 0) {
+              addLog(`🔄 Still processing... ${progress}% complete, ${holders.size} unique holders found so far`, 'info')
+            }
+            
             // Add a small delay to avoid overwhelming the RPC
-            await new Promise(resolve => setTimeout(resolve, 200))
+            await new Promise(resolve => setTimeout(resolve, 100)) // Reduced delay for faster processing
           } catch (error) {
             addLog(`Error in batch ${i}-${batchEnd}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
             // Continue with next batch
@@ -312,12 +350,18 @@ export default function SnapshotTool() {
       }
 
       addLog(`Completed scanning for ${contract.address}. Found ${holders.size} unique holders.`, 'success')
+      addLog(`🔧 DEBUG: Returning ${holders.size} holders from fetchContractHolders`, 'info')
+
+      // Convert to array and return immediately
+      const holdersArray = Array.from(holders)
+      addLog(`🔧 DEBUG: Converted Set to Array: ${holdersArray.length} holders`, 'info')
+      return holdersArray
 
       } catch (error) {
         addLog(`Error fetching holders for ${contract.address}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+        // Return empty array on error
+        return []
       }
-
-      return Array.from(holders)
     })()
     
     try {
@@ -529,114 +573,208 @@ export default function SnapshotTool() {
     setLogs([])
   }
 
+  // Helper function to get current results (prioritizing ref over state)
+  const getCurrentResults = () => {
+    return currentResultsRef.current.length > 0 ? currentResultsRef.current : results
+  }
+
+  // Helper function to check if results are available
+  const hasResults = () => {
+    return getCurrentResults().length > 0
+  }
+
+
   const copyResults = () => {
-    if (results.length === 0) {
+    addLog(`🔧 DEBUG: copyResults called. Results length: ${results.length}`, 'info')
+    addLog(`🔧 DEBUG: Ref results length: ${currentResultsRef.current.length}`, 'info')
+    
+    if (!hasResults()) {
       addLog('No results to copy', 'warning')
       return
     }
     
-    // Copy holder addresses as plain text, one per line
-    const holderAddresses = results[0].holders || []
-    const text = holderAddresses.join('\n')
+    const currentResults = getCurrentResults()
     
-    navigator.clipboard.writeText(text).then(() => {
-      addLog(`Copied ${holderAddresses.length} holder addresses to clipboard`, 'success')
-    }).catch(err => {
-      addLog('Failed to copy results: ' + err.message, 'error')
-    })
+    // Copy holder addresses as plain text, one per line
+    const result = currentResults[0]
+    const holderAddresses = result.holders || []
+    
+    addLog(`🔧 DEBUG: Copying ${holderAddresses.length} holders from results`, 'info')
+    addLog(`🔧 DEBUG: Result object: ${JSON.stringify({ totalHolders: result.totalHolders, holdersLength: holderAddresses.length })}`, 'info')
+    
+    if (holderAddresses.length === 0) {
+      addLog('No holder addresses found in results', 'warning')
+      return
+    }
+    
+    const text = holderAddresses.join('\n')
+    addLog(`🔧 DEBUG: Text to copy length: ${text.length} characters`, 'info')
+    
+    // Use a more reliable copy method
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          addLog(`Copied ${holderAddresses.length} holder addresses to clipboard`, 'success')
+        }).catch(err => {
+          addLog('Failed to copy results: ' + err.message, 'error')
+          // Fallback to textarea method
+          fallbackCopyTextToClipboard(text, holderAddresses.length)
+        })
+      } else {
+        // Fallback for non-secure contexts
+        fallbackCopyTextToClipboard(text, holderAddresses.length)
+      }
+    } catch (error) {
+      addLog('Failed to copy results: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error')
+      fallbackCopyTextToClipboard(text, holderAddresses.length)
+    }
   }
 
-  const exportResults = (format: 'text' | 'csv' | 'json') => {
-    if (results.length === 0) {
+  const fallbackCopyTextToClipboard = (text: string, count: number) => {
+    const textArea = document.createElement("textarea")
+    textArea.value = text
+    textArea.style.position = "fixed"
+    textArea.style.left = "-999999px"
+    textArea.style.top = "-999999px"
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+    
+    try {
+      const successful = document.execCommand('copy')
+      if (successful) {
+        addLog(`Copied ${count} holder addresses to clipboard (fallback method)`, 'success')
+      } else {
+        addLog('Failed to copy results using fallback method', 'error')
+      }
+    } catch (err) {
+      addLog('Failed to copy results using fallback method: ' + (err instanceof Error ? err.message : 'Unknown error'), 'error')
+    }
+    
+    document.body.removeChild(textArea)
+  }
+
+  const exportResults = async (format: 'text' | 'csv' | 'json') => {
+    addLog(`🔧 DEBUG: exportResults called with format: ${format}. Results length: ${results.length}`, 'info')
+    addLog(`🔧 DEBUG: Ref results length: ${currentResultsRef.current.length}`, 'info')
+    
+    if (!hasResults()) {
       addLog('No results to export', 'warning')
       return
     }
+    
+    const currentResults = getCurrentResults()
 
-    const result = results[0]
+    const result = currentResults[0]
+    const holderAddresses = result.holders || []
+    
+    addLog(`🔧 DEBUG: Exporting ${holderAddresses.length} holders in ${format} format`, 'info')
+    addLog(`🔧 DEBUG: Result object: ${JSON.stringify({ totalHolders: result.totalHolders, holdersLength: holderAddresses.length })}`, 'info')
+    
+    if (holderAddresses.length === 0) {
+      addLog('No holder addresses found in results to export', 'warning')
+      return
+    }
+    
     const data: SnapshotResult = {
       timestamp: result.timestamp,
       totalHolders: result.totalHolders,
       contracts: result.contracts,
-      holders: result.holders,
+      holders: holderAddresses,
       network: result.network,
       chainId: result.chainId
     }
 
-    const baseFilename = 'Snapshot'
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const baseFilename = `Snapshot_${data.network}_${timestamp}`
 
-    if (format === 'text') {
-      // Export as plain text (one address per line)
-      const textContent = data.holders.join('\n')
-      const textBlob = new Blob([textContent], { type: 'text/plain' })
-      const textUrl = URL.createObjectURL(textBlob)
-      const textLink = document.createElement('a')
-      textLink.href = textUrl
-      textLink.download = `${baseFilename}.txt`
-      document.body.appendChild(textLink)
-      textLink.click()
-      document.body.removeChild(textLink)
-      URL.revokeObjectURL(textUrl)
-      addLog(`Exported ${data.totalHolders} holders as text file`, 'success')
-    } else if (format === 'csv') {
-      // Export as CSV for easy spreadsheet import
-      const csvHeaders = ['Address', 'Network', 'ChainId', 'SnapshotDate']
-      const csvRows = data.holders.map(holder => [
-        holder,
-        data.network,
-        data.chainId,
-        data.timestamp
-      ])
-      const csvContent = [csvHeaders, ...csvRows]
-        .map(row => row.map(cell => `"${cell}"`).join(','))
-        .join('\n')
-      
-      const csvBlob = new Blob([csvContent], { type: 'text/csv' })
-      const csvUrl = URL.createObjectURL(csvBlob)
-      const csvLink = document.createElement('a')
-      csvLink.href = csvUrl
-      csvLink.download = `${baseFilename}.csv`
-      document.body.appendChild(csvLink)
-      csvLink.click()
-      document.body.removeChild(csvLink)
-      URL.revokeObjectURL(csvUrl)
-      addLog(`Exported ${data.totalHolders} holders as CSV file`, 'success')
-    } else if (format === 'json') {
-      // Create comprehensive export data
-      const exportData = {
-        metadata: {
-          tool: "ApeBeats Snapshot Tool",
-          version: "1.0.0",
-          exportTimestamp: new Date().toISOString(),
-          totalHolders: data.totalHolders,
-          network: data.network,
-          chainId: data.chainId
-        },
-        contracts: data.contracts.map(contract => ({
-          address: contract.address,
-          standard: contract.standard,
-          holdersFound: contract.holders
-        })),
-        holders: data.holders,
-        summary: {
-          totalUniqueHolders: data.totalHolders,
-          contractsScanned: data.contracts.length,
-          network: data.network,
-          chainId: data.chainId,
-          snapshotTimestamp: data.timestamp
+    try {
+      if (format === 'text') {
+        // Export as plain text (one address per line)
+        const textContent = data.holders.join('\n')
+        const textBlob = new Blob([textContent], { type: 'text/plain;charset=utf-8' })
+        downloadBlob(textBlob, `${baseFilename}.txt`)
+        addLog(`Exported ${data.totalHolders} holders as text file`, 'success')
+        
+      } else if (format === 'csv') {
+        // Export as CSV for easy spreadsheet import
+        const csvHeaders = ['Address', 'Network', 'ChainId', 'SnapshotDate']
+        const csvRows = data.holders.map(holder => [
+          holder,
+          data.network,
+          data.chainId,
+          data.timestamp
+        ])
+        const csvContent = [csvHeaders, ...csvRows]
+          .map(row => row.map(cell => `"${cell}"`).join(','))
+          .join('\n')
+        
+        const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+        downloadBlob(csvBlob, `${baseFilename}.csv`)
+        addLog(`Exported ${data.totalHolders} holders as CSV file`, 'success')
+      } else if (format === 'json') {
+        // Create comprehensive export data
+        const exportData = {
+          metadata: {
+            tool: "ApeBeats Snapshot Tool",
+            version: "1.0.0",
+            exportTimestamp: new Date().toISOString(),
+            totalHolders: data.totalHolders,
+            network: data.network,
+            chainId: data.chainId
+          },
+          contracts: data.contracts.map(contract => ({
+            address: contract.address,
+            standard: contract.standard,
+            holdersFound: contract.holders
+          })),
+          holders: data.holders,
+          summary: {
+            totalUniqueHolders: data.totalHolders,
+            contractsScanned: data.contracts.length,
+            network: data.network,
+            chainId: data.chainId,
+            snapshotTimestamp: data.timestamp
+          }
         }
-      }
 
-      // Export as JSON
-      const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-      const jsonUrl = URL.createObjectURL(jsonBlob)
-      const jsonLink = document.createElement('a')
-      jsonLink.href = jsonUrl
-      jsonLink.download = `${baseFilename}.json`
-      document.body.appendChild(jsonLink)
-      jsonLink.click()
-      document.body.removeChild(jsonLink)
-      URL.revokeObjectURL(jsonUrl)
-      addLog(`Exported ${data.totalHolders} holders as JSON file`, 'success')
+        // Export as JSON
+        const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8' })
+        downloadBlob(jsonBlob, `${baseFilename}.json`)
+        addLog(`Exported ${data.totalHolders} holders as JSON file`, 'success')
+      }
+    } catch (error) {
+      addLog(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+    }
+  }
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    try {
+      // Check if blob is valid
+      if (blob.size === 0) {
+        addLog(`ERROR: Blob is empty (0 bytes)`, 'error')
+        return
+      }
+      
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      link.style.display = 'none'
+      
+      // Add to DOM and trigger download
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Clean up the URL after a short delay
+      setTimeout(() => {
+        URL.revokeObjectURL(url)
+      }, 1000)
+      
+    } catch (error) {
+      addLog(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+      console.error('Download error:', error)
     }
   }
 
@@ -669,6 +807,7 @@ export default function SnapshotTool() {
     setProcessedContracts(0)
     setTotalHolders(0)
     setProgress(0)
+    setCurrentStep('')
     const environment = isVercelEnvironment() ? 'Vercel' : 'Local'
     const timeoutLimit = getEnvironmentTimeout()
     addLog(`Starting snapshot process on ${environment} (timeout: ${timeoutLimit}ms)...`, 'info')
@@ -739,7 +878,7 @@ export default function SnapshotTool() {
           const holders = await withRetry(async () => {
             return await withVercelTimeout(
               fetchContractHolders(contract, rpc, chain),
-              timeoutLimit
+              30000 // 30 second timeout for large collections
             )
           })
           
@@ -758,12 +897,13 @@ export default function SnapshotTool() {
       
       for (let i = 0; i < contracts.length; i++) {
         const contract = contracts[i]
-        const progress = Math.round(((i + 1) / contracts.length) * 100)
-        setProgress(progress)
-        addLog(`Progress: ${progress}% - Processing contract ${i + 1}/${contracts.length}`, 'info')
+        const contractProgress = Math.round(((i + 1) / contracts.length) * 100)
+        addLog(`Progress: ${contractProgress}% - Processing contract ${i + 1}/${contracts.length}`, 'info')
         
         try {
           const holders = await contractProcessor(contract)
+          
+          addLog(`🔧 DEBUG: Contract processor returned ${holders.length} holders`, 'info')
           
           // Add holders to the set
           holders.forEach(holder => allHolders.add(holder))
@@ -771,6 +911,7 @@ export default function SnapshotTool() {
           
           setProcessedContracts(i + 1)
           addLog(`Contract ${i + 1} completed: ${holders.length} holders found`, 'success')
+          addLog(`🔧 DEBUG: Total unique holders so far: ${allHolders.size}`, 'info')
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
           addLog(`Contract ${i + 1} failed: ${errorMessage}`, 'error')
@@ -780,6 +921,9 @@ export default function SnapshotTool() {
       const finalHolders = Array.from(allHolders)
       setTotalHolders(finalHolders.length)
       setProgress(100)
+      
+      addLog(`🔧 DEBUG: Final holders array length: ${finalHolders.length}`, 'info')
+      addLog(`🔧 DEBUG: First few holders: ${finalHolders.slice(0, 3).join(', ')}`, 'info')
       
       // Create result
       const result: SnapshotResult = {
@@ -795,8 +939,20 @@ export default function SnapshotTool() {
         chainId: customNetwork.chainId
       }
       
+      addLog(`🔧 DEBUG: About to set results with ${result.holders.length} holders`, 'info')
       setResults([result])
+      currentResultsRef.current = [result] // Update ref immediately
+      addLog(`🔧 DEBUG: Results set in state and ref`, 'info')
       addLog(`Snapshot completed! Found ${finalHolders.length} unique holders across ${successCount}/${contracts.length} successful contracts`, 'success')
+      addLog(`🔧 DEBUG: Result created with ${result.holders.length} holders`, 'info')
+      
+      // Force UI refresh by triggering a state update
+      setTimeout(() => {
+        addLog(`🔧 DEBUG: State should be updated now. Results length: ${results.length}`, 'info')
+        // Force a re-render by updating a dummy state
+        setTotalHolders(prev => prev) // This will trigger a re-render
+        addLog(`🔧 DEBUG: Export buttons should now be enabled with ${currentResultsRef.current.length} results`, 'info')
+      }, 100)
 
     } catch (error) {
       addLog(`Snapshot failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
@@ -1094,7 +1250,7 @@ export default function SnapshotTool() {
                         variant="outline"
                         size="sm"
                         onClick={() => exportResults('text')}
-                        disabled={results.length === 0}
+                        disabled={!hasResults()}
                         title="Export as text file"
                       >
                         <FileText className="w-4 h-4" />
@@ -1103,7 +1259,7 @@ export default function SnapshotTool() {
                         variant="outline"
                         size="sm"
                         onClick={() => exportResults('csv')}
-                        disabled={results.length === 0}
+                        disabled={!hasResults()}
                         title="Export as CSV file"
                       >
                         <FileSpreadsheet className="w-4 h-4" />
@@ -1112,7 +1268,7 @@ export default function SnapshotTool() {
                         variant="outline"
                         size="sm"
                         onClick={() => exportResults('json')}
-                        disabled={results.length === 0}
+                        disabled={!hasResults()}
                         title="Export as JSON file"
                       >
                         <FileJson className="w-4 h-4" />
@@ -1153,6 +1309,12 @@ export default function SnapshotTool() {
                       <span className="ml-2 font-mono">{totalHolders}</span>
                     </div>
                   </div>
+                  {currentStep && (
+                    <div className="mt-2 text-sm">
+                      <span className="text-muted-foreground">Status:</span>
+                      <span className="ml-2 text-primary">{currentStep}</span>
+                    </div>
+                  )}
                 </div>
               </Card>
 
@@ -1162,13 +1324,13 @@ export default function SnapshotTool() {
                   <h3 className="text-lg font-semibold">Results</h3>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
-                      {results.length > 0 ? results[0].totalHolders : 0} holders
+                      {hasResults() ? getCurrentResults()[0].totalHolders : 0} holders
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={copyResults}
-                      disabled={results.length === 0}
+                      disabled={!hasResults()}
                       title="Copy holder addresses to clipboard"
                     >
                       <Copy className="w-4 h-4" />
@@ -1177,43 +1339,55 @@ export default function SnapshotTool() {
                 </div>
 
                 <div className="max-h-64 overflow-y-auto space-y-1">
-                  {results.length === 0 ? (
-                    <p className="text-muted-foreground text-sm">No results yet. Start a snapshot to see holders.</p>
-                  ) : (
-                    results.length > 0 && results[0].holders.map((holder, index) => (
+                  {(() => {
+                    if (!hasResults()) {
+                      return <p className="text-muted-foreground text-sm">No results yet. Start a snapshot to see holders.</p>
+                    }
+                    const currentResults = getCurrentResults()
+                    return currentResults[0].holders.map((holder, index) => (
                       <div key={index} className="p-2 bg-secondary/20 rounded text-xs font-mono">
                         {holder}
                       </div>
                     ))
-                  )}
+                  })()}
                 </div>
               </Card>
             </div>
           </div>
 
-          {/* Logs */}
+          {/* Logs Dropdown */}
           <Card className="mt-8 p-6 bg-card/50 backdrop-blur-sm border-primary/20">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Logs</h3>
+              <button
+                onClick={() => setShowLogs(!showLogs)}
+                className="flex items-center gap-2 text-lg font-semibold hover:text-primary transition-colors"
+              >
+                Logs
+                <ChevronDown 
+                  className={`w-4 h-4 transition-transform ${showLogs ? 'rotate-180' : ''}`} 
+                />
+              </button>
               <Button variant="outline" size="sm" onClick={clearLogs}>
                 Clear
               </Button>
             </div>
-            <div className="max-h-32 overflow-y-auto space-y-1">
-              {logs.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No logs yet.</p>
-              ) : (
-                logs.map((log, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm">
-                    {getLogIcon(log.type)}
-                    <span className="text-muted-foreground">
-                      [{new Date().toLocaleTimeString()}]
-                    </span>
-                    <span>{log.message}</span>
-                  </div>
-                ))
-              )}
-            </div>
+            {showLogs && (
+              <div className="max-h-64 overflow-y-auto space-y-1 border-t border-border pt-4">
+                {logs.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No logs yet.</p>
+                ) : (
+                  logs.map((log, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm">
+                      {getLogIcon(log.type)}
+                      <span className="text-muted-foreground">
+                        [{new Date().toLocaleTimeString()}]
+                      </span>
+                      <span>{log.message}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </Card>
         </div>
       </main>

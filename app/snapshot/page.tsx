@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import SnapshotTool from "@/components/features/SnapshotTool"
+import DonationSection from "@/components/features/DonationSection"
 import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { Users } from "lucide-react"
 
@@ -32,6 +33,11 @@ export default function SnapshotPage() {
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
           </div>
         )}
+        
+        {/* Donation Section - Discrete footer */}
+        <div className="mt-16 pt-8 border-t border-border/20">
+          <DonationSection />
+        </div>
       </div>
     </CommonPageLayout>
   )

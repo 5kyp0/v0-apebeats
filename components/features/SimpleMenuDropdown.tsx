@@ -40,7 +40,7 @@ export default function SimpleMenuDropdown() {
 
       {isOpen && (
         <div 
-          className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[9999]"
+          className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[9999]"
           style={{ position: 'absolute', zIndex: 9999 }}
         >
           <div className="p-2">
@@ -61,9 +61,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Music className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Music Engine</div>
-                  <div className="text-xs text-gray-500">24/7 generative music</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Music Engine</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      BETA
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">24/7 generative music</div>
                 </div>
               </button>
               
@@ -72,9 +77,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Users className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Snapshot Tool</div>
-                  <div className="text-xs text-gray-500">Token holder snapshots</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Snapshot Tool</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      BETA
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">Token holder snapshots</div>
                 </div>
               </button>
               
@@ -83,9 +93,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Sparkles className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Mint NFTs</div>
-                  <div className="text-xs text-gray-500">Create new ApeBeats</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Mint NFTs</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                      Coming soon
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">Create new ApeBeats</div>
                 </div>
               </button>
               
@@ -102,9 +117,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Layers className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Batch Mint</div>
-                  <div className="text-xs text-gray-500">Mint multiple NFTs</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Batch Mint</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                      Coming soon
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">Mint multiple NFTs</div>
                 </div>
               </button>
               
@@ -113,9 +133,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Layers className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Batch Transfer</div>
-                  <div className="text-xs text-gray-500">Transfer multiple NFTs</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Batch Transfer</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                      Coming soon
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">Transfer multiple NFTs</div>
                 </div>
               </button>
               
@@ -124,9 +149,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Layers className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Batch Approve</div>
-                  <div className="text-xs text-gray-500">Approve multiple NFTs</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Batch Approve</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                      Coming soon
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">Approve multiple NFTs</div>
                 </div>
               </button>
               
@@ -143,9 +173,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Coins className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Stake NFTs</div>
-                  <div className="text-xs text-gray-500">Deposit NFTs for rewards</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Stake NFTs</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                      Coming soon
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">Deposit NFTs for rewards</div>
                 </div>
               </button>
               
@@ -154,9 +189,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Coins className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Unstake NFTs</div>
-                  <div className="text-xs text-gray-500">Withdraw staked NFTs</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Unstake NFTs</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                      Coming soon
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">Withdraw staked NFTs</div>
                 </div>
               </button>
               
@@ -165,9 +205,14 @@ export default function SimpleMenuDropdown() {
                 className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
               >
                 <Coins className="w-4 h-4" />
-                <div>
-                  <div className="font-medium text-sm">Claim Rewards</div>
-                  <div className="text-xs text-gray-500">Claim staking rewards</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm truncate">Claim Rewards</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                      Coming soon
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 truncate mt-1">Claim staking rewards</div>
                 </div>
               </button>
             </div>
