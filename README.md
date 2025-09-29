@@ -609,6 +609,93 @@ Choose the right tier based on your NFT collection:
 4. **Confirm Unstaking**: Complete the unstaking process
 5. **Receive Rewards**: Get your earned rewards
 
+### 📸 **Token Holder Snapshot Tool**
+
+The Token Holder Snapshot Tool is a professional-grade utility for capturing token holders across multiple blockchain networks. It's perfect for airdrops, community analysis, and token distribution planning.
+
+#### Features
+- **Multi-chain Support**: Works with Ethereum, Polygon, Arbitrum, Optimism, Base, and ApeChain
+- **Token Standard Detection**: Automatically detects ERC-721 and ERC-1155 tokens
+- **Batch Processing**: Efficiently processes large token collections
+- **Real-time Progress**: Live progress tracking with detailed logging
+- **Export Functionality**: Export results in JSON and CSV formats
+- **Copy to Clipboard**: Quick copy of holder addresses
+- **Vercel Optimized**: Designed for serverless deployment with timeout protection
+
+#### How to Use
+1. **Navigate to Snapshot Tool**: Go to `/snapshot` or use the menu
+2. **Configure Network**: Select your target blockchain network
+3. **Add API Key**: Enter your Alchemy API key for RPC access
+4. **Add Contracts**: Enter contract addresses (one per line)
+5. **Choose Token Standard**: Select ERC-721, ERC-1155, or auto-detect
+6. **Start Snapshot**: Click "Start Snapshot" to begin processing
+7. **Monitor Progress**: Watch real-time progress and detailed logs
+8. **Export Results**: Download results in JSON or CSV format
+
+#### Supported Networks
+- **Ethereum Mainnet** (Chain ID: 1)
+- **Polygon Mainnet** (Chain ID: 137)
+- **Arbitrum One** (Chain ID: 42161)
+- **Optimism** (Chain ID: 10)
+- **Base** (Chain ID: 8453)
+- **ApeChain** (Chain ID: 33139)
+
+#### Export Formats
+
+**JSON Export** includes comprehensive metadata:
+```json
+{
+  "metadata": {
+    "tool": "ApeBeats Snapshot Tool",
+    "version": "1.0.0",
+    "exportTimestamp": "2024-01-15T21:31:46.000Z",
+    "totalHolders": 45,
+    "network": "apechain-mainnet",
+    "chainId": 33139
+  },
+  "contracts": [
+    {
+      "address": "0x6d45bf0a7c9a3747f3d2e1c278ab81db89069837",
+      "standard": "erc721",
+      "holdersFound": 45
+    }
+  ],
+  "holders": [
+    "0x8544a547366eBfA8711ccF60667Cbf7c8b0943f1",
+    "0xb33D2474B0Dc85c33c13E49Fe49a34F2dF9e22a8"
+  ],
+  "summary": {
+    "totalUniqueHolders": 45,
+    "contractsScanned": 1,
+    "network": "apechain-mainnet",
+    "chainId": 33139,
+    "snapshotTimestamp": "2024-01-15T21:31:46.000Z"
+  }
+}
+```
+
+**CSV Export** for spreadsheet compatibility:
+```csv
+"Address","Network","ChainId","SnapshotDate"
+"0x8544a547366eBfA8711ccF60667Cbf7c8b0943f1","apechain-mainnet",33139,"2024-01-15T21:31:46.000Z"
+"0xb33D2474B0Dc85c33c13E49Fe49a34F2dF9e22a8","apechain-mainnet",33139,"2024-01-15T21:31:46.000Z"
+```
+
+#### Use Cases
+- **Airdrops**: Get holder lists for token distribution
+- **Community Analysis**: Analyze token holder distribution
+- **Reward Distribution**: Identify eligible holders for rewards
+- **Governance**: Get voter lists for governance proposals
+- **Analytics**: Study token holder patterns and trends
+
+#### Technical Details
+- **Timeout Protection**: 8-second timeout for Vercel compatibility
+- **Sequential Processing**: Processes contracts one at a time for reliability
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Progress Tracking**: Real-time progress updates with detailed logging
+- **Memory Efficient**: Optimized for large token collections
+- **Rate Limiting**: Built-in rate limiting to respect RPC limits
+
 ### 📊 **Dashboard Features**
 
 #### Overview

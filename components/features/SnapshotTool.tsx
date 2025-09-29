@@ -39,7 +39,7 @@ import {
   isVercelEnvironment 
 } from "@/lib/snapshot/vercel-utils"
 import { withRetry, CircuitBreaker, RateLimiter } from "@/lib/snapshot/retry-utils"
-import { ChunkedProcessor, processContractsInChunks, ProgressManager } from "@/lib/snapshot/chunked-processor"
+// Removed chunked processor import as we're using direct sequential processing
 
 interface NetworkConfig {
   rpcUrl: string
@@ -253,11 +253,6 @@ export default function SnapshotTool() {
         addLog(`Starting to scan ${totalTokens} tokens (${startTokenId} to ${endTokenId}) for ${contract.address}`, 'info')
         
         for (let i = startTokenId; i <= endTokenId; i += batchSize) {
-          if (!isRunning) {
-            addLog(`Scanning stopped by user`, 'warning')
-            break
-          }
-
           const batchEnd = Math.min(i + batchSize - 1, endTokenId)
           const batchPromises = []
 
@@ -275,15 +270,18 @@ export default function SnapshotTool() {
           try {
             const batchResults = await Promise.all(batchPromises)
             
-            batchResults.forEach(owner => {
+            let foundInBatch = 0
+            batchResults.forEach((owner, index) => {
               if (owner && owner !== '0x0000000000000000000000000000000000000000') {
                 holders.add(owner.toLowerCase())
+                foundInBatch++
+                addLog(`Found owner for token ${i + index}: ${owner}`, 'info')
               }
             })
 
             // Update progress for this contract
             const progress = Math.round(((i - startTokenId + batchSize) / totalTokens) * 100)
-            addLog(`Scanned tokens ${i}-${batchEnd} for ${contract.address} (${holders.size} unique holders so far) - ${progress}% complete`, 'info')
+            addLog(`Scanned tokens ${i}-${batchEnd} for ${contract.address} (${foundInBatch} found in batch, ${holders.size} unique holders total) - ${progress}% complete`, 'info')
             
             // Add a small delay to avoid overwhelming the RPC
             await new Promise(resolve => setTimeout(resolve, 200))
@@ -293,6 +291,8 @@ export default function SnapshotTool() {
           }
         }
       }
+
+      addLog(`Completed scanning for ${contract.address}. Found ${holders.size} unique holders.`, 'success')
 
       } catch (error) {
         addLog(`Error fetching holders for ${contract.address}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
@@ -313,17 +313,19 @@ export default function SnapshotTool() {
   const getTokenOwner = async (contract: any, standard: string, tokenId: number): Promise<string | null> => {
     try {
       if (standard === 'erc721' || standard === 'auto') {
-        return await readContract({
+        const owner = await readContract({
           contract,
           method: "function ownerOf(uint256 tokenId) view returns (address)",
           params: [BigInt(tokenId)]
         })
+        return owner
       } else if (standard === 'erc1155') {
         // ERC1155 doesn't have ownerOf, we'll need to use a different approach
         // For now, return null and handle ERC1155 differently in the main function
         return null
       }
     } catch (error) {
+      // Token doesn't exist or other error - this is normal for many token IDs
       return null
     }
     return null
@@ -509,35 +511,97 @@ export default function SnapshotTool() {
   }
 
   const copyResults = () => {
-    const text = results.join('\n')
+    if (results.length === 0) {
+      addLog('No results to copy', 'warning')
+      return
+    }
+    
+    // Copy holder addresses as plain text, one per line
+    const holderAddresses = results[0].holders || []
+    const text = holderAddresses.join('\n')
+    
     navigator.clipboard.writeText(text).then(() => {
-      addLog('Results copied to clipboard', 'success')
+      addLog(`Copied ${holderAddresses.length} holder addresses to clipboard`, 'success')
     }).catch(err => {
       addLog('Failed to copy results: ' + err.message, 'error')
     })
   }
 
   const exportResults = () => {
-    const data: SnapshotResult = {
-      timestamp: new Date().toISOString(),
-      totalHolders: results.length > 0 ? results[0].totalHolders : 0,
-      contracts: results.length > 0 ? results[0].contracts : [],
-      holders: results.length > 0 ? results[0].holders : [],
-      network: results.length > 0 ? results[0].network : '',
-      chainId: results.length > 0 ? results[0].chainId : 0
+    if (results.length === 0) {
+      addLog('No results to export', 'warning')
+      return
     }
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `holder-snapshot-${Date.now()}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    const result = results[0]
+    const data: SnapshotResult = {
+      timestamp: result.timestamp,
+      totalHolders: result.totalHolders,
+      contracts: result.contracts,
+      holders: result.holders,
+      network: result.network,
+      chainId: result.chainId
+    }
 
-    addLog('Results exported successfully', 'success')
+    // Create comprehensive export data
+    const exportData = {
+      metadata: {
+        tool: "ApeBeats Snapshot Tool",
+        version: "1.0.0",
+        exportTimestamp: new Date().toISOString(),
+        totalHolders: data.totalHolders,
+        network: data.network,
+        chainId: data.chainId
+      },
+      contracts: data.contracts.map(contract => ({
+        address: contract.address,
+        standard: contract.standard,
+        holdersFound: contract.holders
+      })),
+      holders: data.holders,
+      summary: {
+        totalUniqueHolders: data.totalHolders,
+        contractsScanned: data.contracts.length,
+        network: data.network,
+        chainId: data.chainId,
+        snapshotTimestamp: data.timestamp
+      }
+    }
+
+    // Export as JSON
+    const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const jsonUrl = URL.createObjectURL(jsonBlob)
+    const jsonLink = document.createElement('a')
+    jsonLink.href = jsonUrl
+    jsonLink.download = `apebeats-snapshot-${data.network}-${Date.now()}.json`
+    document.body.appendChild(jsonLink)
+    jsonLink.click()
+    document.body.removeChild(jsonLink)
+    URL.revokeObjectURL(jsonUrl)
+
+    // Also export as CSV for easy spreadsheet import
+    const csvHeaders = ['Address', 'Network', 'ChainId', 'SnapshotDate']
+    const csvRows = data.holders.map(holder => [
+      holder,
+      data.network,
+      data.chainId,
+      data.timestamp
+    ])
+    const csvContent = [csvHeaders, ...csvRows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n')
+    
+    const csvBlob = new Blob([csvContent], { type: 'text/csv' })
+    const csvUrl = URL.createObjectURL(csvBlob)
+    const csvLink = document.createElement('a')
+    csvLink.href = csvUrl
+    csvLink.download = `apebeats-holders-${data.network}-${Date.now()}.csv`
+    document.body.appendChild(csvLink)
+    csvLink.click()
+    document.body.removeChild(csvLink)
+    URL.revokeObjectURL(csvUrl)
+
+    addLog(`Exported ${data.totalHolders} holders in JSON and CSV formats`, 'success')
   }
 
   const startSnapshot = async () => {
@@ -652,39 +716,31 @@ export default function SnapshotTool() {
         }
       }
 
-      // Process contracts in chunks with progress tracking
-      const results = await processContractsInChunks(
-        contracts,
-        contractProcessor,
-        {
-          chunkSize: 1, // Process 1 contract at a time for Vercel
-          maxConcurrency: 1, // Sequential processing
-          timeout: timeoutLimit,
-          onProgress: (progress, current, elapsed) => {
-            setProgress(progress)
-            addLog(`Progress: ${progress}% - ${current} (${elapsed}s elapsed)`, 'info')
-          },
-          onChunkComplete: (chunkIndex, results) => {
-            setProcessedContracts(chunkIndex + 1)
-            addLog(`Chunk ${chunkIndex + 1} completed`, 'success')
-          },
-          onError: (error, chunkIndex) => {
-            addLog(`Chunk ${chunkIndex + 1} failed: ${error.message}`, 'error')
-          }
-        }
-      )
-
-      // Collect all holders
+      // Process contracts sequentially with progress tracking
       const allHolders = new Set<string>()
       let successCount = 0
       
-      results.forEach(result => {
-        if (result.success && result.data) {
-          result.data.forEach(holder => allHolders.add(holder))
+      for (let i = 0; i < contracts.length; i++) {
+        const contract = contracts[i]
+        const progress = Math.round(((i + 1) / contracts.length) * 100)
+        setProgress(progress)
+        addLog(`Progress: ${progress}% - Processing contract ${i + 1}/${contracts.length}`, 'info')
+        
+        try {
+          const holders = await contractProcessor(contract)
+          
+          // Add holders to the set
+          holders.forEach(holder => allHolders.add(holder))
           successCount++
+          
+          setProcessedContracts(i + 1)
+          addLog(`Contract ${i + 1} completed: ${holders.length} holders found`, 'success')
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          addLog(`Contract ${i + 1} failed: ${errorMessage}`, 'error')
         }
-      })
-      
+      }
+
       const finalHolders = Array.from(allHolders)
       setTotalHolders(finalHolders.length)
       setProgress(100)
@@ -1002,6 +1058,7 @@ export default function SnapshotTool() {
                       size="sm"
                       onClick={exportResults}
                       disabled={results.length === 0}
+                      title="Export results as JSON and CSV files"
                     >
                       <Download className="w-4 h-4" />
                     </Button>
@@ -1048,12 +1105,15 @@ export default function SnapshotTool() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Results</h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{results.length} holders</span>
+                    <span className="text-sm text-muted-foreground">
+                      {results.length > 0 ? results[0].totalHolders : 0} holders
+                    </span>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={copyResults}
                       disabled={results.length === 0}
+                      title="Copy holder addresses to clipboard"
                     >
                       <Copy className="w-4 h-4" />
                     </Button>

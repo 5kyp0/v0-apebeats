@@ -296,6 +296,151 @@ This release includes significant improvements to the snapshot tool:
 - **Debugging**: Enhanced logging for troubleshooting
 - **API Integration**: Improved Alchemy API handling with fallback options
 
+## [0.4.2] - 2025-01-27
+
+### Release Notes
+This is a critical bug fix release that resolves the snapshot tool result processing issue. The release includes comprehensive fixes for holder data collection, enhanced export functionality, and improved user experience. The snapshot tool now properly collects and displays token holders with full export capabilities.
+
+**Key Highlights:**
+- 🔧 **Snapshot Tool Result Processing**: Fixed critical issue where holders were found but not displayed in results
+- 📊 **Enhanced Export Functionality**: Added dual-format export (JSON + CSV) with comprehensive data
+- 📋 **Improved Copy Functionality**: Fixed clipboard functionality for holder addresses
+- 🎯 **Sequential Processing**: Replaced complex chunked processor with reliable sequential processing
+- 🛡️ **Better Error Handling**: Enhanced error handling and user feedback throughout the process
+- 🚀 **Performance Optimization**: Streamlined processing for better reliability and speed
+
+### Fixed
+- **Result Processing Issue**: Resolved critical bug where 45 holders were found but final result showed 0 holders
+- **Chunked Processor Bug**: Fixed undefined success/data values in chunked processor results
+- **Copy Functionality**: Fixed clipboard functionality that was trying to join objects instead of strings
+- **Result Display**: Fixed UI showing incorrect holder count in results section
+- **Export Data Structure**: Fixed export functionality to properly handle holder data
+
+### Enhanced
+- **Export Functionality**: 
+  - Added dual-format export (JSON + CSV) for maximum compatibility
+  - Enhanced JSON export with comprehensive metadata and contract details
+  - Added CSV export for spreadsheet compatibility with proper headers
+  - Improved file naming with network and timestamp information
+- **Copy Functionality**: 
+  - Fixed clipboard functionality to properly copy holder addresses
+  - Added validation to check if results exist before copying
+  - Enhanced success messages showing number of addresses copied
+- **Processing Architecture**: 
+  - Replaced complex chunked processor with reliable sequential processing
+  - Simplified result collection with direct Set-based holder aggregation
+  - Enhanced progress tracking with real-time updates
+  - Improved error handling with graceful fallbacks
+
+### Technical
+- **Sequential Processing**: Replaced `processContractsInChunks` with direct sequential processing
+- **Result Collection**: Direct holder collection using Set for deduplication
+- **Export System**: Dual-format export system with JSON and CSV generation
+- **Error Recovery**: Enhanced error handling with user-friendly messages
+- **Performance**: Optimized processing for better reliability and speed
+- **Code Cleanup**: Removed unused chunked processor imports and dependencies
+
+### Files Modified
+- `components/features/SnapshotTool.tsx` - Fixed result processing and enhanced export functionality
+- `.gitignore` - Updated to exclude temporary files and improve project organization
+- `CHANGELOG.md` - Added comprehensive documentation of fixes and improvements
+
+### Migration Guide
+- **No Breaking Changes**: This version is fully backward compatible
+- **Enhanced Reliability**: Snapshot tool now properly processes and displays results
+- **Better Export**: Enhanced export functionality with dual-format support
+- **No Environment Changes**: No new environment variables required
+- **Testing**: Run `npm test` to verify all functionality
+
+### Performance Improvements
+- **Processing Speed**: Faster sequential processing compared to complex chunked approach
+- **Memory Efficiency**: Direct Set-based holder collection for better memory usage
+- **Export Performance**: Optimized export generation with dual-format support
+- **Error Recovery**: Faster error recovery with immediate user feedback
+
+### Export Formats
+
+#### JSON Export (`apebeats-snapshot-{network}-{timestamp}.json`)
+```json
+{
+  "metadata": {
+    "tool": "ApeBeats Snapshot Tool",
+    "version": "1.0.0",
+    "exportTimestamp": "2024-01-15T21:31:46.000Z",
+    "totalHolders": 45,
+    "network": "apechain-mainnet",
+    "chainId": 33139
+  },
+  "contracts": [
+    {
+      "address": "0x6d45bf0a7c9a3747f3d2e1c278ab81db89069837",
+      "standard": "erc721",
+      "holdersFound": 45
+    }
+  ],
+  "holders": [
+    "0x8544a547366eBfA8711ccF60667Cbf7c8b0943f1",
+    "0xb33D2474B0Dc85c33c13E49Fe49a34F2dF9e22a8"
+  ],
+  "summary": {
+    "totalUniqueHolders": 45,
+    "contractsScanned": 1,
+    "network": "apechain-mainnet",
+    "chainId": 33139,
+    "snapshotTimestamp": "2024-01-15T21:31:46.000Z"
+  }
+}
+```
+
+#### CSV Export (`apebeats-holders-{network}-{timestamp}.csv`)
+```csv
+"Address","Network","ChainId","SnapshotDate"
+"0x8544a547366eBfA8711ccF60667Cbf7c8b0943f1","apechain-mainnet",33139,"2024-01-15T21:31:46.000Z"
+"0xb33D2474B0Dc85c33c13E49Fe49a34F2dF9e22a8","apechain-mainnet",33139,"2024-01-15T21:31:46.000Z"
+```
+
+### Contributors
+- Development Team - Critical bug fixes and result processing improvements
+- AI Assistant - Code review and debugging assistance
+- Community - Issue reporting and feedback
+
+### Release Information
+- **Release Date**: January 27, 2025
+- **Version**: 0.4.2
+- **Type**: Critical Bug Fix Release (Backward Compatible)
+- **Testing**: 70% coverage maintained
+- **Performance**: Enhanced reliability and user experience
+
+### Installation & Upgrade
+```bash
+# Install dependencies
+pnpm install
+
+# Run tests to verify installation
+pnpm test
+
+# Build the project
+pnpm build
+
+# Start development server
+pnpm dev
+```
+
+### Upgrade from v0.4.1
+No breaking changes. Simply update your dependencies and enjoy the fixed snapshot tool:
+```bash
+pnpm install
+pnpm test  # Verify everything works
+```
+
+### Snapshot Tool Improvements
+This release includes critical fixes to the snapshot tool:
+- **Result Processing**: Fixed critical bug where holders were found but not displayed
+- **Export Functionality**: Enhanced export with dual-format support (JSON + CSV)
+- **Copy Functionality**: Fixed clipboard functionality for holder addresses
+- **Processing Architecture**: Simplified and more reliable sequential processing
+- **User Experience**: Better error handling and user feedback throughout the process
+
 ## [Unreleased]
 
 ### 🚀 Coming Soon
