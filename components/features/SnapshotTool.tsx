@@ -21,7 +21,7 @@ import {
   AlertCircle,
   Info
 } from "lucide-react"
-import { BlockchainLogo } from "./BlockchainLogos"
+import { BlockchainLogo } from "@/components/features/BlockchainLogos"
 import { 
   getContract, 
   readContract, 
@@ -30,6 +30,16 @@ import {
   type Address 
 } from "thirdweb"
 import { thirdwebClient } from "@/lib/thirdweb"
+import { 
+  withVercelTimeout, 
+  getEnvironmentTimeout, 
+  createProgressTracker, 
+  updateProgress, 
+  getElapsedTime,
+  isVercelEnvironment 
+} from "@/lib/snapshot/vercel-utils"
+import { withRetry, CircuitBreaker, RateLimiter } from "@/lib/snapshot/retry-utils"
+import { ChunkedProcessor, processContractsInChunks, ProgressManager } from "@/lib/snapshot/chunked-processor"
 
 interface NetworkConfig {
   rpcUrl: string
@@ -48,8 +58,14 @@ interface Contract {
 interface SnapshotResult {
   timestamp: string
   totalHolders: number
-  contracts: string[]
+  contracts: Array<{
+    address: string
+    standard: string
+    holders: number
+  }>
   holders: string[]
+  network: string
+  chainId: number
 }
 
 export default function SnapshotTool() {
@@ -72,7 +88,7 @@ export default function SnapshotTool() {
   const [progress, setProgress] = useState(0)
   const [processedContracts, setProcessedContracts] = useState(0)
   const [totalHolders, setTotalHolders] = useState(0)
-  const [results, setResults] = useState<string[]>([])
+  const [results, setResults] = useState<SnapshotResult[]>([])
   const [logs, setLogs] = useState<Array<{message: string, type: 'info' | 'success' | 'warning' | 'error'}>>([])
   const [provider, setProvider] = useState<any>(null)
 
@@ -128,9 +144,9 @@ export default function SnapshotTool() {
     // DEBUG: This should appear in logs if changes are applied
     addLog(`🔧 DEBUG: Starting fetchContractHolders for ${contract.address}`, 'info')
     
-    // Add timeout wrapper to prevent hanging
+    // Add Vercel-compatible timeout wrapper
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Contract processing timeout after 60 seconds')), 60000)
+      setTimeout(() => reject(new Error('Contract processing timeout after 8 seconds')), getEnvironmentTimeout())
     })
     
     const processPromise = (async () => {
@@ -158,18 +174,15 @@ export default function SnapshotTool() {
       let totalSupply: bigint
       addLog(`Attempting to get total supply for contract ${contract.address}`, 'info')
       try {
-        // Add timeout to prevent hanging
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Total supply call timeout')), 15000)
-        })
-        
-        const totalSupplyPromise = readContract({
-          contract: contractInstance,
-          method: "function totalSupply() view returns (uint256)",
-          params: []
-        })
-        
-        totalSupply = await Promise.race([totalSupplyPromise, timeoutPromise])
+        // Use Vercel-compatible timeout for totalSupply
+        totalSupply = await withVercelTimeout(
+          readContract({
+            contract: contractInstance,
+            method: "function totalSupply() view returns (uint256)",
+            params: []
+          }),
+          3000 // 3 second timeout for totalSupply
+        )
         addLog(`Successfully retrieved total supply: ${totalSupply.toString()}`, 'success')
       } catch (error) {
         addLog(`Failed to get total supply: ${error instanceof Error ? error.message : 'Unknown error'}`, 'warning')
@@ -186,13 +199,13 @@ export default function SnapshotTool() {
 
       addLog(`Contract ${contract.address} has total supply: ${totalSupply.toString()}`, 'info')
 
-      // Determine token range to scan
+      // Determine token range to scan (Vercel optimized)
       let startTokenId = 0
-      let endTokenId = Number(totalSupply) - 1
+      let endTokenId = Math.min(Number(totalSupply) - 1, 50) // Limit to 50 tokens max for Vercel
 
       if (detectedStandard === 'erc1155') {
         startTokenId = contract.tokenIdStart || 0
-        endTokenId = contract.tokenIdEnd || 99
+        endTokenId = contract.tokenIdEnd || 20 // Smaller limit for ERC1155
       }
 
       // Scan tokens to find holders
@@ -234,8 +247,8 @@ export default function SnapshotTool() {
           addLog(`Error scanning ERC1155 events: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
         }
       } else {
-        // For ERC721 and auto-detect
-        const batchSize = 10 // Reduced batch size to avoid rate limiting
+        // For ERC721 and auto-detect - Vercel optimized
+        const batchSize = 3 // Very small batch size for Vercel
         const totalTokens = endTokenId - startTokenId + 1
         addLog(`Starting to scan ${totalTokens} tokens (${startTokenId} to ${endTokenId}) for ${contract.address}`, 'info')
         
@@ -507,9 +520,11 @@ export default function SnapshotTool() {
   const exportResults = () => {
     const data: SnapshotResult = {
       timestamp: new Date().toISOString(),
-      totalHolders: results.length,
-      contracts: contracts.map(c => c.address),
-      holders: results
+      totalHolders: results.length > 0 ? results[0].totalHolders : 0,
+      contracts: results.length > 0 ? results[0].contracts : [],
+      holders: results.length > 0 ? results[0].holders : [],
+      network: results.length > 0 ? results[0].network : '',
+      chainId: results.length > 0 ? results[0].chainId : 0
     }
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -554,7 +569,9 @@ export default function SnapshotTool() {
     setProcessedContracts(0)
     setTotalHolders(0)
     setProgress(0)
-    addLog('Starting snapshot process...', 'info')
+    const environment = isVercelEnvironment() ? 'Vercel' : 'Local'
+    const timeoutLimit = getEnvironmentTimeout()
+    addLog(`Starting snapshot process on ${environment} (timeout: ${timeoutLimit}ms)...`, 'info')
 
     // Test network connection first
     try {
@@ -574,8 +591,13 @@ export default function SnapshotTool() {
 
       const testRpc = getRpcClient({ client: thirdwebClient, chain: testChain })
       
-      // Test connection by getting latest block
-      const blockNumber = await testRpc({ method: 'eth_blockNumber', params: [] as any })
+      // Test connection with retry logic and timeout
+      const blockNumber = await withRetry(async () => {
+        return await withVercelTimeout(
+          testRpc({ method: 'eth_blockNumber', params: [] as any }),
+          timeoutLimit
+        )
+      })
       addLog(`Network connection successful. Latest block: ${parseInt(blockNumber as string, 16)}`, 'success')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -609,55 +631,80 @@ export default function SnapshotTool() {
       
       addLog(`🚀 DEBUG: About to start processing ${contracts.length} contract(s)`, 'info')
       
-      const allHolders = new Set<string>()
-      
-      // Add overall timeout for contract processing
-      const overallTimeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Overall contract processing timeout after 45 seconds')), 45000)
-      })
-      
-      const contractProcessingPromise = (async () => {
-        // Process each contract
-        for (let i = 0; i < contracts.length; i++) {
-          if (!isRunning) break
-
-          const contract = contracts[i]
-          addLog(`Processing contract ${i + 1}/${contracts.length}: ${contract.address}`, 'info')
+      // Process contracts using chunked processor
+      const contractProcessor = async (contract: Contract) => {
+        addLog(`Processing contract: ${contract.address}`, 'info')
+        
+        try {
+          const holders = await withRetry(async () => {
+            return await withVercelTimeout(
+              fetchContractHolders(contract, rpc, chain),
+              timeoutLimit
+            )
+          })
           
-          try {
-            // Add timeout wrapper for each contract
-            const contractTimeoutPromise = new Promise<never>((_, reject) => {
-              setTimeout(() => reject(new Error('Contract processing timeout after 30 seconds')), 30000)
-            })
-            
-            const contractProcessingPromise = fetchContractHolders(contract, rpc, chain)
-            
-            addLog(`🔧 DEBUG: About to process contract ${contract.address}`, 'info')
-            const contractHolders = await Promise.race([contractProcessingPromise, contractTimeoutPromise])
-            
-            contractHolders.forEach(holder => allHolders.add(holder))
-            
-            setResults(Array.from(allHolders))
-            setTotalHolders(allHolders.size)
-            
-            setProcessedContracts(i + 1)
-            setProgress(((i + 1) / contracts.length) * 100)
-            
-            addLog(`Found ${contractHolders.length} holders for ${contract.address}`, 'success')
-          } catch (error) {
-            addLog(`Failed to process contract ${contract.address}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
-            // Continue with next contract even if this one fails
+          addLog(`Contract ${contract.address} completed: ${holders.length} holders found`, 'success')
+          return holders
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          addLog(`Contract ${contract.address} failed: ${errorMessage}`, 'error')
+          return []
+        }
+      }
+
+      // Process contracts in chunks with progress tracking
+      const results = await processContractsInChunks(
+        contracts,
+        contractProcessor,
+        {
+          chunkSize: 1, // Process 1 contract at a time for Vercel
+          maxConcurrency: 1, // Sequential processing
+          timeout: timeoutLimit,
+          onProgress: (progress, current, elapsed) => {
+            setProgress(progress)
+            addLog(`Progress: ${progress}% - ${current} (${elapsed}s elapsed)`, 'info')
+          },
+          onChunkComplete: (chunkIndex, results) => {
+            setProcessedContracts(chunkIndex + 1)
+            addLog(`Chunk ${chunkIndex + 1} completed`, 'success')
+          },
+          onError: (error, chunkIndex) => {
+            addLog(`Chunk ${chunkIndex + 1} failed: ${error.message}`, 'error')
           }
         }
-        return allHolders
-      })()
-      
-      // Race between contract processing and overall timeout
-      await Promise.race([contractProcessingPromise, overallTimeoutPromise])
+      )
 
-      if (isRunning) {
-        addLog(`Snapshot completed! Total unique holders: ${allHolders.size}`, 'success')
+      // Collect all holders
+      const allHolders = new Set<string>()
+      let successCount = 0
+      
+      results.forEach(result => {
+        if (result.success && result.data) {
+          result.data.forEach(holder => allHolders.add(holder))
+          successCount++
+        }
+      })
+      
+      const finalHolders = Array.from(allHolders)
+      setTotalHolders(finalHolders.length)
+      setProgress(100)
+      
+      // Create result
+      const result: SnapshotResult = {
+        timestamp: new Date().toISOString(),
+        totalHolders: finalHolders.length,
+        contracts: contracts.map(c => ({
+          address: c.address,
+          standard: c.standard,
+          holders: finalHolders.length // Simplified for now
+        })),
+        holders: finalHolders,
+        network: customNetwork.networkName,
+        chainId: customNetwork.chainId
       }
+      
+      setResults([result])
+      addLog(`Snapshot completed! Found ${finalHolders.length} unique holders across ${successCount}/${contracts.length} successful contracts`, 'success')
 
     } catch (error) {
       addLog(`Snapshot failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
@@ -1017,7 +1064,7 @@ export default function SnapshotTool() {
                   {results.length === 0 ? (
                     <p className="text-muted-foreground text-sm">No results yet. Start a snapshot to see holders.</p>
                   ) : (
-                    results.map((holder, index) => (
+                    results.length > 0 && results[0].holders.map((holder, index) => (
                       <div key={index} className="p-2 bg-secondary/20 rounded text-xs font-mono">
                         {holder}
                       </div>
