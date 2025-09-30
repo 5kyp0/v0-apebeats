@@ -96,6 +96,7 @@ export default function SnapshotTool() {
   const [showLogs, setShowLogs] = useState(false)
   const [currentStep, setCurrentStep] = useState('')
   const [provider, setProvider] = useState<any>(null)
+  const [forceUpdate, setForceUpdate] = useState(0)
   const currentResultsRef = useRef<SnapshotResult[]>([])
 
   const networkConfigs = {
@@ -179,13 +180,8 @@ export default function SnapshotTool() {
     // DEBUG: This should appear in logs if changes are applied
     addLog(`🔧 DEBUG: Starting fetchContractHolders for ${contract.address}`, 'info')
     
-    // Add Vercel-compatible timeout wrapper - increased timeout for large collections
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Contract processing timeout after 30 seconds')), 30000) // 30 second timeout
-    })
-    
-    const processPromise = (async () => {
-      try {
+    // Remove the timeout wrapper that was causing issues - let the processing complete naturally
+    try {
       // Auto-detect token standard if needed
       let detectedStandard = contract.standard
       if (contract.standard === 'auto') {
@@ -220,15 +216,12 @@ export default function SnapshotTool() {
       let totalSupply: bigint
       addLog(`Attempting to get total supply for contract ${contract.address}`, 'info')
       try {
-        // Use Vercel-compatible timeout for totalSupply
-        totalSupply = await withVercelTimeout(
-          readContract({
-            contract: contractInstance,
-            method: "function totalSupply() view returns (uint256)",
-            params: []
-          }),
-          3000 // 3 second timeout for totalSupply
-        )
+        // Get total supply without timeout
+        totalSupply = await readContract({
+          contract: contractInstance,
+          method: "function totalSupply() view returns (uint256)",
+          params: []
+        })
         addLog(`Successfully retrieved total supply: ${totalSupply.toString()}`, 'success')
       } catch (error) {
         addLog(`Failed to get total supply: ${error instanceof Error ? error.message : 'Unknown error'}`, 'warning')
@@ -335,10 +328,13 @@ export default function SnapshotTool() {
             const progress = Math.round(((i - startTokenId + batchSize) / totalTokens) * 100)
             addLog(`Scanned tokens ${i}-${batchEnd} for ${contract.address} (${foundInBatch} found in batch, ${holders.size} unique holders total) - ${progress}% complete`, 'info')
             
-            // Add periodic progress updates for large collections
-            if (progress % 10 === 0) {
+            // Add periodic progress updates for large collections - more frequent updates
+            if (progress % 5 === 0) {
               addLog(`🔄 Still processing... ${progress}% complete, ${holders.size} unique holders found so far`, 'info')
             }
+            
+            // Update the global progress state for better UI responsiveness
+            setProgress(Math.min(progress, 95)) // Cap at 95% until completion
             
             // Add a small delay to avoid overwhelming the RPC
             await new Promise(resolve => setTimeout(resolve, 100)) // Reduced delay for faster processing
@@ -352,22 +348,17 @@ export default function SnapshotTool() {
       addLog(`Completed scanning for ${contract.address}. Found ${holders.size} unique holders.`, 'success')
       addLog(`🔧 DEBUG: Returning ${holders.size} holders from fetchContractHolders`, 'info')
 
+      // Update progress to 100% for this contract
+      setProgress(100)
+
       // Convert to array and return immediately
       const holdersArray = Array.from(holders)
       addLog(`🔧 DEBUG: Converted Set to Array: ${holdersArray.length} holders`, 'info')
       return holdersArray
 
-      } catch (error) {
-        addLog(`Error fetching holders for ${contract.address}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
-        // Return empty array on error
-        return []
-      }
-    })()
-    
-    try {
-      return await Promise.race([processPromise, timeoutPromise])
     } catch (error) {
-      addLog(`Contract processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+      addLog(`Error fetching holders for ${contract.address}: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+      // Return empty array on error
       return []
     }
   }
@@ -573,27 +564,29 @@ export default function SnapshotTool() {
     setLogs([])
   }
 
-  // Helper function to get current results (prioritizing ref over state)
+  // Helper function to get current results (use state as primary source)
   const getCurrentResults = () => {
-    return currentResultsRef.current.length > 0 ? currentResultsRef.current : results
+    return results.length > 0 ? results : currentResultsRef.current
   }
 
   // Helper function to check if results are available
   const hasResults = () => {
-    return getCurrentResults().length > 0
+    return results.length > 0 || currentResultsRef.current.length > 0
   }
 
 
   const copyResults = () => {
-    addLog(`🔧 DEBUG: copyResults called. Results length: ${results.length}`, 'info')
+    addLog(`🔧 DEBUG: copyResults called`, 'info')
+    addLog(`🔧 DEBUG: State results length: ${results.length}`, 'info')
     addLog(`🔧 DEBUG: Ref results length: ${currentResultsRef.current.length}`, 'info')
     
-    if (!hasResults()) {
+    // Get the most recent results
+    const currentResults = results.length > 0 ? results : currentResultsRef.current
+    
+    if (currentResults.length === 0) {
       addLog('No results to copy', 'warning')
       return
     }
-    
-    const currentResults = getCurrentResults()
     
     // Copy holder addresses as plain text, one per line
     const result = currentResults[0]
@@ -655,63 +648,65 @@ export default function SnapshotTool() {
   }
 
   const exportResults = async (format: 'text' | 'csv' | 'json') => {
-    addLog(`🔧 DEBUG: exportResults called with format: ${format}. Results length: ${results.length}`, 'info')
+    addLog(`🔧 DEBUG: exportResults called with format: ${format}`, 'info')
+    addLog(`🔧 DEBUG: State results length: ${results.length}`, 'info')
     addLog(`🔧 DEBUG: Ref results length: ${currentResultsRef.current.length}`, 'info')
     
-    if (!hasResults()) {
-      addLog('No results to export', 'warning')
+    // Get the most recent results - prioritize state over ref
+    const currentResults = results.length > 0 ? results : currentResultsRef.current
+    
+    addLog(`🔧 DEBUG: Using ${results.length > 0 ? 'state' : 'ref'} results`, 'info')
+    
+    if (currentResults.length === 0) {
+      addLog('❌ No results to export - please run a snapshot first', 'error')
       return
     }
     
-    const currentResults = getCurrentResults()
-
     const result = currentResults[0]
-    const holderAddresses = result.holders || []
+    addLog(`🔧 DEBUG: Result object keys: ${Object.keys(result).join(', ')}`, 'info')
     
-    addLog(`🔧 DEBUG: Exporting ${holderAddresses.length} holders in ${format} format`, 'info')
-    addLog(`🔧 DEBUG: Result object: ${JSON.stringify({ totalHolders: result.totalHolders, holdersLength: holderAddresses.length })}`, 'info')
+    const holderAddresses = result.holders || []
+    addLog(`🔧 DEBUG: Holder addresses type: ${typeof holderAddresses}, length: ${holderAddresses.length}`, 'info')
     
     if (holderAddresses.length === 0) {
-      addLog('No holder addresses found in results to export', 'warning')
+      addLog('❌ No holder addresses found in results to export', 'error')
+      addLog(`🔧 DEBUG: Result structure: ${JSON.stringify(result, null, 2)}`, 'info')
       return
     }
     
-    const data: SnapshotResult = {
-      timestamp: result.timestamp,
-      totalHolders: result.totalHolders,
-      contracts: result.contracts,
-      holders: holderAddresses,
-      network: result.network,
-      chainId: result.chainId
-    }
-
+    addLog(`🔧 DEBUG: About to export ${holderAddresses.length} holders in ${format} format`, 'info')
+    
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const baseFilename = `Snapshot_${data.network}_${timestamp}`
+    const baseFilename = `Snapshot_${result.network || 'unknown'}_${timestamp}`
 
     try {
+      let blob: Blob
+      let filename: string
+      
       if (format === 'text') {
         // Export as plain text (one address per line)
-        const textContent = data.holders.join('\n')
-        const textBlob = new Blob([textContent], { type: 'text/plain;charset=utf-8' })
-        downloadBlob(textBlob, `${baseFilename}.txt`)
-        addLog(`Exported ${data.totalHolders} holders as text file`, 'success')
+        const textContent = holderAddresses.join('\n')
+        addLog(`🔧 DEBUG: Text content length: ${textContent.length} characters`, 'info')
+        blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' })
+        filename = `${baseFilename}.txt`
         
       } else if (format === 'csv') {
         // Export as CSV for easy spreadsheet import
         const csvHeaders = ['Address', 'Network', 'ChainId', 'SnapshotDate']
-        const csvRows = data.holders.map(holder => [
+        const csvRows = holderAddresses.map(holder => [
           holder,
-          data.network,
-          data.chainId,
-          data.timestamp
+          result.network || 'unknown',
+          result.chainId || 0,
+          result.timestamp || new Date().toISOString()
         ])
         const csvContent = [csvHeaders, ...csvRows]
           .map(row => row.map(cell => `"${cell}"`).join(','))
           .join('\n')
         
-        const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
-        downloadBlob(csvBlob, `${baseFilename}.csv`)
-        addLog(`Exported ${data.totalHolders} holders as CSV file`, 'success')
+        addLog(`🔧 DEBUG: CSV content length: ${csvContent.length} characters`, 'info')
+        blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+        filename = `${baseFilename}.csv`
+        
       } else if (format === 'json') {
         // Create comprehensive export data
         const exportData = {
@@ -719,62 +714,131 @@ export default function SnapshotTool() {
             tool: "ApeBeats Snapshot Tool",
             version: "1.0.0",
             exportTimestamp: new Date().toISOString(),
-            totalHolders: data.totalHolders,
-            network: data.network,
-            chainId: data.chainId
+            totalHolders: holderAddresses.length,
+            network: result.network || 'unknown',
+            chainId: result.chainId || 0
           },
-          contracts: data.contracts.map(contract => ({
-            address: contract.address,
-            standard: contract.standard,
-            holdersFound: contract.holders
-          })),
-          holders: data.holders,
+          contracts: result.contracts || [],
+          holders: holderAddresses,
           summary: {
-            totalUniqueHolders: data.totalHolders,
-            contractsScanned: data.contracts.length,
-            network: data.network,
-            chainId: data.chainId,
-            snapshotTimestamp: data.timestamp
+            totalUniqueHolders: holderAddresses.length,
+            contractsScanned: (result.contracts || []).length,
+            network: result.network || 'unknown',
+            chainId: result.chainId || 0,
+            snapshotTimestamp: result.timestamp || new Date().toISOString()
           }
         }
 
-        // Export as JSON
-        const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8' })
-        downloadBlob(jsonBlob, `${baseFilename}.json`)
-        addLog(`Exported ${data.totalHolders} holders as JSON file`, 'success')
-      }
-    } catch (error) {
-      addLog(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
-    }
-  }
-
-  const downloadBlob = (blob: Blob, filename: string) => {
-    try {
-      // Check if blob is valid
-      if (blob.size === 0) {
-        addLog(`ERROR: Blob is empty (0 bytes)`, 'error')
+        const jsonContent = JSON.stringify(exportData, null, 2)
+        addLog(`🔧 DEBUG: JSON content length: ${jsonContent.length} characters`, 'info')
+        blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' })
+        filename = `${baseFilename}.json`
+      } else {
+        addLog(`❌ Unknown export format: ${format}`, 'error')
         return
       }
       
+      addLog(`🔧 DEBUG: Blob created - size: ${blob.size} bytes, type: ${blob.type}`, 'info')
+      
+      // Use the improved download function
+      const downloadSuccess = downloadBlob(blob, filename)
+      
+      if (downloadSuccess) {
+        addLog(`✅ Successfully exported ${holderAddresses.length} holders as ${format.toUpperCase()} file: ${filename}`, 'success')
+      } else {
+        addLog(`❌ Primary download failed, trying fallback method...`, 'warning')
+        
+        // Fallback: Try to open in new window/tab
+        try {
+          const url = URL.createObjectURL(blob)
+          const newWindow = window.open(url, '_blank')
+          if (newWindow) {
+            addLog(`✅ Opened ${format.toUpperCase()} file in new window as fallback`, 'success')
+            setTimeout(() => URL.revokeObjectURL(url), 5000)
+          } else {
+            addLog(`❌ Fallback also failed - popup blocked or other issue`, 'error')
+          }
+        } catch (fallbackError) {
+          addLog(`❌ Fallback method also failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`, 'error')
+        }
+      }
+      
+    } catch (error) {
+      addLog(`❌ Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+      addLog(`🔧 DEBUG: Error details: ${JSON.stringify(error)}`, 'info')
+    }
+  }
+
+  // Test export function to help debug issues
+  const testExport = () => {
+    addLog(`🔧 DEBUG: Testing export functionality...`, 'info')
+    
+    const testData = ['0x1234567890123456789012345678901234567890', '0x0987654321098765432109876543210987654321']
+    const testBlob = new Blob([testData.join('\n')], { type: 'text/plain;charset=utf-8' })
+    
+    addLog(`🔧 DEBUG: Test blob created - size: ${testBlob.size} bytes`, 'info')
+    
+    const success = downloadBlob(testBlob, 'test_export.txt')
+    
+    if (success) {
+      addLog(`✅ Test export successful!`, 'success')
+    } else {
+      addLog(`❌ Test export failed!`, 'error')
+    }
+  }
+
+  const downloadBlob = (blob: Blob, filename: string): boolean => {
+    try {
+      addLog(`🔧 DEBUG: Starting download for ${filename}`, 'info')
+      
+      // Check if blob is valid
+      if (!blob) {
+        addLog(`❌ ERROR: Blob is null or undefined`, 'error')
+        return false
+      }
+      
+      if (blob.size === 0) {
+        addLog(`❌ ERROR: Blob is empty (0 bytes)`, 'error')
+        return false
+      }
+      
+      addLog(`🔧 DEBUG: Blob is valid - size: ${blob.size} bytes, type: ${blob.type}`, 'info')
+      
+      // Create object URL
       const url = URL.createObjectURL(blob)
+      addLog(`🔧 DEBUG: Created object URL: ${url}`, 'info')
+      
+      // Create download link
       const link = document.createElement('a')
       link.href = url
       link.download = filename
       link.style.display = 'none'
       
-      // Add to DOM and trigger download
+      // Add to DOM
       document.body.appendChild(link)
+      addLog(`🔧 DEBUG: Link added to DOM`, 'info')
+      
+      // Trigger download
       link.click()
+      addLog(`🔧 DEBUG: Download triggered`, 'info')
+      
+      // Clean up
       document.body.removeChild(link)
       
       // Clean up the URL after a short delay
       setTimeout(() => {
         URL.revokeObjectURL(url)
+        addLog(`🔧 DEBUG: Object URL revoked`, 'info')
       }, 1000)
       
+      addLog(`✅ Download initiated successfully for ${filename}`, 'success')
+      return true
+      
     } catch (error) {
-      addLog(`Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+      addLog(`❌ Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+      addLog(`🔧 DEBUG: Download error details: ${JSON.stringify(error)}`, 'info')
       console.error('Download error:', error)
+      return false
     }
   }
 
@@ -804,10 +868,12 @@ export default function SnapshotTool() {
 
     setIsRunning(true)
     setResults([])
+    currentResultsRef.current = [] // Clear ref as well
     setProcessedContracts(0)
     setTotalHolders(0)
     setProgress(0)
     setCurrentStep('')
+    setForceUpdate(prev => prev + 1) // Force UI update
     const environment = isVercelEnvironment() ? 'Vercel' : 'Local'
     const timeoutLimit = getEnvironmentTimeout()
     addLog(`Starting snapshot process on ${environment} (timeout: ${timeoutLimit}ms)...`, 'info')
@@ -830,12 +896,9 @@ export default function SnapshotTool() {
 
       const testRpc = getRpcClient({ client: thirdwebClient, chain: testChain })
       
-      // Test connection with retry logic and timeout
+      // Test connection with retry logic
       const blockNumber = await withRetry(async () => {
-        return await withVercelTimeout(
-          testRpc({ method: 'eth_blockNumber', params: [] as any }),
-          timeoutLimit
-        )
+        return await testRpc({ method: 'eth_blockNumber', params: [] as any })
       })
       addLog(`Network connection successful. Latest block: ${parseInt(blockNumber as string, 16)}`, 'success')
     } catch (error) {
@@ -875,12 +938,7 @@ export default function SnapshotTool() {
         addLog(`Processing contract: ${contract.address}`, 'info')
         
         try {
-          const holders = await withRetry(async () => {
-            return await withVercelTimeout(
-              fetchContractHolders(contract, rpc, chain),
-              30000 // 30 second timeout for large collections
-            )
-          })
+          const holders = await fetchContractHolders(contract, rpc, chain)
           
           addLog(`Contract ${contract.address} completed: ${holders.length} holders found`, 'success')
           return holders
@@ -940,24 +998,32 @@ export default function SnapshotTool() {
       }
       
       addLog(`🔧 DEBUG: About to set results with ${result.holders.length} holders`, 'info')
+      
+      // Set results in state and ref simultaneously
       setResults([result])
-      currentResultsRef.current = [result] // Update ref immediately
+      currentResultsRef.current = [result]
+      
       addLog(`🔧 DEBUG: Results set in state and ref`, 'info')
       addLog(`Snapshot completed! Found ${finalHolders.length} unique holders across ${successCount}/${contracts.length} successful contracts`, 'success')
       addLog(`🔧 DEBUG: Result created with ${result.holders.length} holders`, 'info')
       
-      // Force UI refresh by triggering a state update
+      // Force UI state updates to ensure proper completion
+      setProgress(100)
+      setCurrentStep('Complete')
+      setTotalHolders(finalHolders.length)
+      setIsRunning(false) // Stop the running state immediately
+      setForceUpdate(prev => prev + 1) // Force UI re-render
+      
+      // Verify results are properly set
       setTimeout(() => {
-        addLog(`🔧 DEBUG: State should be updated now. Results length: ${results.length}`, 'info')
-        // Force a re-render by updating a dummy state
-        setTotalHolders(prev => prev) // This will trigger a re-render
-        addLog(`🔧 DEBUG: Export buttons should now be enabled with ${currentResultsRef.current.length} results`, 'info')
-      }, 100)
+        addLog(`🔧 DEBUG: Verification - State results length: ${results.length}`, 'info')
+        addLog(`🔧 DEBUG: Verification - Ref results length: ${currentResultsRef.current.length}`, 'info')
+        addLog(`🔧 DEBUG: Export buttons should now be enabled`, 'info')
+      }, 200)
 
     } catch (error) {
       addLog(`Snapshot failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
-    } finally {
-      setIsRunning(false)
+      setIsRunning(false) // Stop running state on error too
     }
   }
 
@@ -1250,8 +1316,9 @@ export default function SnapshotTool() {
                         variant="outline"
                         size="sm"
                         onClick={() => exportResults('text')}
-                        disabled={!hasResults()}
+                        disabled={results.length === 0 && currentResultsRef.current.length === 0}
                         title="Export as text file"
+                        key={`text-${forceUpdate}`}
                       >
                         <FileText className="w-4 h-4" />
                       </Button>
@@ -1259,8 +1326,9 @@ export default function SnapshotTool() {
                         variant="outline"
                         size="sm"
                         onClick={() => exportResults('csv')}
-                        disabled={!hasResults()}
+                        disabled={results.length === 0 && currentResultsRef.current.length === 0}
                         title="Export as CSV file"
+                        key={`csv-${forceUpdate}`}
                       >
                         <FileSpreadsheet className="w-4 h-4" />
                       </Button>
@@ -1268,10 +1336,20 @@ export default function SnapshotTool() {
                         variant="outline"
                         size="sm"
                         onClick={() => exportResults('json')}
-                        disabled={!hasResults()}
+                        disabled={results.length === 0 && currentResultsRef.current.length === 0}
                         title="Export as JSON file"
+                        key={`json-${forceUpdate}`}
                       >
                         <FileJson className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={testExport}
+                        title="Test export functionality"
+                        className="text-xs"
+                      >
+                        Test
                       </Button>
                     </div>
                   </div>
@@ -1324,27 +1402,39 @@ export default function SnapshotTool() {
                   <h3 className="text-lg font-semibold">Results</h3>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
-                      {hasResults() ? getCurrentResults()[0].totalHolders : 0} holders
+                      {(() => {
+                        const currentResults = results.length > 0 ? results : currentResultsRef.current
+                        return currentResults.length > 0 ? currentResults[0].totalHolders : 0
+                      })()} holders
                     </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={copyResults}
-                      disabled={!hasResults()}
-                      title="Copy holder addresses to clipboard"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyResults}
+                        disabled={results.length === 0 && currentResultsRef.current.length === 0}
+                        title="Copy holder addresses to clipboard"
+                        key={`copy-${forceUpdate}`}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
                   </div>
                 </div>
 
                 <div className="max-h-64 overflow-y-auto space-y-1">
                   {(() => {
-                    if (!hasResults()) {
+                    // Get the most recent results
+                    const currentResults = results.length > 0 ? results : currentResultsRef.current
+                    
+                    if (currentResults.length === 0) {
                       return <p className="text-muted-foreground text-sm">No results yet. Start a snapshot to see holders.</p>
                     }
-                    const currentResults = getCurrentResults()
-                    return currentResults[0].holders.map((holder, index) => (
+                    
+                    const result = currentResults[0]
+                    if (!result.holders || result.holders.length === 0) {
+                      return <p className="text-muted-foreground text-sm">No holders found in results.</p>
+                    }
+                    
+                    return result.holders.map((holder, index) => (
                       <div key={index} className="p-2 bg-secondary/20 rounded text-xs font-mono">
                         {holder}
                       </div>
