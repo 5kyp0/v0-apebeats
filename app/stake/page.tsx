@@ -1,3 +1,5 @@
+import type { Metadata } from "next"
+import { getPageMetadata } from "@/lib/metadata"
 import { StakingHeroSection } from "@/components/staking/StakingHeroSection"
 import { StakingFeaturesSection } from "@/components/staking/StakingFeaturesSection"
 import { StakingTiersSection } from "@/components/staking/StakingTiersSection"
@@ -5,6 +7,8 @@ import { StakingCTASection } from "@/components/staking/StakingCTASection"
 import { StakingFooter } from "@/components/staking/StakingFooter"
 import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { Coins } from "lucide-react"
+
+export const metadata: Metadata = getPageMetadata("stake")
 
 export default function StakePage() {
   return (

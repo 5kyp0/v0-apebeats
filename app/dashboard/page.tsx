@@ -1,7 +1,11 @@
+import type { Metadata } from "next"
 import { Suspense } from "react"
+import { getPageMetadata } from "@/lib/metadata"
 import { DashboardPage } from "@/components/dashboard/DashboardPage"
 import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { BarChart3 } from "lucide-react"
+
+export const metadata: Metadata = getPageMetadata("dashboard")
 
 export default function DashboardPageRoute() {
   return (

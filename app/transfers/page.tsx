@@ -1,7 +1,11 @@
+import type { Metadata } from "next"
 import { Suspense } from "react"
+import { getPageMetadata } from "@/lib/metadata"
 import { BatchTransferPage } from "@/components/transfers/BatchTransferPage"
 import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { Send } from "lucide-react"
+
+export const metadata: Metadata = getPageMetadata("transfers")
 
 export default function TransfersPage() {
   return (

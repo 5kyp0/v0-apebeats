@@ -1156,24 +1156,6 @@ export default function SnapshotTool() {
                         <Settings className="w-3 h-3" />
                         <span className="hidden sm:inline">Custom</span>
                       </Button>
-                      <Button
-                        variant={selectedNetwork === 'apechain-public' ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          setSelectedNetwork('apechain-public')
-                          setCustomNetwork({
-                            rpcUrl: 'https://apechain-mainnet.g.alchemy.com/v2/demo',
-                            chainId: 33139,
-                            networkName: 'apechain-mainnet-public'
-                          })
-                          addLog('Using public ApeChain endpoint (limited functionality)', 'warning')
-                        }}
-                        className="text-xs flex items-center gap-1"
-                      >
-                        <BlockchainLogo chain="apechain" size={14} />
-                        <span className="hidden sm:inline">ApeChain Public</span>
-                        <span className="sm:hidden">🦍 Public</span>
-                      </Button>
                     </div>
                   </div>
 
@@ -1341,15 +1323,6 @@ export default function SnapshotTool() {
                         key={`json-${forceUpdate}`}
                       >
                         <FileJson className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={testExport}
-                        title="Test export functionality"
-                        className="text-xs"
-                      >
-                        Test
                       </Button>
                     </div>
                   </div>
