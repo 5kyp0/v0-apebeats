@@ -4,8 +4,7 @@ import { WagmiProvider } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { wagmiConfig } from "@/lib/wagmi"
 import { GlyphWalletProvider } from "@use-glyph/sdk-react"
-import { apeChain } from "viem/chains"
-import { useState } from "react"
+import { apeChain, mainnet, base, curtis } from "viem/chains"
 
 // Create a client for React Query with optimized settings
 const queryClient = new QueryClient({
@@ -24,17 +23,10 @@ interface GlyphProviderProps {
 }
 
 export default function GlyphProvider({ children }: GlyphProviderProps) {
-  const [isInitialized, setIsInitialized] = useState(false)
-
-  // Prevent multiple initialization attempts
-  if (!isInitialized) {
-    setIsInitialized(true)
-  }
-
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <GlyphWalletProvider chains={[apeChain]}>
+        <GlyphWalletProvider chains={[apeChain, mainnet, base, curtis]} askForSignature={true}>
           {children}
         </GlyphWalletProvider>
       </QueryClientProvider>

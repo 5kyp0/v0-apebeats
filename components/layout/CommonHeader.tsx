@@ -6,7 +6,9 @@ import { Music, Sun, Moon, ArrowLeft } from "lucide-react"
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { useRouter } from "next/navigation"
 import { useActiveAccount } from "thirdweb/react"
-import useUserStore from "@/stores/userStore"
+import { useAccount } from "wagmi"
+import { useSafeGlyph } from "@/hooks/useSafeGlyph"
+import { ClientOnly } from "@/components/ClientOnly"
 
 // Lazy load components to improve initial page load
 const HeaderUser = lazy(() => import("@/components/auth/HeaderUser"))
@@ -24,7 +26,7 @@ interface CommonHeaderProps {
   onLoginClick?: () => void
 }
 
-export function CommonHeader({
+function CommonHeaderContent({
   title = "ApeBeats",
   subtitle,
   showBackButton = false,
@@ -39,7 +41,11 @@ export function CommonHeader({
   
   // Get auth state
   const account = useActiveAccount()
-  const email = useUserStore((s: any) => s.email)
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
+  const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
+  
+  // Check for Glyph connection using the proper SDK method
+  const isGlyphConnected = !!(glyphReady && glyphUser?.evmWallet)
 
   useEffect(() => {
     if (isDarkMode) {
@@ -48,6 +54,13 @@ export function CommonHeader({
       document.documentElement.classList.remove("dark")
     }
   }, [isDarkMode])
+
+  // Auto-close login modal when user becomes connected
+  useEffect(() => {
+    if ((account?.address || isGlyphConnected) && showLoginModal) {
+      setShowLoginModal(false)
+    }
+  }, [account?.address, isGlyphConnected, showLoginModal])
 
   const handleBackClick = () => {
     if (backButtonHref) {
@@ -120,7 +133,7 @@ export function CommonHeader({
       </nav>
 
       {/* Login Modal - Only show if not logged in */}
-      {showLoginModal && (!email && !account?.address) && (
+      {showLoginModal && (!account?.address && !isGlyphConnected) && (
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-md"
           onClick={(e) => {
@@ -137,5 +150,13 @@ export function CommonHeader({
         </div>
       )}
     </>
+  )
+}
+
+export function CommonHeader(props: CommonHeaderProps) {
+  return (
+    <ClientOnly>
+      <CommonHeaderContent {...props} />
+    </ClientOnly>
   )
 }

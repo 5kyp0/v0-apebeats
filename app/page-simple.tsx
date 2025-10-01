@@ -267,7 +267,14 @@ export default function ApeBeatLanding() {
 
       {/* Coming Soon Popup Modal */}
       {showComingSoonPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowComingSoonPopup(false)
+            }
+          }}
+        >
           <Card className="p-8 bg-card border-primary/30 max-w-md mx-4 relative">
             <Button
               variant="ghost"

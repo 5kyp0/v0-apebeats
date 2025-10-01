@@ -1,6 +1,22 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Cursor styles for interactive elements */
+button, 
+[role="button"], 
+.cursor-pointer,
+a,
+input[type="submit"],
+input[type="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"]:disabled,
+input:disabled {
+  cursor: not-allowed;
+}
+
 /* @custom-variant dark (&:is(.dark *)); */
 
 :root {
