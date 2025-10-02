@@ -23,6 +23,21 @@ import {
 } from "@/lib/mint-config"
 import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 
+// Helper function to format balance to exactly 3 decimal places
+function formatBalanceToThreeDecimals(value: bigint): string {
+  if (value === 0n) return "0.000"
+  
+  const divisor = 10n ** 18n
+  const wholePart = value / divisor
+  const fractionalPart = value % divisor
+  
+  // Always show exactly 3 decimal places
+  const fractionalString = fractionalPart.toString().padStart(18, '0')
+  const formattedFractional = fractionalString.substring(0, 3)
+  
+  return `${wholePart}.${formattedFractional}`
+}
+
 export function MintPageClient() {
   const [isClient, setIsClient] = useState(false)
   const [quantity, setQuantity] = useState(1)
@@ -267,7 +282,7 @@ export function MintPageClient() {
             {/* Balance Display */}
             {isConnected && balance && (
               <div className="mt-4 text-center text-sm text-muted-foreground">
-                Balance: {formatEther(balance.value)} APE
+                Balance: {formatBalanceToThreeDecimals(balance.value)} APE
               </div>
             )}
 

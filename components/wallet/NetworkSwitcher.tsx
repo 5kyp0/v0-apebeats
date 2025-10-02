@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useActiveAccount, useNetworkSwitcherModal } from "thirdweb/react"
+import { useAccount } from "wagmi"
+import { useSafeGlyph } from "@/hooks/useSafeGlyph"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,7 +28,12 @@ interface NetworkSwitcherProps {
 
 export default function NetworkSwitcher({ showAlways = false, className = "" }: NetworkSwitcherProps) {
   const account = useActiveAccount()
+  const { address: wagmiAddress } = useAccount()
+  const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
   const { open: openNetworkSwitcher } = useNetworkSwitcherModal()
+  
+  // Check if any wallet is connected
+  const isAnyWalletConnected = !!(account?.address || wagmiAddress || (glyphReady && glyphUser?.evmWallet))
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [showBanner, setShowBanner] = useState(false)
@@ -35,7 +42,14 @@ export default function NetworkSwitcher({ showAlways = false, className = "" }: 
   // Check if user is on the correct network (ApeChain)
   useEffect(() => {
     const checkNetwork = async () => {
-      if (account && typeof window !== "undefined" && window.ethereum) {
+      console.log("🔍 NetworkSwitcher checking network:", { 
+        account: !!account, 
+        wagmiAddress: !!wagmiAddress,
+        glyphConnected: !!(glyphReady && glyphUser?.evmWallet),
+        isAnyWalletConnected,
+        hasEthereum: !!window?.ethereum 
+      })
+      if (isAnyWalletConnected && typeof window !== "undefined" && window.ethereum) {
         try {
           const chainId = await window.ethereum.request({ method: 'eth_chainId' })
           const chainIdNumber = parseInt(chainId, 16)
@@ -77,7 +91,7 @@ export default function NetworkSwitcher({ showAlways = false, className = "" }: 
         window.ethereum.removeListener('chainChanged', handleChainChanged)
       }
     }
-  }, [account])
+  }, [account, wagmiAddress, glyphReady, glyphUser, isAnyWalletConnected])
 
   const handleSwitchNetwork = async () => {
     setIsLoading(true)
@@ -221,15 +235,28 @@ export default function NetworkSwitcher({ showAlways = false, className = "" }: 
 // Hook to check if user is on correct network
 export function useNetworkCheck() {
   const account = useActiveAccount()
+  const { address: wagmiAddress } = useAccount()
+  const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(true)
   const [currentChainId, setCurrentChainId] = useState<number | null>(null)
 
+  // Check if any wallet is connected
+  const isAnyWalletConnected = !!(account?.address || wagmiAddress || (glyphReady && glyphUser?.evmWallet))
+
   useEffect(() => {
     const checkNetwork = async () => {
-      if (account && typeof window !== "undefined" && window.ethereum) {
+      console.log("🔍 useNetworkCheck checking network:", { 
+        account: !!account, 
+        wagmiAddress: !!wagmiAddress,
+        glyphConnected: !!(glyphReady && glyphUser?.evmWallet),
+        isAnyWalletConnected,
+        hasEthereum: !!window?.ethereum 
+      })
+      if (isAnyWalletConnected && typeof window !== "undefined" && window.ethereum) {
         try {
           const chainId = await window.ethereum.request({ method: 'eth_chainId' })
           const chainIdNumber = parseInt(chainId, 16)
+          console.log("🔍 useNetworkCheck detected chain:", { chainIdNumber, apeChainId: apeChain.id, isCorrect: chainIdNumber === apeChain.id })
           setCurrentChainId(chainIdNumber)
           setIsCorrectNetwork(chainIdNumber === apeChain.id)
         } catch (error) {
@@ -257,7 +284,7 @@ export function useNetworkCheck() {
         window.ethereum.removeListener('chainChanged', handleChainChanged)
       }
     }
-  }, [account])
+  }, [account, wagmiAddress, glyphReady, glyphUser, isAnyWalletConnected])
 
   return {
     isCorrectNetwork,

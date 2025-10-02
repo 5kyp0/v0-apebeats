@@ -28,7 +28,7 @@ export const preferredWallets = [
 ]
 
 // ApeCoin token address on ApeChain
-export const APE_TOKEN_ADDRESS = "0x4c078361FC9BbB78DF910800A991C7e3DD75Ac95"
+export const APE_TOKEN_ADDRESS = "0x4d224452801aced8b2f0aebe155379bb5d594381"
 
 // Batch Transfer Contract ABI
 export const BATCH_TRANSFER_ABI = [
@@ -302,7 +302,7 @@ export const contractAddresses = {
   nftShadow: process.env.NEXT_PUBLIC_NFT_SHADOW_CONTRACT_ADDRESS || "",
   
   // Reward token (APE)
-  apeToken: "0x4d224452801ACEd8B2F0aebE155379bb5D594381", // APE token address
+  apeToken: "0x4d224452801aced8b2f0aebe155379bb5d594381", // APE token address
   
   // NFT Collection addresses
   collections: {

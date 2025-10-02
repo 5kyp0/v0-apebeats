@@ -1314,6 +1314,49 @@ This release includes significant improvements to wallet integration:
 - **Cross-chain Support**: Expansion to additional blockchain networks
 - **API Integration**: Third-party developer API for ApeBeats services
 - **Advanced NFT Features**: Dynamic NFTs with evolving metadata
+
+## [0.4.9] - 2025-01-27
+
+### 🔧 **Code Cleanup & Refactoring**
+- **Removed Debug Components**: Cleaned up development debugging tools (`BraveDebugInfo.tsx`, `GlyphDebugInfo.tsx`)
+- **Enhanced Balance Formatting**: Implemented consistent 3-decimal place formatting across the application
+- **Improved APE Token Integration**: Updated APE token address and enhanced balance fetching logic
+
+### 💰 **APE Balance System Improvements**
+- **Consistent Balance Display**: All balance displays now show exactly 3 decimal places (e.g., "1.234 APE")
+- **Enhanced Balance Hook**: `useApeCoinBalance.ts` now supports multiple wallet types (ThirdWeb, Wagmi, Glyph) with fallback mechanisms
+- **Better Error Handling**: Improved error handling for balance fetching with native token fallback to ERC20
+- **Multi-Wallet Support**: Enhanced balance detection across different wallet providers
+
+### 🔗 **Multi-Wallet Support Enhancement**
+- **Network Detection**: Enhanced network switching to work with all wallet types (ThirdWeb, Wagmi, Glyph)
+- **Unified Address Detection**: Better logic to detect connected wallets across different providers
+- **Improved Logging**: Enhanced debug logging for better troubleshooting and connection diagnostics
+
+### 🎨 **UI/UX Improvements**
+- **Menu Dropdown**: Added click-outside functionality to close dropdown menus automatically
+- **Balance Formatting**: Consistent formatting in mint page, profile dropdown, and header components
+- **Better State Management**: Improved state handling for wallet connections and user interactions
+
+### 🏗️ **Technical Infrastructure**
+- **Chain Configuration**: Simplified and improved ApeChain configuration with better fallbacks
+- **APE Token Address**: Updated to correct APE token contract address (`0x4d224452801aced8b2f0aebe155379bb5d594381`)
+- **Batch Transfer Service**: Enhanced amount formatting for consistency across all transfer operations
+
+### 🧹 **Cleanup & Maintenance**
+- **Debug Code Removal**: Removed development-only debug components and logging
+- **Code Consistency**: Standardized balance formatting and display patterns
+- **Import Optimization**: Cleaned up unused imports and dependencies
+
+### 🔍 **Developer Experience**
+- **Enhanced Logging**: Better debug information for wallet connection troubleshooting
+- **Improved Error Messages**: More descriptive error messages for balance and connection issues
+- **Code Documentation**: Better inline documentation for balance formatting functions
+
+### 📊 **Performance & Reliability**
+- **Balance Fetching**: More reliable balance fetching with multiple fallback mechanisms
+- **Network Detection**: Improved network detection reliability across different wallet types
+- **State Management**: Better state consistency for wallet connections and balance updates
 - **Social Features**: Community features and social music sharing
 - **Premium Subscriptions**: Advanced features for premium users
 
