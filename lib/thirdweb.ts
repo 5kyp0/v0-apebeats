@@ -1,61 +1,14 @@
 // thirdweb client setup
-import { createThirdwebClient, defineChain, getContract } from "thirdweb"
+import { createThirdwebClient, getContract } from "thirdweb"
 import { createWallet, inAppWallet, walletConnect } from "thirdweb/wallets"
+import { apeChainThirdweb } from "./chains"
 
 export const thirdwebClient = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "demo-client-id",
 })
 
-
-// ApeChain configuration with Alchemy API
-// Required envs:
-// - NEXT_PUBLIC_ALCHEMY_API_KEY (get from https://dashboard.alchemy.com)
-// - NEXT_PUBLIC_APECHAIN_CHAIN_ID (33139 for ApeChain mainnet)
-const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ""
-const APECHAIN_CHAIN_ID = Number(process.env.NEXT_PUBLIC_APECHAIN_CHAIN_ID || 33139) // ApeChain mainnet
-const APECHAIN_RPC = ALCHEMY_API_KEY 
-  ? `https://apechain-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
-  : ""
-
-// For testing, you can use Ethereum mainnet as fallback
-const FALLBACK_CHAIN_ID = 1
-const FALLBACK_RPC = "https://eth.llamarpc.com"
-
-export const apeChain = APECHAIN_CHAIN_ID && APECHAIN_RPC
-  ? defineChain({
-      id: APECHAIN_CHAIN_ID,
-      name: "ApeChain",
-      rpc: [APECHAIN_RPC],
-      nativeCurrency: {
-        name: "APE",
-        symbol: "APE",
-        decimals: 18,
-      },
-      blockExplorers: [
-        {
-          name: "ApeChain Explorer",
-          url: "https://explorer.apechain.com",
-        },
-      ],
-      testnet: false,
-    })
-  : defineChain({
-      id: FALLBACK_CHAIN_ID,
-      name: "Ethereum (Fallback)",
-      rpc: [FALLBACK_RPC],
-      nativeCurrency: {
-        name: "Ether",
-        symbol: "ETH",
-        decimals: 18,
-      },
-      blockExplorers: [
-        {
-          name: "Etherscan",
-          url: "https://etherscan.io",
-        },
-      ],
-      testnet: false,
-    })
+// Re-export apeChain for backward compatibility
+export { apeChainThirdweb as apeChain }
 
 // Preferred wallets for Connect UI
 export const preferredWallets = [
@@ -235,7 +188,7 @@ export const getBatchTransferContract = () => {
   
   return getContract({
     client: thirdwebClient,
-    chain: apeChain,
+    chain: apeChainThirdweb,
     address: contractAddress,
     abi: BATCH_TRANSFER_ABI,
   })
@@ -244,7 +197,7 @@ export const getBatchTransferContract = () => {
 export const getApeTokenContract = () => {
   return getContract({
     client: thirdwebClient,
-    chain: apeChain,
+    chain: apeChainThirdweb,
     address: APE_TOKEN_ADDRESS,
     abi: [
       {

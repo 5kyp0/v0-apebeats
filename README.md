@@ -1375,16 +1375,16 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.4.7
+### Current Version: v0.4.8
 **Latest Release**: January 27, 2025
 
-**Key Features in v0.4.7:**
-- 🔗 **Enhanced Glyph Wallet Integration**: Improved Glyph wallet connection with better error handling and user guidance
-- 🦁 **Browser Detection & Popup Guidance**: Intelligent popup blocking detection with browser-specific guidance
-- 🎯 **Enhanced Authentication Components**: Improved login flows and user experience across all authentication methods
-- 🎨 **New UI Components**: Alert components and enhanced user interface elements
-- 🛡️ **Improved Wallet Service**: Enhanced wallet connection handling with better error recovery
-- 📚 **Documentation Cleanup**: Removal of outdated documentation files and improved project organization
+**Key Features in v0.4.8:**
+- 🔗 **Enhanced Glyph Wallet Integration**: Improved Glyph wallet connection with better error handling, debug logging, and user guidance
+- 🚀 **Dynamic Labs Integration**: Added comprehensive Dynamic Labs SDK integration with Glyph Global Wallet EVM connector
+- 🎯 **Enhanced Authentication Components**: Improved login flows with better state management and user experience
+- 🧹 **Major Project Cleanup**: Removed outdated test files, documentation, and unused dependencies
+- 🛡️ **Improved Error Handling**: Enhanced error recovery and user feedback throughout the application
+- 📦 **Dependency Updates**: Updated to latest Dynamic Labs SDK and related packages
 
 **Previous Features (v0.4.6):**
 - 📱 **Complete Social Media Previews**: Rich previews for all pages with Open Graph and Twitter Card meta tags
@@ -1543,7 +1543,7 @@ docs/
 - **Security**: ✅ Comprehensive security audit completed
 
 ### 📈 **Version Information**
-- **Current Version**: v0.4.7
+- **Current Version**: v0.4.8
 - **Release Date**: January 27, 2025
 - **Next.js Version**: 14.2.16
 - **TypeScript**: Latest with strict mode
@@ -1752,4 +1752,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
 
-**Version**: v0.4.7 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
+**Version**: v0.4.8 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready

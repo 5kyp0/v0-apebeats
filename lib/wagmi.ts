@@ -1,6 +1,8 @@
 import { createConfig, http } from "wagmi"
-import { apeChain, mainnet, base, curtis } from "viem/chains"
 import { glyphWalletConnector } from "@use-glyph/sdk-react"
+import { apeChain, mainnet, base, curtis } from "./chains"
+
+console.log("Creating wagmi config with apeChain:", apeChain)
 
 export const wagmiConfig = createConfig({
   chains: [apeChain, mainnet, base, curtis],
@@ -11,9 +13,14 @@ export const wagmiConfig = createConfig({
     [curtis.id]: http(),
   },
   connectors: [
-    glyphWalletConnector()
+    glyphWalletConnector({
+      chains: [apeChain, mainnet, base, curtis],
+      options: {
+        shimDisconnect: true,
+      },
+    })
   ],
   ssr: true,
-  // Ensure ApeChain is the default chain
+  // Use ApeChain as the default chain
   defaultChain: apeChain,
 })

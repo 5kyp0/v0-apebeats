@@ -10,6 +10,7 @@ import { PopupGuidanceModal } from "@/components/auth/PopupGuidanceModal"
 import { detectBrowser } from "@/lib/browserDetection"
 import { SendReceiveModal } from "@/components/auth/SendReceiveModal"
 import { GlyphIcon, MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon } from "@/components/wallet/WalletIcons"
+// Note: Glyph components will be dynamically imported to prevent style conflicts
 import { useNetworkCheck } from "@/components/wallet/NetworkSwitcher"
 import { useApeCoinBalance } from "@/hooks/useApeCoinBalance"
 
@@ -232,7 +233,7 @@ export default function ProfileDropdown() {
   const handleRetryGlyphConnection = async () => {
     setShowPopupGuidance(false)
     setError(null)
-    await connectGlyphWallet()
+    connectGlyphWallet()
   }
 
   const handleSendTokens = () => {

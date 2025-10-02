@@ -1,10 +1,15 @@
 "use client"
 
+import React from "react"
 import { WagmiProvider } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { GlyphProvider as GlyphSDKProvider, StrategyType, WalletClientType } from "@use-glyph/sdk-react"
 import { wagmiConfig } from "@/lib/wagmi"
-import { GlyphWalletProvider } from "@use-glyph/sdk-react"
-import { apeChain, mainnet, base, curtis } from "viem/chains"
+import { apeChain, mainnet, base, curtis } from "@/lib/chains"
+
+// Import Glyph styles only when needed to prevent layout conflicts
+// import "@use-glyph/sdk-react/style.css"
+import "@/styles/glyph-overrides.css"
 
 // Create a client for React Query with optimized settings
 const queryClient = new QueryClient({
@@ -23,12 +28,20 @@ interface GlyphProviderProps {
 }
 
 export default function GlyphProvider({ children }: GlyphProviderProps) {
+  // Log only once on mount
+  React.useEffect(() => {
+    console.log("🔧 GlyphProvider with Native (Wagmi) integration initialized")
+  }, [])
+  
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <GlyphWalletProvider chains={[apeChain, mainnet, base, curtis]} askForSignature={true}>
+        <GlyphSDKProvider
+          strategy={StrategyType.EIP1193}
+          walletClientType={WalletClientType.WAGMI}
+        >
           {children}
-        </GlyphWalletProvider>
+        </GlyphSDKProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )

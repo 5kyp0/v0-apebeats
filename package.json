@@ -13,6 +13,10 @@
     "test:social": "node scripts/test-social-previews.js"
   },
   "dependencies": {
+    "@dynamic-labs-connectors/glyph-global-wallet-evm": "^4.4.3",
+    "@dynamic-labs/ethereum": "^4.34.0",
+    "@dynamic-labs/sdk-react-core": "^4.34.0",
+    "@dynamic-labs/wagmi-connector": "^4.34.0",
     "@hookform/resolvers": "^3.10.0",
     "@privy-io/cross-app-connect": "^0.2.3",
     "@privy-io/react-auth": "^3.0.1",
