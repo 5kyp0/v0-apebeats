@@ -20,12 +20,15 @@ yarn-error.log*
 .pnpm-debug.log*
 lerna-debug.log*
 
-# env files
+# env files - CRITICAL: Never commit environment files
 .env*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.development
+.env.production
+.env.staging
 
 # vercel
 .vercel
@@ -71,20 +74,48 @@ coverage/
 *.bak
 *.orig
 
-# Documentation and test reports (temporary)
-SNAPSHOT_TOOL_TEST_REPORT.md
-COMMIT_MESSAGE.md
-DEPLOYMENT_SUCCESS_REPORT.md
-NFT_INTEGRATION_README.md
-STAKING_ENVIRONMENT_SETUP.md
-STAKING_INTEGRATION_GUIDE.md
-TESTING_SETUP_GUIDE.md
-TESTING_SUMMARY.md
+# Security and sensitive files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets.json
+credentials.json
+private-keys.txt
+mnemonic.txt
+wallet.json
 
-# Test scripts (temporary)
+# API keys and tokens (additional patterns)
+*api-key*
+*secret*
+*token*
+*password*
+*credential*
+*private*
+
+# Test reports and audit files
+*TEST*.md
+*SECURITY*.md
+*COMPREHENSIVE*.md
+*REPORT*.md
+*SUMMARY*.md
+*GUIDE*.md
+*SETUP*.md
+*DEBUG*.md
+*OPTIMIZATION*.md
+
+# Test scripts
 scripts/test-*.js
 scripts/verify-*.js
+scripts/debug-*.js
 
 # Package manager lock files (keep pnpm-lock.yaml)
 package-lock.json
 yarn.lock
+
+# Additional security patterns
+*.env.backup
+*.env.old
+.env.*.local
+.env.*.backup

@@ -41,7 +41,7 @@ export function NotFoundClient() {
   
   // Get auth state
   const account = useActiveAccount()
-  const email = useUserStore((s: any) => s.email)
+  const email = useUserStore((state) => state.email)
 
   useEffect(() => {
     if (isDarkMode) {

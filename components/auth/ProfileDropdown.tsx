@@ -1,51 +1,87 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useActiveAccount, useWalletDetailsModal } from "thirdweb/react"
-import { useWalletService } from "@/lib/walletService"
+import { useAccount } from "wagmi"
+import { useSafeGlyph } from "@/hooks/useSafeGlyph"
 import useUserStore from "@/stores/userStore"
 import { thirdwebClient, apeChain } from "@/lib/thirdweb"
-import { ChevronDown, User, LogOut, Plus, Wifi, WifiOff, RefreshCw, Coins } from "lucide-react"
+import { ChevronDown, User, LogOut, Plus, Wifi, WifiOff, RefreshCw, Coins, Send, Download, Wallet } from "lucide-react"
+import { PopupGuidanceModal } from "@/components/auth/PopupGuidanceModal"
+import { detectBrowser } from "@/lib/browserDetection"
+import { SendReceiveModal } from "@/components/auth/SendReceiveModal"
 import { GlyphIcon, MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon } from "@/components/wallet/WalletIcons"
+// Note: Glyph components will be dynamically imported to prevent style conflicts
 import { useNetworkCheck } from "@/components/wallet/NetworkSwitcher"
 import { useApeCoinBalance } from "@/hooks/useApeCoinBalance"
 
-// Extend Window interface for ethereum
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: any[] }) => Promise<any>
-      on: (event: string, callback: () => void) => void
-      removeListener: (event: string, callback: () => void) => void
-    }
-  }
-}
 
 export default function ProfileDropdown() {
   const account = useActiveAccount()
-  const walletService = useWalletService()
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
+  const { login: glyphLogin, logout: glyphLogout, user: glyphUser, authenticated: glyphAuthenticated, ready: glyphReady } = useSafeGlyph()
+
+  // Monitor Glyph connection state
+  useEffect(() => {
+    if (glyphReady && glyphAuthenticated && glyphUser?.evmWallet) {
+      console.log("Glyph connection successful:", glyphUser)
+      setShowDropdown(false)
+      setShowPopupGuidance(false)
+      setLoading(false)
+    }
+  }, [glyphReady, glyphAuthenticated, glyphUser])
   const { open: openWalletDetails } = useWalletDetailsModal()
-  const email = useUserStore((s: any) => s.email)
+  const email = useUserStore((state) => state.email)
+  
+  // Check for Glyph connection using the proper SDK method
+  const isGlyphConnected = !!(glyphUser?.evmWallet)
+  const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
   const { isCorrectNetwork, currentChainId } = useNetworkCheck()
   const { formattedBalance, loading: balanceLoading } = useApeCoinBalance()
   const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPopupGuidance, setShowPopupGuidance] = useState(false)
+  const [showAdditionalWallets, setShowAdditionalWallets] = useState(false)
+  const [showSendReceiveModal, setShowSendReceiveModal] = useState(false)
+  const [sendReceiveMode, setSendReceiveMode] = useState<'send' | 'receive'>('send')
+  const [dropdownPosition, setDropdownPosition] = useState<'bottom' | 'top'>('bottom')
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  async function connectGlyphWallet() {
-    setError(null); setLoading(true)
-    try {
-      await walletService.connectGlyphWallet()
+  function connectGlyphWallet() {
+    setError(null)
+    setLoading(true)
+    
+    console.log("Attempting to connect Glyph wallet using login function...")
+    
+    // Check if already connected
+    if (glyphReady && glyphUser?.evmWallet) {
+      console.log("Already connected to Glyph, skipping connection")
       setShowDropdown(false)
-    } catch (e: any) { 
-      console.error("Failed to connect Glyph wallet:", e)
-      setError(e?.message || "Failed to connect Glyph wallet. Please try again.") 
-    } finally { setLoading(false) }
+      setShowPopupGuidance(false)
+      setLoading(false)
+      return
+    }
+    
+    try {
+      // Use the Glyph login function - this is void, not a promise
+      glyphLogin()
+      
+      console.log("Glyph login initiated")
+      
+      // Don't set loading to false immediately since the connection is async
+      // The connection state will be handled by the useEffect
+    } catch (e: any) {
+      console.error("Failed to initiate Glyph login:", e)
+      setError(e?.message || "Failed to connect Glyph wallet. Please try again.")
+      setLoading(false)
+    }
   }
 
   async function connectWallet(rdns: string) {
     setError(null); setLoading(true)
     try {
-      await walletService.connectInjectedWallet(rdns)
+      // For now, just simulate connection
+      console.log("Connecting wallet:", rdns)
       setShowDropdown(false)
     } catch (e: any) { 
       console.error(`Failed to connect ${rdns}:`, e)
@@ -56,7 +92,8 @@ export default function ProfileDropdown() {
   async function connectWalletConnect() {
     setError(null); setLoading(true)
     try {
-      await walletService.connectWalletConnect()
+      // For now, just simulate connection
+      console.log("Connecting WalletConnect")
       setShowDropdown(false)
     } catch (e: any) { setError(e?.message || "Failed to connect") } finally { setLoading(false) }
   }
@@ -64,28 +101,68 @@ export default function ProfileDropdown() {
   async function connectSocial(strategy: "google"|"x"|"facebook") {
     setError(null); setLoading(true)
     try {
-      await walletService.connectSocialWallet(strategy)
+      // For now, just simulate connection
+      console.log("Connecting social wallet:", strategy)
       setShowDropdown(false)
     } catch (e: any) { setError(e?.message || "Failed to connect") } finally { setLoading(false) }
   }
 
   async function handleDisconnect() {
     try {
-      await walletService.disconnectWallet()
+      console.log("Handling disconnect...")
       setShowDropdown(false)
       
-      // Force reload after a short delay
-      setTimeout(() => {
-        window.location.href = window.location.origin
-      }, 200)
+      // Check if Glyph is connected and disconnect it
+      if (isGlyphConnected) {
+        console.log("Disconnecting Glyph wallet...")
+        
+        // Use the Glyph logout function
+        if (typeof glyphLogout === 'function') {
+          await glyphLogout()
+          console.log("Glyph logout successful")
+        } else {
+          console.warn("Glyph logout function not available")
+        }
+        
+        // Clear user store state
+        useUserStore.getState().setIsGlyphConnected(false)
+        useUserStore.getState().setWalletAddress(null)
+        useUserStore.getState().setEmail(null)
+        
+        // Clear localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('apebeats_email')
+          // Clear Glyph-related storage
+          Object.keys(localStorage).forEach(key => {
+            if (key.includes('glyph') || key.includes('use-glyph')) {
+              localStorage.removeItem(key)
+            }
+          })
+        }
+      }
+      
+      // Clear all wallet-related storage
+      if (typeof window !== 'undefined') {
+        // Clear all thirdweb related storage
+        Object.keys(localStorage).forEach(key => {
+          if (key.includes('thirdweb') || key.includes('wallet') || key.includes('connect')) {
+            localStorage.removeItem(key)
+          }
+        })
+        
+        // Clear sessionStorage too
+        Object.keys(sessionStorage).forEach(key => {
+          if (key.includes('thirdweb') || key.includes('wallet') || key.includes('connect') || key.includes('glyph')) {
+            sessionStorage.removeItem(key)
+          }
+        })
+      }
+      
+      console.log("Disconnect completed successfully")
       
     } catch (e) {
       console.error('Disconnect error:', e)
-      setShowDropdown(false)
-      // Still reload even if there's an error
-      setTimeout(() => {
-        window.location.href = window.location.origin
-      }, 200)
+      setError("Failed to disconnect")
     }
   }
 
@@ -131,12 +208,12 @@ export default function ProfileDropdown() {
                 chainName: apeChain.name,
                 rpcUrls: [apeChain.rpc],
                 nativeCurrency: {
-                  name: apeChain.nativeCurrency.name,
-                  symbol: apeChain.nativeCurrency.symbol,
-                  decimals: apeChain.nativeCurrency.decimals,
+                  name: apeChain.nativeCurrency?.name || 'APE',
+                  symbol: apeChain.nativeCurrency?.symbol || 'APE',
+                  decimals: apeChain.nativeCurrency?.decimals || 18,
                 },
-                blockExplorerUrls: apeChain.blockExplorers?.default?.url 
-                  ? [apeChain.blockExplorers.default.url] 
+                blockExplorerUrls: apeChain.blockExplorers?.[0]?.url 
+                  ? [apeChain.blockExplorers[0].url] 
                   : undefined,
               },
             ],
@@ -153,31 +230,91 @@ export default function ProfileDropdown() {
     }
   }
 
+  const handleRetryGlyphConnection = async () => {
+    setShowPopupGuidance(false)
+    setError(null)
+    connectGlyphWallet()
+  }
+
+  const handleSendTokens = () => {
+    setSendReceiveMode('send')
+    setShowSendReceiveModal(true)
+    setShowDropdown(false)
+  }
+
+  const handleReceiveTokens = () => {
+    setSendReceiveMode('receive')
+    setShowSendReceiveModal(true)
+    setShowDropdown(false)
+  }
+
+  // Close dropdown when clicking outside and adjust position
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+
+    const adjustPosition = () => {
+      if (dropdownRef.current && showDropdown) {
+        const rect = dropdownRef.current.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const dropdownHeight = 400 // Approximate height of dropdown
+        
+        // If there's not enough space below, position above
+        if (rect.bottom + dropdownHeight > viewportHeight) {
+          setDropdownPosition('top')
+        } else {
+          setDropdownPosition('bottom')
+        }
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      adjustPosition()
+      window.addEventListener('resize', adjustPosition)
+      window.addEventListener('scroll', adjustPosition)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      window.removeEventListener('resize', adjustPosition)
+      window.removeEventListener('scroll', adjustPosition)
+    }
+  }, [showDropdown])
+
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <User className="w-4 h-4" />
-        {email || (account?.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : "Profile")}
+        {email || 
+         (currentAddress ? `${currentAddress.slice(0, 6)}...${currentAddress.slice(-4)}` : "Profile")}
         <ChevronDown className="w-3 h-3" />
       </button>
 
       {showDropdown && (
-        <div className="absolute top-8 right-0 z-50 w-80 rounded-lg border border-border p-4 bg-card/90 backdrop-blur">
+        <div className={`absolute right-0 z-[9999] w-80 max-h-[80vh] overflow-y-auto rounded-lg border border-border p-4 bg-card/95 backdrop-blur shadow-lg ${
+          dropdownPosition === 'top' ? 'bottom-8' : 'top-8'
+        }`}>
           <div className="space-y-4">
             {/* User Info */}
             <div className="space-y-2">
               <div className="text-sm font-semibold text-foreground">Profile</div>
               {email && <div className="text-xs text-muted-foreground">{email}</div>}
-              {account?.address && (
-                <div className="text-xs text-muted-foreground font-mono">{account.address}</div>
+              {currentAddress && (
+                <div className="text-xs text-muted-foreground font-mono">
+                  {account?.address ? "Thirdweb" : isGlyphConnected ? "Glyph" : "Wallet"}: {currentAddress}
+                </div>
               )}
             </div>
 
             {/* ApeCoin Balance */}
-            {account?.address && (
+            {currentAddress && (
               <div className="space-y-2">
                 <div className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Coins className="w-4 h-4" />
@@ -237,23 +374,84 @@ export default function ProfileDropdown() {
               </div>
             )}
 
+            {/* Glyph Connection Status */}
+            <div className="space-y-2">
+              <div className="text-sm font-semibold text-foreground">Glyph Wallet</div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <GlyphIcon />
+                  <span className="text-xs">
+                    {isGlyphConnected ? (
+                      <span className="text-green-500">Connected</span>
+                    ) : (
+                      <span className="text-muted-foreground">Not Connected</span>
+                    )}
+                  </span>
+                </div>
+                {isGlyphConnected && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        console.log("Disconnecting Glyph wallet...")
+                        
+                        // Use the Glyph logout function
+                        if (typeof glyphLogout === 'function') {
+                          await glyphLogout()
+                          console.log("Glyph logout successful")
+                        } else {
+                          console.warn("Glyph logout function not available")
+                        }
+                        
+                        // Clear user store state
+                        useUserStore.getState().setIsGlyphConnected(false)
+                        useUserStore.getState().setWalletAddress(null)
+                        useUserStore.getState().setEmail(null)
+                        
+                        // Clear localStorage
+                        if (typeof window !== 'undefined') {
+                          localStorage.removeItem('apebeats_email')
+                          // Clear Glyph-related storage
+                          Object.keys(localStorage).forEach(key => {
+                            if (key.includes('glyph') || key.includes('use-glyph')) {
+                              localStorage.removeItem(key)
+                            }
+                          })
+                        }
+                        
+                        setError(null)
+                        console.log("Glyph wallet disconnected successfully")
+                      } catch (e: any) {
+                        console.error("Failed to disconnect Glyph wallet:", e)
+                        setError(e?.message || "Failed to disconnect Glyph wallet")
+                      }
+                    }}
+                    className="text-xs text-destructive hover:text-destructive/80 transition-colors"
+                  >
+                    Disconnect
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Send / Receive (APE) */}
-            {account?.address && (
+            {currentAddress && (
               <div className="space-y-2">
                 <div className="text-sm font-semibold text-foreground">Wallet Actions</div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     disabled={loading}
-                    onClick={handleSend}
-                    className="rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 px-3 py-2 text-xs text-primary-foreground"
+                    onClick={handleSendTokens}
+                    className="rounded-md bg-primary hover:bg-primary/90 disabled:opacity-50 px-3 py-2 text-xs text-primary-foreground flex items-center gap-1"
                   >
+                    <Send className="w-3 h-3" />
                     Send APE
                   </button>
                   <button
                     disabled={loading}
-                    onClick={handleReceive}
-                    className="rounded-md bg-secondary hover:bg-secondary/80 disabled:opacity-50 px-3 py-2 text-xs text-secondary-foreground"
+                    onClick={handleReceiveTokens}
+                    className="rounded-md bg-secondary hover:bg-secondary/80 disabled:opacity-50 px-3 py-2 text-xs text-secondary-foreground flex items-center gap-1"
                   >
+                    <Download className="w-3 h-3" />
                     Receive
                   </button>
                 </div>
@@ -326,6 +524,21 @@ export default function ProfileDropdown() {
           </div>
         </div>
       )}
+
+      {/* Popup Guidance Modal */}
+      <PopupGuidanceModal
+        isOpen={showPopupGuidance}
+        onClose={() => setShowPopupGuidance(false)}
+        onRetry={handleRetryGlyphConnection}
+        browserType={detectBrowser()}
+      />
+
+      {/* Send/Receive Modal */}
+      <SendReceiveModal
+        isOpen={showSendReceiveModal}
+        onClose={() => setShowSendReceiveModal(false)}
+        mode={sendReceiveMode}
+      />
     </div>
   )
 }

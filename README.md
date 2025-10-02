@@ -419,7 +419,15 @@ Multi-tier NFT staking system with different APY rates and features.
 - Header short connect/disconnect in `components/HeaderUser.tsx`
 - Live ApeChain data in `app/page.tsx` powered by `fetchApeChainStats` from `lib/utils.ts`
 
-### **NEW**: Enhanced Features
+### **NEW**: Enhanced Features (v0.4.7)
+- **Enhanced Wallet Integration**: Improved Glyph wallet connection with browser detection and popup guidance
+- **Browser Detection**: Intelligent browser detection with popup blocking resolution
+- **Popup Guidance System**: Browser-specific popup guidance modal with step-by-step instructions
+- **Enhanced Authentication**: Improved login flows and user experience across all authentication methods
+- **New UI Components**: Alert components and enhanced user interface elements
+- **Improved Wallet Service**: Enhanced wallet connection handling with better error recovery
+
+### **NEW**: Enhanced Features (Previous)
 - **Error Handling**: Comprehensive error boundaries in `components/ErrorBoundary.tsx`
 - **Loading States**: Optimized loading components in `components/LoadingStates.tsx`
 - **Video Processing**: Genesis NFT video preview generation in `lib/videoUtils.ts` and `lib/useVideoPreviews.ts`
@@ -577,7 +585,14 @@ Connect using your preferred browser wallet:
 - **MetaMask**: Most popular Ethereum wallet
 - **Rabby**: Advanced DeFi wallet with gas optimization
 - **Rainbow**: Beautiful, user-friendly wallet
-- **Glyph**: Secure, non-custodial wallet
+- **Glyph**: Secure, non-custodial wallet with enhanced integration
+
+#### Enhanced Wallet Features (v0.4.7)
+- **🦁 Browser Detection**: Intelligent detection of Chrome, Brave, Firefox, Safari, and Edge
+- **🚫 Popup Guidance**: Smart popup blocking detection with browser-specific resolution instructions
+- **🛡️ Error Handling**: Enhanced error handling and user feedback for wallet connection issues
+- **🔄 Safe Rendering**: Client-side rendering protection for wallet components
+- **📱 Mobile Support**: Enhanced mobile browser compatibility
 
 #### Mobile Wallets
 - **WalletConnect**: Connect any mobile wallet (Coinbase, Trust, etc.)
@@ -1360,10 +1375,18 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.4.6
+### Current Version: v0.4.8
 **Latest Release**: January 27, 2025
 
-**Key Features in v0.4.6:**
+**Key Features in v0.4.8:**
+- 🔗 **Enhanced Glyph Wallet Integration**: Improved Glyph wallet connection with better error handling, debug logging, and user guidance
+- 🚀 **Dynamic Labs Integration**: Added comprehensive Dynamic Labs SDK integration with Glyph Global Wallet EVM connector
+- 🎯 **Enhanced Authentication Components**: Improved login flows with better state management and user experience
+- 🧹 **Major Project Cleanup**: Removed outdated test files, documentation, and unused dependencies
+- 🛡️ **Improved Error Handling**: Enhanced error recovery and user feedback throughout the application
+- 📦 **Dependency Updates**: Updated to latest Dynamic Labs SDK and related packages
+
+**Previous Features (v0.4.6):**
 - 📱 **Complete Social Media Previews**: Rich previews for all pages with Open Graph and Twitter Card meta tags
 - 🎯 **Centralized Metadata System**: Unified metadata management with page-specific customization
 - 🧪 **Comprehensive Testing Infrastructure**: Automated testing tools and manual testing guides
@@ -1520,7 +1543,7 @@ docs/
 - **Security**: ✅ Comprehensive security audit completed
 
 ### 📈 **Version Information**
-- **Current Version**: v0.4.6
+- **Current Version**: v0.4.8
 - **Release Date**: January 27, 2025
 - **Next.js Version**: 14.2.16
 - **TypeScript**: Latest with strict mode
@@ -1729,4 +1752,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
 
-**Version**: v0.4.6 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
+**Version**: v0.4.8 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready

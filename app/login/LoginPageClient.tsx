@@ -1,13 +1,15 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { inAppWallet, createWallet, walletConnect } from "thirdweb/wallets"
 import { preAuthenticate } from "thirdweb/wallets/in-app"
-import { useConnect, useActiveAccount } from "thirdweb/react"
+import { useActiveAccount, useConnect } from "thirdweb/react"
 import { deploySmartAccount } from "thirdweb/wallets"
 import { thirdwebClient } from "@/lib/thirdweb"
 import useUserStore from "@/stores/userStore"
-import { useNativeGlyphConnection, useGlyph } from "@use-glyph/sdk-react"
-import { GlyphIcon, MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon, EmailIcon, GoogleIcon, AppleIcon, XIcon, FacebookIcon } from "@/components/wallet/WalletIcons"
+import { useSafeGlyph } from "@/hooks/useSafeGlyph"
+import { MetaMaskIcon, RabbyIcon, RainbowIcon, WalletConnectIcon } from "@/components/wallet/WalletIcons"
+import { GlyphConnectButton } from "@/components/auth/GlyphConnectButton"
+// Note: Glyph components will be dynamically imported to prevent style conflicts
 
 export function LoginPageClient() {
   const [email, setEmail] = useState("")
@@ -16,11 +18,19 @@ export function LoginPageClient() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const { connect } = useConnect()
-  const { connect: connectGlyph } = useNativeGlyphConnection()
-  const { login: glyphLogin, user: glyphUser } = useGlyph()
+  const { user: glyphUser, authenticated: glyphAuthenticated } = useSafeGlyph()
   const account = useActiveAccount()
-  const setEmailGlobal = useUserStore((s: any) => s.setEmail)
+  const { connect } = useConnect()
+  const setEmailGlobal = useUserStore((state) => state.setEmail)
+
+  // Monitor Glyph connection state
+  useEffect(() => {
+    if (glyphAuthenticated && glyphUser?.evmWallet) {
+      console.log("Glyph connection successful:", glyphUser)
+      setStep("done")
+      setLoading(false)
+    }
+  }, [glyphAuthenticated, glyphUser])
 
   // create the in-app wallet only when needed to avoid stale instances
 
@@ -52,17 +62,7 @@ export function LoginPageClient() {
         return wallet
       })
       
-      // Check if user has a Glyph wallet, if not, create one
-      if (!glyphUser?.evmWallet) {
-        console.log("Creating Glyph wallet for user...")
-        try {
-          await glyphLogin()
-          console.log("Glyph wallet created successfully")
-        } catch (glyphError) {
-          console.warn("Failed to create Glyph wallet:", glyphError)
-          // Continue without Glyph wallet if creation fails
-        }
-      }
+      // Glyph wallet connection is handled separately via GlyphConnectButton
       
       setStep("done")
       setEmailGlobal(email)
@@ -74,21 +74,6 @@ export function LoginPageClient() {
     }
   }
 
-  async function connectGlyphWallet() {
-    setError(null)
-    setLoading(true)
-    try {
-      console.log("Attempting to connect Glyph wallet...")
-      await connectGlyph()
-      console.log("Successfully connected Glyph wallet")
-      setStep("done")
-    } catch (e: any) {
-      console.error("Failed to connect Glyph wallet:", e)
-      setError(e?.message || "Failed to connect Glyph wallet. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   async function connectInjected(rdns: string) {
     setError(null)
@@ -161,7 +146,7 @@ export function LoginPageClient() {
             <button
               disabled={!email || loading}
               onClick={handleSendCode}
-              className="w-full rounded-md bg-lime-600 hover:bg-lime-500 disabled:opacity-50 px-3 py-2 text-sm font-medium"
+              className="w-full rounded-md bg-lime-600 hover:bg-lime-500 disabled:opacity-50 px-3 py-2 text-sm font-medium cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? "Sending..." : "Send Code"}
             </button>
@@ -181,7 +166,7 @@ export function LoginPageClient() {
             <button
               disabled={!code || loading}
               onClick={handleVerify}
-              className="w-full rounded-md bg-lime-600 hover:bg-lime-500 disabled:opacity-50 px-3 py-2 text-sm font-medium"
+              className="w-full rounded-md bg-lime-600 hover:bg-lime-500 disabled:opacity-50 px-3 py-2 text-sm font-medium cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? "Verifying..." : "Verify & Connect"}
             </button>
@@ -198,19 +183,13 @@ export function LoginPageClient() {
         <div className="space-y-2">
           <div className="text-xs uppercase tracking-wider text-zinc-500">Or connect a wallet</div>
           <div className="grid grid-cols-2 gap-2">
-            <button
-              disabled={loading}
-              onClick={connectGlyphWallet}
-              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2"
-              title="Glyph wallet by Yuga Labs - opens Glyph wallet directly"
-            >
-              <GlyphIcon />
-              Glyph
-            </button>
+            <div className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2 relative">
+              <GlyphConnectButton />
+            </div>
             <button
               disabled={loading}
               onClick={() => connectInjected("io.rabby")}
-              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2"
+              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >
               <RabbyIcon />
               Rabby
@@ -218,7 +197,7 @@ export function LoginPageClient() {
             <button
               disabled={loading}
               onClick={() => connectInjected("io.metamask")}
-              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2"
+              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >
               <MetaMaskIcon />
               MetaMask
@@ -226,7 +205,7 @@ export function LoginPageClient() {
             <button
               disabled={loading}
               onClick={() => connectInjected("me.rainbow")}
-              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2"
+              className="rounded-md bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 px-3 py-2 text-sm flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >
               <RainbowIcon />
               Rainbow
@@ -243,6 +222,7 @@ export function LoginPageClient() {
         </div>
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
       </div>
+      
     </div>
   )
 }

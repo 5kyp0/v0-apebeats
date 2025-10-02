@@ -1,25 +1,29 @@
 "use client"
-import { useEffect } from "react"
 import { useActiveAccount } from "thirdweb/react"
-import useUserStore from "@/stores/userStore"
+import { useAccount } from "wagmi"
+import { useSafeGlyph } from "@/hooks/useSafeGlyph"
 import ProfileDropdown from "@/components/auth/ProfileDropdown"
+import { HeaderUserInfo } from "@/components/auth/HeaderUserInfo"
+import { ClientOnly } from "@/components/ClientOnly"
 
 interface HeaderUserProps {
   onLoginClick?: () => void
 }
 
-export default function HeaderUser({ onLoginClick }: HeaderUserProps) {
+function HeaderUserContent({ onLoginClick }: HeaderUserProps) {
   const account = useActiveAccount()
-  const email = useUserStore((s: any) => s.email)
-  const setEmail = useUserStore((s: any) => s.setEmail)
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
+  const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
+  
+  // Check for Glyph connection using the proper SDK method
+  const isGlyphConnected = !!(glyphReady && glyphUser?.evmWallet)
+  
+  // For now, we'll just check wallet connections and skip email state
+  // This avoids the Zustand SSR issues
+  const hasWallet = !!(account?.address || isGlyphConnected)
 
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? window.localStorage.getItem("apebeats_email") : null
-    if (saved && !email) setEmail(saved)
-  }, [email, setEmail])
-
-  // Show login button if no email and no wallet
-  if (!email && !account?.address) {
+  // Show login button if no wallet connections
+  if (!hasWallet) {
     return (
       <button
         onClick={onLoginClick}
@@ -30,6 +34,28 @@ export default function HeaderUser({ onLoginClick }: HeaderUserProps) {
     )
   }
 
-  // Show profile dropdown if logged in
-  return <ProfileDropdown />
+  // Show profile dropdown and user info if logged in with any wallet
+  return (
+    <div className="flex items-center gap-4">
+      <HeaderUserInfo />
+      <ProfileDropdown />
+    </div>
+  )
+}
+
+export default function HeaderUser({ onLoginClick }: HeaderUserProps) {
+  return (
+    <ClientOnly 
+      fallback={
+        <button
+          onClick={onLoginClick}
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+        >
+          Login
+        </button>
+      }
+    >
+      <HeaderUserContent onLoginClick={onLoginClick} />
+    </ClientOnly>
+  )
 }
