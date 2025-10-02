@@ -4,14 +4,14 @@ import { useActiveAccount } from "thirdweb/react"
 import { useAccount } from "wagmi"
 import { useSafeGlyph } from "@/hooks/useSafeGlyph"
 import { useApeCoinBalance } from "@/hooks/useApeCoinBalance"
-import { Coins, User } from "lucide-react"
+import { Coins } from "lucide-react"
 import { ClientOnly } from "@/components/ClientOnly"
 
 function HeaderUserInfoContent() {
   const account = useActiveAccount()
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
-  const { formattedBalance, loading: balanceLoading } = useApeCoinBalance()
+  const { balance, loading: balanceLoading } = useApeCoinBalance()
 
   // Check for Glyph connection using the proper SDK method
   const isGlyphConnected = !!(glyphReady && glyphUser?.evmWallet)
@@ -42,7 +42,7 @@ function HeaderUserInfoContent() {
             {balanceLoading ? (
               <div className="w-12 h-3 bg-muted animate-pulse rounded" />
             ) : (
-              `${formattedBalance} APE`
+              `${balance} APE`
             )}
           </span>
         </div>

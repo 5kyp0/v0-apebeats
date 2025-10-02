@@ -25,19 +25,24 @@ export function useSafeGlyph() {
   // Debug logging with better state tracking
   useEffect(() => {
     if (isClient) {
-      // Only log when there are actual changes to avoid spam
-      if (glyphValues.authenticated || glyphValues.user) {
-        console.log("🔍 useSafeGlyph values:", {
-          ready: glyphValues.ready,
-          authenticated: glyphValues.authenticated,
-          user: glyphValues.user ? "present" : "null",
-          login: typeof glyphValues.login,
-          logout: typeof glyphValues.logout,
-          timestamp: new Date().toISOString()
-        })
-      }
+      // Enhanced logging for debugging connection issues
+      console.log("🔍 useSafeGlyph detailed state:", {
+        ready: glyphValues.ready,
+        authenticated: glyphValues.authenticated,
+        user: glyphValues.user ? {
+          evmWallet: glyphValues.user.evmWallet,
+          authenticated: glyphValues.user.authenticated,
+          ready: glyphValues.user.ready
+        } : "null",
+        login: typeof glyphValues.login,
+        logout: typeof glyphValues.logout,
+        hasBalances: !!glyphValues.balances,
+        balancesLength: glyphValues.balances?.length || 0,
+        nativeSymbol: glyphValues.nativeSymbol,
+        timestamp: new Date().toISOString()
+      })
     }
-  }, [isClient, glyphValues.ready, glyphValues.authenticated, glyphValues.user, glyphValues])
+  }, [isClient, glyphValues.ready, glyphValues.authenticated, glyphValues.user, glyphValues.balances])
 
   // Return default values if not on client side
   if (!isClient) {

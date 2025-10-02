@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { 
   Menu, 
@@ -15,6 +15,20 @@ import {
 
 export default function SimpleMenuDropdown() {
   const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const navigateTo = (path: string) => {
     console.log('Navigating to:', path)
@@ -23,7 +37,7 @@ export default function SimpleMenuDropdown() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <Button
         variant="outline"
         size="sm"

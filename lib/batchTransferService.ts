@@ -322,18 +322,17 @@ export class BatchTransferService {
    * Format amount for display (with decimals)
    */
   formatAmount(amount: string, decimals: number = 18): string {
+    if (amount === "0") return "0.000"
+    
     const divisor = BigInt(10 ** decimals)
     const wholePart = BigInt(amount) / divisor
     const fractionalPart = BigInt(amount) % divisor
     
-    if (fractionalPart === BigInt(0)) {
-      return wholePart.toString()
-    }
-    
+    // Always show exactly 3 decimal places
     const fractionalStr = fractionalPart.toString().padStart(decimals, '0')
-    const trimmedFractional = fractionalStr.replace(/0+$/, '')
+    const formattedFractional = fractionalStr.substring(0, 3)
     
-    return trimmedFractional ? `${wholePart}.${trimmedFractional}` : wholePart.toString()
+    return `${wholePart}.${formattedFractional}`
   }
 
   /**

@@ -36,7 +36,7 @@ export default function ProfileDropdown() {
   const isGlyphConnected = !!(glyphUser?.evmWallet)
   const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
   const { isCorrectNetwork, currentChainId } = useNetworkCheck()
-  const { formattedBalance, loading: balanceLoading } = useApeCoinBalance()
+  const { balance, loading: balanceLoading } = useApeCoinBalance()
   const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -325,7 +325,7 @@ export default function ProfileDropdown() {
                     {balanceLoading ? (
                       <div className="w-16 h-5 bg-muted animate-pulse rounded" />
                     ) : (
-                      `${formattedBalance} APE`
+                      `${balance} APE`
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">

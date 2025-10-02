@@ -13,19 +13,11 @@ const APECHAIN_RPC = ALCHEMY_API_KEY
   ? `https://apechain-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
   : ""
 
-// For testing, you can use Ethereum mainnet as fallback
-const FALLBACK_CHAIN_ID = 1
-const FALLBACK_RPC = "https://eth.llamarpc.com"
 
 // Viem-compatible apeChain for wagmi/Glyph
 export const apeChain = (() => {
-  console.log("Creating viem apeChain with:", {
-    APECHAIN_CHAIN_ID,
-    APECHAIN_RPC: APECHAIN_RPC ? "set" : "not set",
-    ALCHEMY_API_KEY: ALCHEMY_API_KEY ? "set" : "not set"
-  })
-  
-  if (APECHAIN_CHAIN_ID && APECHAIN_RPC) {
+  // Always use ApeChain configuration
+  if (APECHAIN_CHAIN_ID && APECHAIN_RPC && APECHAIN_RPC !== "") {
     return defineViemChain({
       id: APECHAIN_CHAIN_ID,
       name: "ApeChain",
@@ -51,49 +43,41 @@ export const apeChain = (() => {
       testnet: false,
     })
   } else {
-    console.warn("Using fallback chain - ApeChain environment variables not set")
-    // Use mainnet as fallback instead of custom Ethereum config
-    return mainnet
-  }
-})()
-
-// Thirdweb-compatible apeChain for thirdweb client
-export const apeChainThirdweb = (() => {
-  console.log("Creating thirdweb apeChain with:", {
-    APECHAIN_CHAIN_ID,
-    APECHAIN_RPC: APECHAIN_RPC ? "set" : "not set",
-    ALCHEMY_API_KEY: ALCHEMY_API_KEY ? "set" : "not set"
-  })
-  
-  if (APECHAIN_CHAIN_ID && APECHAIN_RPC) {
-    return defineThirdwebChain({
-      id: APECHAIN_CHAIN_ID,
+    // Force ApeChain configuration even if env vars are missing
+    return defineViemChain({
+      id: 33139, // ApeChain mainnet
       name: "ApeChain",
-      rpc: [APECHAIN_RPC],
+      rpcUrls: {
+        default: {
+          http: ["https://apechain.calderachain.xyz/http"],
+        },
+        public: {
+          http: ["https://apechain.calderachain.xyz/http"],
+        },
+      },
       nativeCurrency: {
         name: "APE",
         symbol: "APE",
         decimals: 18,
       },
-      blockExplorers: [
-        {
+      blockExplorers: {
+        default: {
           name: "ApeChain Explorer",
           url: "https://explorer.apechain.com",
         },
-      ],
+      },
       testnet: false,
     })
+  }
+})()
+
+// Thirdweb-compatible apeChain for thirdweb client
+export const apeChainThirdweb = (() => {
+  if (APECHAIN_CHAIN_ID && APECHAIN_RPC && APECHAIN_RPC !== "") {
+    return defineThirdwebChain(APECHAIN_CHAIN_ID)
   } else {
-    console.warn("Using fallback chain - ApeChain environment variables not set")
-    // Use mainnet as fallback instead of custom Ethereum config
-    return defineThirdwebChain({
-      id: mainnet.id,
-      name: mainnet.name,
-      rpc: mainnet.rpcUrls.default.http,
-      nativeCurrency: mainnet.nativeCurrency,
-      blockExplorers: mainnet.blockExplorers ? [mainnet.blockExplorers.default] : [],
-      testnet: mainnet.testnet,
-    })
+    // Force ApeChain configuration even if env vars are missing
+    return defineThirdwebChain(33139) // ApeChain mainnet
   }
 })()
 
