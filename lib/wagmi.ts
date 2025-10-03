@@ -2,25 +2,38 @@ import { createConfig, http } from "wagmi"
 import { glyphWalletConnector } from "@use-glyph/sdk-react"
 import { apeChain, mainnet, base, curtis } from "./chains"
 
-console.log("Creating wagmi config with apeChain:", apeChain)
+// Create wagmi config lazily to avoid loading on non-wallet pages
+let _wagmiConfig: ReturnType<typeof createConfig> | null = null
 
-export const wagmiConfig = createConfig({
-  chains: [apeChain, mainnet, base, curtis],
-  transports: {
-    [apeChain.id]: http(),
-    [mainnet.id]: http(),
-    [base.id]: http(),
-    [curtis.id]: http(),
-  },
-  connectors: [
-    glyphWalletConnector({
+export function getWagmiConfig() {
+  if (!_wagmiConfig) {
+    _wagmiConfig = createConfig({
       chains: [apeChain, mainnet, base, curtis],
-      options: {
-        shimDisconnect: true,
+      transports: {
+        [apeChain.id]: http(),
+        [mainnet.id]: http(),
+        [base.id]: http(),
+        [curtis.id]: http(),
       },
+      connectors: [
+        glyphWalletConnector({
+          chains: [apeChain, mainnet, base, curtis],
+          options: {
+            shimDisconnect: true,
+          },
+        })
+      ],
+      ssr: true,
+      // Use ApeChain as the default chain
+      defaultChain: apeChain,
     })
-  ],
-  ssr: true,
-  // Use ApeChain as the default chain
-  defaultChain: apeChain,
+  }
+  return _wagmiConfig
+}
+
+// Lazy getter for backward compatibility
+export const wagmiConfig = new Proxy({} as ReturnType<typeof createConfig>, {
+  get(target, prop) {
+    return getWagmiConfig()[prop as keyof ReturnType<typeof createConfig>]
+  }
 })

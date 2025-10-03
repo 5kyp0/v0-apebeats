@@ -36,8 +36,7 @@ export const BATCH_TRANSFER_ABI = [
     "type": "constructor",
     "inputs": [
       { "name": "_apeToken", "type": "address" },
-      { "name": "_feeRecipient", "type": "address" },
-      { "name": "_feeBps", "type": "uint256" }
+      { "name": "_feeRecipient", "type": "address" }
     ],
     "stateMutability": "nonpayable"
   },
@@ -63,6 +62,51 @@ export const BATCH_TRANSFER_ABI = [
   },
   {
     "type": "function",
+    "name": "batchTransferToken",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "recipients", "type": "address[]" },
+      { "name": "amounts", "type": "uint256[]" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "batchTransferTokenEqual",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "recipients", "type": "address[]" },
+      { "name": "amountPerRecipient", "type": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "commitRandomTransfer",
+    "inputs": [
+      { "name": "recipients", "type": "address[]" },
+      { "name": "minAmount", "type": "uint256" },
+      { "name": "maxAmount", "type": "uint256" },
+      { "name": "commitHash", "type": "bytes32" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revealAndExecuteRandomTransfer",
+    "inputs": [
+      { "name": "recipients", "type": "address[]" },
+      { "name": "amounts", "type": "uint256[]" },
+      { "name": "secret", "type": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "batchTransferRandom",
     "inputs": [
       { "name": "recipients", "type": "address[]" },
@@ -71,7 +115,7 @@ export const BATCH_TRANSFER_ABI = [
       { "name": "seed", "type": "uint256" }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "pure"
   },
   {
     "type": "function",
@@ -83,6 +127,50 @@ export const BATCH_TRANSFER_ABI = [
       { "name": "", "type": "uint256" }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "calculateTokenFee",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "totalAmount", "type": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCommitStatus",
+    "inputs": [
+      { "name": "user", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "commitHash", "type": "bytes32" },
+      { "name": "blockNumber", "type": "uint256" },
+      { "name": "revealed", "type": "bool" },
+      { "name": "canReveal", "type": "bool" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRevealedAmounts",
+    "inputs": [
+      { "name": "user", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "amounts", "type": "uint256[]" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "clearCommit",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -131,21 +219,112 @@ export const BATCH_TRANSFER_ABI = [
   },
   {
     "type": "function",
-    "name": "setTrackingEnabled",
+    "name": "getUserStats",
     "inputs": [
-      { "name": "_enabled", "type": "bool" }
+      { "name": "user", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "totalTransferred", "type": "uint256" },
+      { "name": "transferCount", "type": "uint256" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getGlobalStats",
+    "inputs": [],
+    "outputs": [
+      { "name": "totalVolume", "type": "uint256" },
+      { "name": "totalTransfers", "type": "uint256" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "addSupportedToken",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "feeBps", "type": "uint256" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "trackingEnabled",
-    "inputs": [],
+    "name": "removeSupportedToken",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "updateTokenFee",
+    "inputs": [
+      { "name": "token", "type": "address" },
+      { "name": "newFeeBps", "type": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isTokenSupported",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ],
     "outputs": [
       { "name": "", "type": "bool" }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getTokenFee",
+    "inputs": [
+      { "name": "token", "type": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "grantTeamRole",
+    "inputs": [
+      { "name": "account", "type": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeTeamRole",
+    "inputs": [
+      { "name": "account", "type": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "grantFeeManagerRole",
+    "inputs": [
+      { "name": "account", "type": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeFeeManagerRole",
+    "inputs": [
+      { "name": "account", "type": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -158,13 +337,44 @@ export const BATCH_TRANSFER_ABI = [
   },
   {
     "type": "event",
-    "name": "BatchTracked",
+    "name": "BatchTransferExecuted",
     "inputs": [
       { "name": "sender", "type": "address", "indexed": true },
-      { "name": "totalVolume", "type": "uint256", "indexed": false },
-      { "name": "numRecipients", "type": "uint256", "indexed": false },
+      { "name": "totalAmount", "type": "uint256", "indexed": false },
+      { "name": "recipientCount", "type": "uint256", "indexed": false },
       { "name": "fee", "type": "uint256", "indexed": false },
+      { "name": "batchId", "type": "bytes32", "indexed": true },
       { "name": "timestamp", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokenAdded",
+    "inputs": [
+      { "name": "token", "type": "address", "indexed": true },
+      { "name": "feeBps", "type": "uint256", "indexed": false },
+      { "name": "addedBy", "type": "address", "indexed": true }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokenRemoved",
+    "inputs": [
+      { "name": "token", "type": "address", "indexed": true },
+      { "name": "removedBy", "type": "address", "indexed": true }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TokenFeeUpdated",
+    "inputs": [
+      { "name": "token", "type": "address", "indexed": true },
+      { "name": "oldFee", "type": "uint256", "indexed": false },
+      { "name": "newFee", "type": "uint256", "indexed": false },
+      { "name": "updatedBy", "type": "address", "indexed": true }
     ],
     "anonymous": false
   },
@@ -174,6 +384,55 @@ export const BATCH_TRANSFER_ABI = [
     "inputs": [
       { "name": "previousOwner", "type": "address", "indexed": true },
       { "name": "newOwner", "type": "address", "indexed": true }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RandomCommitCreated",
+    "inputs": [
+      { "name": "user", "type": "address", "indexed": true },
+      { "name": "commitHash", "type": "bytes32", "indexed": true },
+      { "name": "blockNumber", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RandomCommitRevealed",
+    "inputs": [
+      { "name": "user", "type": "address", "indexed": true },
+      { "name": "amounts", "type": "uint256[]", "indexed": false },
+      { "name": "totalAmount", "type": "uint256", "indexed": false }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FeeBpsUpdated",
+    "inputs": [
+      { "name": "oldFee", "type": "uint256", "indexed": false },
+      { "name": "newFee", "type": "uint256", "indexed": false },
+      { "name": "updatedBy", "type": "address", "indexed": true }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FeeRecipientUpdated",
+    "inputs": [
+      { "name": "oldRecipient", "type": "address", "indexed": true },
+      { "name": "newRecipient", "type": "address", "indexed": true },
+      { "name": "updatedBy", "type": "address", "indexed": true }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "EmergencyWithdrawal",
+    "inputs": [
+      { "name": "token", "type": "address", "indexed": true },
+      { "name": "amount", "type": "uint256", "indexed": false }
     ],
     "anonymous": false
   }

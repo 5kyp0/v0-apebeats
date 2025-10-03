@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useActiveAccount } from "thirdweb/react"
+import { useAccount } from "wagmi"
+import { useSafeGlyph } from "@/hooks/useSafeGlyph"
+import { ClientOnly } from "@/components/ClientOnly"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,15 +27,27 @@ import {
   Edit3
 } from "lucide-react"
 import { useBatchTransferService, type BatchTransferRecipient, type BatchTransferOptions } from "@/lib/batchTransferService"
+import { TokenSelector } from "./TokenSelector"
+import { APE_TOKEN_ADDRESS } from "@/lib/thirdweb"
 import { toast } from "sonner"
 
 interface BatchTransferFormProps {
   onTransferComplete?: (receipt: any) => void
 }
 
-export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps) {
+function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps) {
   const account = useActiveAccount()
+  const { address: wagmiAddress } = useAccount()
+  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
   const batchService = useBatchTransferService()
+  
+  // Check for any wallet connection
+  const isGlyphConnected = !!(glyphReady && glyphAuthenticated && glyphUser?.evmWallet)
+  const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
+  const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
+  
+  
+  
   
   const [mode, setMode] = useState<'equal' | 'custom' | 'random'>('equal')
   const [recipients, setRecipients] = useState<BatchTransferRecipient[]>([])
@@ -43,33 +59,39 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
   const [balance, setBalance] = useState("0")
   const [estimate, setEstimate] = useState<any>(null)
   const [feeBps, setFeeBps] = useState(50)
+  const [selectedToken, setSelectedToken] = useState<string>(APE_TOKEN_ADDRESS)
 
   // Load user balance and fee rate
   useEffect(() => {
-    if (account?.address) {
+    if (currentAddress) {
       loadUserData()
     }
-  }, [account?.address])
+  }, [currentAddress, selectedToken])
+
+  // Add client-side hydration guard
+  const [isClient, setIsClient] = useState(false)
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   // Update estimate when inputs change
   useEffect(() => {
     if (recipients.length > 0) {
       updateEstimate()
     }
-  }, [recipients, equalAmount, randomMin, randomMax, mode])
+  }, [recipients, equalAmount, randomMin, randomMax, mode, selectedToken])
 
   const loadUserData = async () => {
-    if (!account?.address) return
+    if (!currentAddress) return
     
     try {
       const [userBalance, currentFeeBps] = await Promise.all([
-        batchService.getBalance(account.address),
-        batchService.getFeeBps()
+        batchService.getBalance(currentAddress, selectedToken as any),
+        batchService.getFeeBps(selectedToken as any)
       ])
       setBalance(userBalance)
       setFeeBps(currentFeeBps)
     } catch (error) {
-      console.error("Error loading user data:", error)
       // Set default values if contract is not configured
       setBalance("0")
       setFeeBps(50)
@@ -89,12 +111,13 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
         equalAmount: mode === 'equal' ? equalAmount : undefined,
         randomMin: mode === 'random' ? randomMin : undefined,
         randomMax: mode === 'random' ? randomMax : undefined,
+        tokenAddress: selectedToken as any,
       }
       
       const estimateResult = await batchService.estimateTransfer(options)
       setEstimate(estimateResult)
     } catch (error) {
-      console.error("Error updating estimate:", error)
+      // Handle error silently
       // Set a fallback estimate if contract is not configured
       let totalAmount = BigInt(0)
       if (mode === 'equal' && equalAmount) {
@@ -174,7 +197,7 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
   }
 
   const executeTransfer = async () => {
-    if (!account?.address || recipients.length === 0) {
+    if (!currentAddress || recipients.length === 0) {
       toast.error("Please connect wallet and add recipients")
       return
     }
@@ -196,6 +219,7 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
         randomMin: mode === 'random' ? randomMin : undefined,
         randomMax: mode === 'random' ? randomMax : undefined,
         randomSeed: mode === 'random' ? Math.floor(Math.random() * 1000000) : undefined,
+        tokenAddress: selectedToken as any,
       }
 
       toast.loading("Executing batch transfer...")
@@ -227,19 +251,62 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
     return batchService.formatAmount(amount)
   }
 
+  if (!isClient) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {/* Token Selector - Temporarily disabled */}
+      {/* <TokenSelector
+        selectedToken={selectedToken}
+        onTokenSelect={setSelectedToken}
+        disabled={isLoading}
+      /> */}
+      
+      {/* Temporary token selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5" />
+            Token Selection
+          </CardTitle>
+          <CardDescription>
+            APE token is currently selected for batch transfer
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <Coins className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <div className="font-medium">APE</div>
+                <div className="text-sm text-muted-foreground">ApeCoin</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Balance Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Coins className="h-5 w-5" />
-            Your APE Balance
+            Your Token Balance
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-primary">
-            {formatBalance(balance)} APE
+            {formatBalance(balance)} {estimate?.tokenSymbol || "APE"}
           </div>
           <div className="text-sm text-muted-foreground">
             Fee rate: {feeBps / 100}% per transaction
@@ -400,15 +467,15 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
           <CardContent className="space-y-2">
             <div className="flex justify-between">
               <span>Total to recipients:</span>
-              <span className="font-mono">{formatEstimate(estimate.totalAmount)} APE</span>
+              <span className="font-mono">{formatEstimate(estimate.totalAmount)} {estimate.tokenSymbol || "APE"}</span>
             </div>
             <div className="flex justify-between">
               <span>Fee ({feeBps / 100}%):</span>
-              <span className="font-mono text-orange-500">{formatEstimate(estimate.fee)} APE</span>
+              <span className="font-mono text-orange-500">{formatEstimate(estimate.fee)} {estimate.tokenSymbol || "APE"}</span>
             </div>
             <div className="flex justify-between font-bold border-t pt-2">
               <span>Total required:</span>
-              <span className="font-mono">{formatEstimate(estimate.totalRequired)} APE</span>
+              <span className="font-mono">{formatEstimate(estimate.totalRequired)} {estimate.tokenSymbol || "APE"}</span>
             </div>
             
             {BigInt(balance) < BigInt(estimate.totalRequired) && (
@@ -426,7 +493,7 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
         <CardContent className="pt-6">
           <Button
             onClick={executeTransfer}
-            disabled={!account?.address || recipients.length === 0 || isLoading || !estimate}
+            disabled={!currentAddress || recipients.length === 0 || isLoading || !estimate}
             className="w-full"
             size="lg"
           >
@@ -443,7 +510,7 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
             )}
           </Button>
           
-          {!account?.address && (
+          {!hasWallet && (
             <p className="text-sm text-muted-foreground text-center mt-2">
               Please connect your wallet to continue
             </p>
@@ -451,5 +518,26 @@ export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps) {
+  return (
+    <ClientOnly fallback={
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <ErrorBoundary fallback={
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-red-500 mb-2">Component Error</h3>
+            <p className="text-sm text-muted-foreground">There was an error loading the batch transfer form.</p>
+          </div>
+        </div>
+      }>
+        <BatchTransferFormContent onTransferComplete={onTransferComplete} />
+      </ErrorBoundary>
+    </ClientOnly>
   )
 }

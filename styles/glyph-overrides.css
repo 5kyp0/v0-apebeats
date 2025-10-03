@@ -16,7 +16,6 @@
 body {
   /* Preserve your original body styles */
   font-family: var(--font-sans) !important;
-  background-color: #000 !important;
   color: #fff !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -24,7 +23,6 @@ body {
 
 /* Preserve your main layout */
 html {
-  background-color: #000 !important;
   color: #fff !important;
 }
 
@@ -33,7 +31,6 @@ main,
 [role="main"],
 .app-content,
 #__next {
-  background-color: #000 !important;
   color: #fff !important;
   font-family: var(--font-sans) !important;
 }

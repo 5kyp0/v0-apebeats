@@ -100,13 +100,14 @@ export function NotFoundClient() {
     errorMessage: 'Page not found - route does not exist'
   }
 
+
   const copyToClipboard = async (text: string, field: string) => {
     try {
       await navigator.clipboard.writeText(text)
       setCopiedField(field)
       setTimeout(() => setCopiedField(null), 2000)
     } catch (err) {
-      console.error('Failed to copy:', err)
+      // Handle copy error silently
     }
   }
 

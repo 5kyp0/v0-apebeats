@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMusicEngine } from '@/lib/music-engine/useMusicEngine';
 import { defaultMusicConfig, defaultNFTSnapshotConfig } from '@/lib/music-engine';
 import { Button } from '@/components/ui/button';
@@ -21,11 +21,16 @@ interface MusicEngineProps {
 }
 
 export function MusicEngine({ className }: MusicEngineProps) {
+  const [isClient, setIsClient] = useState(false);
   const [blockCount, setBlockCount] = useState(10);
   const [startBlock, setStartBlock] = useState(0);
   const [endBlock, setEndBlock] = useState(0);
   const [addresses, setAddresses] = useState<string[]>([]);
   const [newAddress, setNewAddress] = useState('');
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const {
     state,
@@ -196,6 +201,16 @@ export function MusicEngine({ className }: MusicEngineProps) {
       default: return 'bg-gray-500';
     }
   };
+
+  if (!isClient) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-6 ${className}`}>

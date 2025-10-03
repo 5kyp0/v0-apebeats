@@ -57,7 +57,7 @@ export default function DonationSection() {
   }
 
   return (
-    <div className="mt-8 p-4 bg-card/30 backdrop-blur-sm border border-border/30 rounded-lg">
+    <div className="mt-8 p-4 bg-card/10 backdrop-blur-sm border border-border/30 rounded-lg">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Heart className="w-4 h-4 text-muted-foreground" />
