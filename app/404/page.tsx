@@ -94,6 +94,7 @@ export default function Custom404Page() {
     email: email || 'Not logged in'
   }
 
+
   const copyToClipboard = async (text: string, field: string) => {
     try {
       await navigator.clipboard.writeText(text)

@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useActiveAccount } from "thirdweb/react"
+import { useAccount } from "wagmi"
+import { useSafeGlyph } from "@/hooks/useSafeGlyph"
+import { ClientOnly } from "@/components/ClientOnly"
+import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,26 +21,35 @@ import {
 import { useBatchTransferService } from "@/lib/batchTransferService"
 import Link from "next/link"
 
-export function UserDashboard() {
+function UserDashboardContent() {
   const account = useActiveAccount()
+  const { address: wagmiAddress } = useAccount()
+  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
   const batchService = useBatchTransferService()
+  
+  // Check for any wallet connection
+  const isGlyphConnected = !!(glyphReady && glyphAuthenticated && glyphUser?.evmWallet)
+  const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
+  const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
+  
+  
+  
   const [balance, setBalance] = useState("0")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (account?.address) {
+    if (currentAddress) {
       loadUserData()
     }
-  }, [account?.address])
+  }, [currentAddress])
 
   const loadUserData = async () => {
-    if (!account?.address) return
+    if (!currentAddress) return
     
     try {
-      const userBalance = await batchService.getBalance(account.address)
+      const userBalance = await batchService.getBalance(currentAddress)
       setBalance(userBalance)
     } catch (error) {
-      console.error("Error loading user data:", error)
       setBalance("0")
     } finally {
       setLoading(false)
@@ -189,5 +202,26 @@ export function UserDashboard() {
         </p>
       </div>
     </div>
+  )
+}
+
+export function UserDashboard() {
+  return (
+    <ClientOnly fallback={
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <ErrorBoundary fallback={
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-red-500 mb-2">Component Error</h3>
+            <p className="text-sm text-muted-foreground">There was an error loading the dashboard.</p>
+          </div>
+        </div>
+      }>
+        <UserDashboardContent />
+      </ErrorBoundary>
+    </ClientOnly>
   )
 }

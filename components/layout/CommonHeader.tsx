@@ -9,10 +9,9 @@ import { useActiveAccount } from "thirdweb/react"
 import { useAccount } from "wagmi"
 import { useSafeGlyph } from "@/hooks/useSafeGlyph"
 import { ClientOnly } from "@/components/ClientOnly"
+import { WalletComponents } from "./WalletComponents"
 
 // Lazy load components to improve initial page load
-const HeaderUser = lazy(() => import("@/components/auth/HeaderUser"))
-const NetworkSwitcher = lazy(() => import("@/components/wallet/NetworkSwitcher"))
 const MenuDropdown = lazy(() => import("@/components/features/MenuDropdown"))
 const LoginInline = lazy(() => import("@/components/auth/LoginInline"))
 
@@ -39,7 +38,7 @@ function CommonHeaderContent({
   const [showLoginModal, setShowLoginModal] = useState(false)
   const router = useRouter()
   
-  // Get auth state
+  // Always call hooks to maintain hook order, but conditionally use results
   const account = useActiveAccount()
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
   const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
@@ -70,14 +69,9 @@ function CommonHeaderContent({
 
   return (
     <>
-      {/* Network Switcher Banner */}
-      <Suspense fallback={null}>
-        <NetworkSwitcher />
-      </Suspense>
-
       {/* Navigation */}
       <nav
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 md:p-8 bg-background/80 backdrop-blur border-b border-border/50"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 md:p-8 bg-background/20 backdrop-blur border-b border-border/50"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -89,18 +83,7 @@ function CommonHeaderContent({
           {subtitle && (
             <span className="text-sm text-muted-foreground">{subtitle}</span>
           )}
-          <div className="ml-4 flex items-center space-x-4">
-            <ErrorBoundary>
-              <Suspense fallback={<div className="w-16 h-6 bg-zinc-800 rounded animate-pulse" />}>
-                <HeaderUser onLoginClick={onLoginClick || (() => setShowLoginModal(true))} />
-              </Suspense>
-            </ErrorBoundary>
-            <ErrorBoundary>
-              <Suspense fallback={null}>
-                <NetworkSwitcher showAlways={true} className="hidden md:flex" />
-              </Suspense>
-            </ErrorBoundary>
-          </div>
+              <WalletComponents onLoginClick={onLoginClick || (() => setShowLoginModal(true))} />
         </div>
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-6 text-sm">
@@ -132,8 +115,8 @@ function CommonHeaderContent({
         </div>
       </nav>
 
-      {/* Login Modal - Only show if not logged in */}
-      {showLoginModal && (!account?.address && !isGlyphConnected) && (
+          {/* Login Modal - Only show if not logged in */}
+          {showLoginModal && (!account?.address && !isGlyphConnected) && (
         <div 
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-background/80 backdrop-blur-md"
           onClick={(e) => {

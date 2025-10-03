@@ -1,11 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useActiveAccount } from "thirdweb/react"
+import { useAccount } from "wagmi"
+import { useSafeGlyph } from "@/hooks/useSafeGlyph"
 import { BatchTransferForm } from "./BatchTransferForm"
+import { Leaderboard } from "./Leaderboard"
+import { TeamManagement } from "./TeamManagement"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CommonPageLayout } from "@/components/layout/CommonPageLayout"
 import { 
   ArrowLeft, 
@@ -13,14 +18,34 @@ import {
   CheckCircle, 
   Clock,
   Users,
-  Coins
+  Coins,
+  Send,
+  Trophy,
+  Shield
 } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
 export function BatchTransferPage() {
+  const [isClient, setIsClient] = useState(false)
+  const [isHydrated, setIsHydrated] = useState(false)
   const account = useActiveAccount()
+  const { address: wagmiAddress } = useAccount()
+  const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
   const [lastReceipt, setLastReceipt] = useState<any>(null)
+  
+  useEffect(() => {
+    setIsClient(true)
+    // Add a small delay to ensure proper hydration
+    const timer = setTimeout(() => {
+      setIsHydrated(true)
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [])
+  
+  // Check for any wallet connection
+  const isGlyphConnected = !!(glyphReady && glyphUser?.evmWallet)
+  const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
 
   const handleTransferComplete = (receipt: any) => {
     setLastReceipt(receipt)
@@ -35,22 +60,29 @@ export function BatchTransferPage() {
       backButtonText="Back to Home"
       backButtonHref="/"
       icon={<Coins className="w-5 h-5 text-primary-foreground" />}
+      showFooter={false}
     >
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-              <Coins className="w-8 h-8 text-primary" />
-            </div>
+        {!isClient || !isHydrated ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
-            Batch Transfer APE
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Send APE tokens to multiple addresses in a single transaction
-          </p>
-        </div>
+        ) : (
+          <>
+            {/* Header */}
+            <div className="text-center mb-12">
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+                  <Coins className="w-8 h-8 text-primary" />
+                </div>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-bold mb-4">
+                Batch Transfer APE
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Send APE tokens to multiple addresses in a single transaction
+              </p>
+            </div>
 
         {/* Success Message */}
         {lastReceipt && (
@@ -91,7 +123,7 @@ export function BatchTransferPage() {
         )}
 
         {/* Wallet Connection Status */}
-        {!account?.address && (
+        {!hasWallet && (
           <Card className="mb-6 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
@@ -152,20 +184,51 @@ export function BatchTransferPage() {
           </Card>
         </div>
 
-        {/* Main Transfer Form */}
-        <BatchTransferForm onTransferComplete={handleTransferComplete} />
+        {/* Main Content with Tabs */}
+        <Tabs defaultValue="transfer" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="transfer" className="flex items-center gap-2">
+              <Send className="h-4 w-4" />
+              Batch Transfer
+            </TabsTrigger>
+            <TabsTrigger value="leaderboard" className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              Leaderboard
+            </TabsTrigger>
+            <TabsTrigger value="team" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Team Management
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Back to Home */}
-        <div className="text-center mt-12">
-          <Button
-            variant="outline"
-            onClick={() => window.location.href = '/'}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Button>
-        </div>
+          <TabsContent value="transfer" className="mt-6">
+            <BatchTransferForm onTransferComplete={handleTransferComplete} />
+          </TabsContent>
+
+          <TabsContent value="leaderboard" className="mt-6">
+            <Leaderboard />
+          </TabsContent>
+
+          <TabsContent value="team" className="mt-6">
+            <TeamManagement />
+          </TabsContent>
+        </Tabs>
+
+            {/* Back to Home */}
+            <div className="text-center mt-12">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                asChild
+              >
+                <Link href="/">
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Home
+                </Link>
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </CommonPageLayout>
   )

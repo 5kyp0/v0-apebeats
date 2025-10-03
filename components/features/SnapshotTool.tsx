@@ -72,6 +72,7 @@ interface SnapshotResult {
 }
 
 export default function SnapshotTool() {
+  const [isClient, setIsClient] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [apiKey, setApiKey] = useState("")
@@ -98,6 +99,10 @@ export default function SnapshotTool() {
   const [provider, setProvider] = useState<any>(null)
   const [forceUpdate, setForceUpdate] = useState(0)
   const currentResultsRef = useRef<SnapshotResult[]>([])
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const networkConfigs = {
     ethereum: {
@@ -177,8 +182,6 @@ export default function SnapshotTool() {
   const fetchContractHolders = async (contract: Contract, rpc: any, chain: any): Promise<string[]> => {
     const holders = new Set<string>()
     
-    // DEBUG: This should appear in logs if changes are applied
-    addLog(`🔧 DEBUG: Starting fetchContractHolders for ${contract.address}`, 'info')
     
     // Remove the timeout wrapper that was causing issues - let the processing complete naturally
     try {
@@ -346,14 +349,12 @@ export default function SnapshotTool() {
       }
 
       addLog(`Completed scanning for ${contract.address}. Found ${holders.size} unique holders.`, 'success')
-      addLog(`🔧 DEBUG: Returning ${holders.size} holders from fetchContractHolders`, 'info')
 
       // Update progress to 100% for this contract
       setProgress(100)
 
       // Convert to array and return immediately
       const holdersArray = Array.from(holders)
-      addLog(`🔧 DEBUG: Converted Set to Array: ${holdersArray.length} holders`, 'info')
       return holdersArray
 
     } catch (error) {
@@ -429,7 +430,7 @@ export default function SnapshotTool() {
       // This is not comprehensive but gives a starting point
       
     } catch (error) {
-      console.error('Error getting ERC1155 holders:', error)
+      // Handle error silently
     }
     
     return Array.from(holders)
@@ -576,10 +577,6 @@ export default function SnapshotTool() {
 
 
   const copyResults = () => {
-    addLog(`🔧 DEBUG: copyResults called`, 'info')
-    addLog(`🔧 DEBUG: State results length: ${results.length}`, 'info')
-    addLog(`🔧 DEBUG: Ref results length: ${currentResultsRef.current.length}`, 'info')
-    
     // Get the most recent results
     const currentResults = results.length > 0 ? results : currentResultsRef.current
     
@@ -592,8 +589,6 @@ export default function SnapshotTool() {
     const result = currentResults[0]
     const holderAddresses = result.holders || []
     
-    addLog(`🔧 DEBUG: Copying ${holderAddresses.length} holders from results`, 'info')
-    addLog(`🔧 DEBUG: Result object: ${JSON.stringify({ totalHolders: result.totalHolders, holdersLength: holderAddresses.length })}`, 'info')
     
     if (holderAddresses.length === 0) {
       addLog('No holder addresses found in results', 'warning')
@@ -601,7 +596,6 @@ export default function SnapshotTool() {
     }
     
     const text = holderAddresses.join('\n')
-    addLog(`🔧 DEBUG: Text to copy length: ${text.length} characters`, 'info')
     
     // Use a more reliable copy method
     try {
@@ -648,14 +642,9 @@ export default function SnapshotTool() {
   }
 
   const exportResults = async (format: 'text' | 'csv' | 'json') => {
-    addLog(`🔧 DEBUG: exportResults called with format: ${format}`, 'info')
-    addLog(`🔧 DEBUG: State results length: ${results.length}`, 'info')
-    addLog(`🔧 DEBUG: Ref results length: ${currentResultsRef.current.length}`, 'info')
-    
     // Get the most recent results - prioritize state over ref
     const currentResults = results.length > 0 ? results : currentResultsRef.current
     
-    addLog(`🔧 DEBUG: Using ${results.length > 0 ? 'state' : 'ref'} results`, 'info')
     
     if (currentResults.length === 0) {
       addLog('❌ No results to export - please run a snapshot first', 'error')
@@ -663,18 +652,12 @@ export default function SnapshotTool() {
     }
     
     const result = currentResults[0]
-    addLog(`🔧 DEBUG: Result object keys: ${Object.keys(result).join(', ')}`, 'info')
-    
     const holderAddresses = result.holders || []
-    addLog(`🔧 DEBUG: Holder addresses type: ${typeof holderAddresses}, length: ${holderAddresses.length}`, 'info')
     
     if (holderAddresses.length === 0) {
       addLog('❌ No holder addresses found in results to export', 'error')
-      addLog(`🔧 DEBUG: Result structure: ${JSON.stringify(result, null, 2)}`, 'info')
       return
     }
-    
-    addLog(`🔧 DEBUG: About to export ${holderAddresses.length} holders in ${format} format`, 'info')
     
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     const baseFilename = `Snapshot_${result.network || 'unknown'}_${timestamp}`
@@ -686,7 +669,6 @@ export default function SnapshotTool() {
       if (format === 'text') {
         // Export as plain text (one address per line)
         const textContent = holderAddresses.join('\n')
-        addLog(`🔧 DEBUG: Text content length: ${textContent.length} characters`, 'info')
         blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' })
         filename = `${baseFilename}.txt`
         
@@ -703,7 +685,6 @@ export default function SnapshotTool() {
           .map(row => row.map(cell => `"${cell}"`).join(','))
           .join('\n')
         
-        addLog(`🔧 DEBUG: CSV content length: ${csvContent.length} characters`, 'info')
         blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
         filename = `${baseFilename}.csv`
         
@@ -730,7 +711,6 @@ export default function SnapshotTool() {
         }
 
         const jsonContent = JSON.stringify(exportData, null, 2)
-        addLog(`🔧 DEBUG: JSON content length: ${jsonContent.length} characters`, 'info')
         blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' })
         filename = `${baseFilename}.json`
       } else {
@@ -738,7 +718,6 @@ export default function SnapshotTool() {
         return
       }
       
-      addLog(`🔧 DEBUG: Blob created - size: ${blob.size} bytes, type: ${blob.type}`, 'info')
       
       // Use the improved download function
       const downloadSuccess = downloadBlob(blob, filename)
@@ -765,32 +744,12 @@ export default function SnapshotTool() {
       
     } catch (error) {
       addLog(`❌ Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
-      addLog(`🔧 DEBUG: Error details: ${JSON.stringify(error)}`, 'info')
     }
   }
 
-  // Test export function to help debug issues
-  const testExport = () => {
-    addLog(`🔧 DEBUG: Testing export functionality...`, 'info')
-    
-    const testData = ['0x1234567890123456789012345678901234567890', '0x0987654321098765432109876543210987654321']
-    const testBlob = new Blob([testData.join('\n')], { type: 'text/plain;charset=utf-8' })
-    
-    addLog(`🔧 DEBUG: Test blob created - size: ${testBlob.size} bytes`, 'info')
-    
-    const success = downloadBlob(testBlob, 'test_export.txt')
-    
-    if (success) {
-      addLog(`✅ Test export successful!`, 'success')
-    } else {
-      addLog(`❌ Test export failed!`, 'error')
-    }
-  }
 
   const downloadBlob = (blob: Blob, filename: string): boolean => {
     try {
-      addLog(`🔧 DEBUG: Starting download for ${filename}`, 'info')
-      
       // Check if blob is valid
       if (!blob) {
         addLog(`❌ ERROR: Blob is null or undefined`, 'error')
@@ -802,11 +761,8 @@ export default function SnapshotTool() {
         return false
       }
       
-      addLog(`🔧 DEBUG: Blob is valid - size: ${blob.size} bytes, type: ${blob.type}`, 'info')
-      
       // Create object URL
       const url = URL.createObjectURL(blob)
-      addLog(`🔧 DEBUG: Created object URL: ${url}`, 'info')
       
       // Create download link
       const link = document.createElement('a')
@@ -816,11 +772,9 @@ export default function SnapshotTool() {
       
       // Add to DOM
       document.body.appendChild(link)
-      addLog(`🔧 DEBUG: Link added to DOM`, 'info')
       
       // Trigger download
       link.click()
-      addLog(`🔧 DEBUG: Download triggered`, 'info')
       
       // Clean up
       document.body.removeChild(link)
@@ -828,7 +782,6 @@ export default function SnapshotTool() {
       // Clean up the URL after a short delay
       setTimeout(() => {
         URL.revokeObjectURL(url)
-        addLog(`🔧 DEBUG: Object URL revoked`, 'info')
       }, 1000)
       
       addLog(`✅ Download initiated successfully for ${filename}`, 'success')
@@ -836,8 +789,6 @@ export default function SnapshotTool() {
       
     } catch (error) {
       addLog(`❌ Download failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
-      addLog(`🔧 DEBUG: Download error details: ${JSON.stringify(error)}`, 'info')
-      console.error('Download error:', error)
       return false
     }
   }
@@ -931,8 +882,6 @@ export default function SnapshotTool() {
       const rpc = getRpcClient({ client: thirdwebClient, chain })
       addLog(`Connected to network: ${customNetwork.networkName} (chainId: ${customNetwork.chainId})`, 'success')
       
-      addLog(`🚀 DEBUG: About to start processing ${contracts.length} contract(s)`, 'info')
-      
       // Process contracts using chunked processor
       const contractProcessor = async (contract: Contract) => {
         addLog(`Processing contract: ${contract.address}`, 'info')
@@ -961,15 +910,12 @@ export default function SnapshotTool() {
         try {
           const holders = await contractProcessor(contract)
           
-          addLog(`🔧 DEBUG: Contract processor returned ${holders.length} holders`, 'info')
-          
           // Add holders to the set
           holders.forEach(holder => allHolders.add(holder))
           successCount++
           
           setProcessedContracts(i + 1)
           addLog(`Contract ${i + 1} completed: ${holders.length} holders found`, 'success')
-          addLog(`🔧 DEBUG: Total unique holders so far: ${allHolders.size}`, 'info')
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
           addLog(`Contract ${i + 1} failed: ${errorMessage}`, 'error')
@@ -979,9 +925,6 @@ export default function SnapshotTool() {
       const finalHolders = Array.from(allHolders)
       setTotalHolders(finalHolders.length)
       setProgress(100)
-      
-      addLog(`🔧 DEBUG: Final holders array length: ${finalHolders.length}`, 'info')
-      addLog(`🔧 DEBUG: First few holders: ${finalHolders.slice(0, 3).join(', ')}`, 'info')
       
       // Create result
       const result: SnapshotResult = {
@@ -997,15 +940,11 @@ export default function SnapshotTool() {
         chainId: customNetwork.chainId
       }
       
-      addLog(`🔧 DEBUG: About to set results with ${result.holders.length} holders`, 'info')
-      
       // Set results in state and ref simultaneously
       setResults([result])
       currentResultsRef.current = [result]
       
-      addLog(`🔧 DEBUG: Results set in state and ref`, 'info')
       addLog(`Snapshot completed! Found ${finalHolders.length} unique holders across ${successCount}/${contracts.length} successful contracts`, 'success')
-      addLog(`🔧 DEBUG: Result created with ${result.holders.length} holders`, 'info')
       
       // Force UI state updates to ensure proper completion
       setProgress(100)
@@ -1014,13 +953,6 @@ export default function SnapshotTool() {
       setIsRunning(false) // Stop the running state immediately
       setForceUpdate(prev => prev + 1) // Force UI re-render
       
-      // Verify results are properly set
-      setTimeout(() => {
-        addLog(`🔧 DEBUG: Verification - State results length: ${results.length}`, 'info')
-        addLog(`🔧 DEBUG: Verification - Ref results length: ${currentResultsRef.current.length}`, 'info')
-        addLog(`🔧 DEBUG: Export buttons should now be enabled`, 'info')
-      }, 200)
-
     } catch (error) {
       addLog(`Snapshot failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
       setIsRunning(false) // Stop running state on error too
@@ -1041,47 +973,16 @@ export default function SnapshotTool() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-background text-foreground overflow-hidden transition-colors duration-300">
-      {/* Background */}
-      <div
-        className="fixed inset-0 opacity-30 dark:opacity-25 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: "url('/apebeats-sonic-swamp-hub-dark-mystical-swamp-with-.jpg')",
-          backgroundAttachment: "fixed",
-          backgroundPosition: "center center",
-          zIndex: 2,
-        }}
-      ></div>
-
-      <div className="fixed inset-0 opacity-20 dark:opacity-15" style={{ zIndex: 1 }}>
-        <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-r from-purple-500/40 to-pink-500/40 dark:from-purple-500/25 dark:to-pink-500/25 rounded-full blur-xl float"></div>
-        <div className="absolute top-40 right-20 w-24 h-24 bg-gradient-to-r from-cyan-500/35 to-blue-500/35 dark:from-cyan-500/20 dark:to-blue-500/20 rounded-full blur-lg float" style={{ animationDelay: "1s" }}></div>
-        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-gradient-to-r from-orange-500/30 to-red-500/30 dark:from-orange-500/15 dark:to-red-500/15 rounded-full blur-2xl float" style={{ animationDelay: "2s" }}></div>
+  if (!isClient) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
+    )
+  }
 
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-6 md:p-8 bg-background/80 backdrop-blur border-b border-border/50">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center pulse-glow">
-            <Users className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="text-xl font-bold">ApeBeats Snapshot Tool</span>
-        </div>
-        <div className="flex items-center space-x-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="w-10 h-10 p-0"
-          >
-            {isDarkMode ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-          </Button>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="relative z-10 px-6 md:px-8 pt-28 pb-12 md:pt-36 md:pb-20">
+  return (
+    <div className="w-full">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 text-balance">
@@ -1098,7 +999,7 @@ export default function SnapshotTool() {
             {/* Left Column: Configuration */}
             <div className="space-y-6">
               {/* Network Setup */}
-              <Card className="p-6 bg-card/50 backdrop-blur-sm border-primary/20">
+              <Card className="p-6 bg-card/20 backdrop-blur-sm border-primary/20">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Network className="w-5 h-5" />
@@ -1190,7 +1091,7 @@ export default function SnapshotTool() {
               </Card>
 
               {/* Contract Setup */}
-              <Card className="p-6 bg-card/50 backdrop-blur-sm border-primary/20">
+              <Card className="p-6 bg-card/20 backdrop-blur-sm border-primary/20">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <FileText className="w-5 h-5" />
@@ -1281,7 +1182,7 @@ export default function SnapshotTool() {
             {/* Right Column: Actions & Results */}
             <div className="space-y-6">
               {/* Actions */}
-              <Card className="p-6 bg-card/50 backdrop-blur-sm border-primary/20">
+              <Card className="p-6 bg-card/20 backdrop-blur-sm border-primary/20">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Actions</h3>
                   <div className="flex gap-2">
@@ -1370,7 +1271,7 @@ export default function SnapshotTool() {
               </Card>
 
               {/* Results */}
-              <Card className="p-6 bg-card/50 backdrop-blur-sm border-primary/20">
+              <Card className="p-6 bg-card/20 backdrop-blur-sm border-primary/20">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Results</h3>
                   <div className="flex items-center gap-2">
@@ -1419,7 +1320,7 @@ export default function SnapshotTool() {
           </div>
 
           {/* Logs Dropdown */}
-          <Card className="mt-8 p-6 bg-card/50 backdrop-blur-sm border-primary/20">
+          <Card className="mt-8 p-6 bg-card/20 backdrop-blur-sm border-primary/20">
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={() => setShowLogs(!showLogs)}
@@ -1453,7 +1354,6 @@ export default function SnapshotTool() {
             )}
           </Card>
         </div>
-      </main>
     </div>
   )
 }

@@ -13,14 +13,14 @@ interface HeaderUserProps {
 function HeaderUserContent({ onLoginClick }: HeaderUserProps) {
   const account = useActiveAccount()
   const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount()
-  const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
+  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
   
   // Check for Glyph connection using the proper SDK method
-  const isGlyphConnected = !!(glyphReady && glyphUser?.evmWallet)
+  const isGlyphConnected = !!(glyphReady && glyphAuthenticated && glyphUser?.evmWallet)
   
   // For now, we'll just check wallet connections and skip email state
   // This avoids the Zustand SSR issues
-  const hasWallet = !!(account?.address || isGlyphConnected)
+  const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
 
   // Show login button if no wallet connections
   if (!hasWallet) {

@@ -2,6 +2,7 @@
 
 import { Suspense } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -68,18 +69,22 @@ export default function BatchPage() {
               <Button 
                 size="lg" 
                 className="pulse-glow text-lg px-8 py-4"
-                onClick={() => router.push('/transfers')}
+                asChild
               >
-                Start Batch Send
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <Link href="/transfers">
+                  Start Batch Send
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8 py-4 bg-transparent"
-                onClick={() => router.push('/dashboard')}
+                asChild
               >
-                View Dashboard
+                <Link href="/dashboard">
+                  View Dashboard
+                </Link>
               </Button>
             </div>
 
@@ -113,17 +118,6 @@ export default function BatchPage() {
         </div>
       </section>
 
-      {/* Back to Home */}
-      <div className="relative z-10 text-center pb-12">
-        <Button
-          variant="outline"
-          onClick={() => router.push('/')}
-          className="flex items-center gap-2 mx-auto"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Button>
-      </div>
-    </CommonPageLayout>
+        </CommonPageLayout>
   )
 }

@@ -1375,10 +1375,20 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.4.9
+### Current Version: v0.5.0
 **Latest Release**: January 27, 2025
 
-**Key Features in v0.4.9:**
+**Key Features in v0.5.0:**
+- 🚀 **Enhanced Batch Transfer System**: Complete overhaul with secure smart contract implementation
+- 🔐 **Advanced Security**: Role-based access control, reentrancy protection, and comprehensive input validation
+- 📊 **Analytics & Leaderboard**: Real-time user statistics, global metrics, and transfer tracking
+- 👥 **Team Management**: Role-based team management interface with admin controls
+- ⚡ **Gas Optimization**: Up to 70% gas savings with optimized batch operations
+- 🎯 **Enhanced UX**: Intuitive tabbed interface, real-time validation, and improved error handling
+- 🛠️ **Deployment Infrastructure**: Comprehensive deployment scripts and verification tools
+- 📚 **Enhanced Documentation**: Complete setup guides and deployment instructions
+
+**Previous Features (v0.4.9):**
 - 🔧 **Code Cleanup & Refactoring**: Removed debug components and enhanced balance formatting
 - 💰 **APE Balance System Improvements**: Consistent 3-decimal formatting and multi-wallet support
 - 🔗 **Multi-Wallet Support Enhancement**: Better network detection and unified address handling
@@ -1550,7 +1560,7 @@ docs/
 - **Security**: ✅ Comprehensive security audit completed
 
 ### 📈 **Version Information**
-- **Current Version**: v0.4.9
+- **Current Version**: v0.5.0
 - **Release Date**: January 27, 2025
 - **Next.js Version**: 14.2.16
 - **TypeScript**: Latest with strict mode
@@ -1759,4 +1769,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
 
-**Version**: v0.4.9 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
+**Version**: v0.5.0 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
