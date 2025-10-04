@@ -40,16 +40,16 @@ module.exports = {
         network: "curtis-testnet",
         chainId: 33111,
         urls: {
-          apiURL: "https://explorer.curtis.apechain.xyz/api",
-          browserURL: "https://explorer.curtis.apechain.xyz"
+          apiURL: "https://curtis.apescan.io/api",
+          browserURL: "https://curtis.apescan.io"
         }
       },
       {
         network: "apechain-mainnet",
         chainId: 33144,
         urls: {
-          apiURL: "https://explorer.apechain.xyz/api",
-          browserURL: "https://explorer.apechain.xyz"
+          apiURL: "https://apescan.io/api",
+          browserURL: "https://apescan.io"
         }
       }
     ]

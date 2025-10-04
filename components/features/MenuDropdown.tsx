@@ -61,7 +61,7 @@ export default function MenuDropdown({ className = "" }: MenuDropdownProps) {
       label: "Music Engine",
       description: "24/7 generative music",
       href: "/music",
-      badge: "BETA"
+      badge: "ALPHA"
     },
     {
       icon: <Users className="w-4 h-4" />,
@@ -82,7 +82,7 @@ export default function MenuDropdown({ className = "" }: MenuDropdownProps) {
       label: "Batch Operations",
       description: "Batch token sending",
       href: "/batch",
-      badge: "Coming soon",
+      badge: "TESTNET",
       subsections: [
         {
           label: "Batch Transfer",
@@ -158,7 +158,11 @@ export default function MenuDropdown({ className = "" }: MenuDropdownProps) {
                           {item.badge && (
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${
                               item.badge === 'BETA' 
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                : item.badge === 'ALPHA'
+                                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
+                                : item.badge === 'TESTNET'
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
                                 : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
                             }`}>
                               {item.badge}

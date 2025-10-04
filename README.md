@@ -80,9 +80,9 @@ Create a `.env.local` file in the project root:
 # Required - Thirdweb Configuration
 NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_thirdweb_client_id
 
-# Required - ApeChain RPC Access
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
-NEXT_PUBLIC_APECHAIN_CHAIN_ID=33139
+# Required - Curtis Testnet RPC Access
+NEXT_PUBLIC_RPC_URL=https://curtis.rpc.caldera.xyz/http
+NEXT_PUBLIC_CHAIN_ID=33111
 
 # Optional - Batch Transfer Contract
 NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS=0x...
@@ -103,12 +103,10 @@ NEXT_PUBLIC_APEBEATS_CONTRACT_ADDRESS=0x...
 3. Create a new "Client ID" (not secret key)
 4. Copy the client ID to your `.env.local`
 
-#### Alchemy API Key
-1. Go to [Alchemy Dashboard](https://dashboard.alchemy.com)
-2. Create a new app
-3. Select "ApeChain" network
-4. Copy the API key from app details
-5. Add to your `.env.local`
+#### Curtis Testnet RPC URL
+1. Use the public Curtis Testnet RPC URL: `https://curtis.rpc.caldera.xyz/http`
+2. Add to your `.env.local` as `NEXT_PUBLIC_RPC_URL`
+3. Set `NEXT_PUBLIC_CHAIN_ID=33111` for Curtis Testnet
 
 ### 4. Start Development
 ```bash
@@ -150,8 +148,8 @@ open public/social-preview-test.html
 Create a `.env.local` at the repo root with:
 ```bash
 NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_thirdweb_client_id
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
-NEXT_PUBLIC_APECHAIN_CHAIN_ID=33139
+NEXT_PUBLIC_RPC_URL=https://curtis.rpc.caldera.xyz/http
+NEXT_PUBLIC_CHAIN_ID=33111
 NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS=0x... # Optional: Batch transfer contract address
 NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS=0x... # Optional: Staking contract address
 NEXT_PUBLIC_POOL_FACTORY_CONTRACT_ADDRESS=0x... # Optional: Pool factory contract address
@@ -170,20 +168,17 @@ NEXT_PUBLIC_APEBEATS_CONTRACT_ADDRESS=0x... # Optional: ApeBeats contract addres
 - **Used in**: `lib/thirdweb.ts` to initialize `createThirdwebClient`
 - **Example**: `NEXT_PUBLIC_THIRDWEB_CLIENT_ID=abc123def456...`
 
-#### NEXT_PUBLIC_ALCHEMY_API_KEY
-- **What**: Alchemy API key for ApeChain RPC access
-- **Where to get**:
-  1. Go to [Alchemy Dashboard](https://dashboard.alchemy.com)
-  2. Create a new app → Select "ApeChain" network
-  3. Copy the API key from the app details
-- **Used in**: Construct ApeChain RPC URL: `https://apechain-mainnet.g.alchemy.com/v2/{API_KEY}`
-- **Example**: `NEXT_PUBLIC_ALCHEMY_API_KEY=alcht_abc123...`
+#### NEXT_PUBLIC_RPC_URL
+- **What**: Curtis Testnet RPC URL for blockchain access
+- **Value**: `https://curtis.rpc.caldera.xyz/http` (Curtis Testnet)
+- **Used in**: `lib/chains.ts` for blockchain connection
+- **Example**: `NEXT_PUBLIC_RPC_URL=https://curtis.rpc.caldera.xyz/http`
 
-#### NEXT_PUBLIC_APECHAIN_CHAIN_ID
-- **What**: ApeChain mainnet chain ID
-- **Value**: `33139` (ApeChain mainnet)
-- **Used in**: `lib/thirdweb.ts` with `defineChain`
-- **Example**: `NEXT_PUBLIC_APECHAIN_CHAIN_ID=33139`
+#### NEXT_PUBLIC_CHAIN_ID
+- **What**: Curtis Testnet chain ID
+- **Value**: `33111` (Curtis Testnet)
+- **Used in**: `lib/chains.ts` with `defineChain`
+- **Example**: `NEXT_PUBLIC_CHAIN_ID=33111`
 
 #### NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS
 - **What**: Batch transfer smart contract address on ApeChain
@@ -231,20 +226,20 @@ NEXT_PUBLIC_APEBEATS_CONTRACT_ADDRESS=0x... # Optional: ApeBeats contract addres
 
 ## Network Setup
 
-This application is configured to use **ApeChain** as the default network. The app will automatically prompt users to switch to ApeChain if they're connected to a different network.
+This application is configured to use **Curtis Testnet** as the default network for development and testing. The app will automatically prompt users to switch to Curtis Testnet if they're connected to a different network.
 
 ### Network Features
 - 🔄 **Automatic Network Detection**: Detects when users are on the wrong network
-- 🚀 **One-Click Network Switching**: Users can switch to ApeChain with a single click
+- 🚀 **One-Click Network Switching**: Users can switch to Curtis Testnet with a single click
 - 📱 **Network Status Indicators**: Real-time network status updates
 - ✅ **Supported Wallets**: MetaMask, Rabby, Rainbow, WalletConnect, Glyph, and in-app wallets
 
-### ApeChain Configuration
+### Curtis Testnet Configuration
 ```typescript
-// Chain ID: 33139 (ApeChain Mainnet)
-// RPC URL: https://apechain-mainnet.g.alchemy.com/v2/{API_KEY}
+// Chain ID: 33111 (Curtis Testnet)
+// RPC URL: https://curtis.rpc.caldera.xyz/http
 // Native Currency: APE (18 decimals)
-// Block Explorer: https://explorer.apechain.com
+// Block Explorer: https://curtis.apescan.io
 ```
 
 See `NETWORK_SETUP.md` for detailed network configuration and troubleshooting.
@@ -340,7 +335,7 @@ Professional-grade utility for capturing token holders across multiple blockchai
 - **Status**: Available after Genesis launch
 
 ### 💰 **Batch Transfer System**
-Efficiently distribute APE tokens to multiple recipients with significant gas savings.
+Efficiently distribute APE tokens to multiple recipients with significant gas savings and multi-wallet support.
 
 #### Transfer Modes
 1. **Equal Amounts**: Perfect for airdrops and equal distribution
@@ -348,18 +343,21 @@ Efficiently distribute APE tokens to multiple recipients with significant gas sa
 3. **Random Amounts**: Great for gamification and surprise distributions
 
 #### Features
+- **Multi-Wallet Support**: Works seamlessly with ThirdWeb and Glyph wallets
 - **CSV Upload**: Bulk recipient management via CSV files
 - **Real-time Validation**: Live balance checking and gas estimation
 - **Gas Optimization**: Up to 70% savings compared to individual transfers
 - **Transaction Tracking**: Complete history and status monitoring
 - **Error Handling**: Comprehensive validation and user-friendly messages
+- **Smart Contract Integration**: Secure BatchTransferNative contract with role-based access control
 
 #### Getting Started
 1. Navigate to `/transfers`
-2. Choose your transfer mode
-3. Add recipients manually or upload CSV
-4. Review estimates and execute transfer
-5. Monitor progress in the dashboard
+2. Connect your wallet (ThirdWeb or Glyph)
+3. Choose your transfer mode
+4. Add recipients manually or upload CSV
+5. Review estimates and execute transfer
+6. Monitor progress in the dashboard
 
 ### 🏆 **ApeStake Integration**
 Multi-tier NFT staking system with different APY rates and features.
@@ -419,6 +417,15 @@ Multi-tier NFT staking system with different APY rates and features.
 - Header short connect/disconnect in `components/HeaderUser.tsx`
 - Live ApeChain data in `app/page.tsx` powered by `fetchApeChainStats` from `lib/utils.ts`
 
+### **NEW**: Enhanced Features (v0.5.2)
+- **🌐 Network Context System**: Dynamic network switching with automatic detection based on page routes
+- **📊 Enhanced Dashboard Analytics**: Real-time user statistics, global metrics, and fee rate display
+- **🏆 Leaderboard Service**: Dedicated service for managing leaderboard data and user statistics
+- **💰 Enhanced Batch Transfer System**: Total amount distribution options and improved form validation
+- **🎯 User Interface Improvements**: Updated feature badges and enhanced visual hierarchy
+- **🔧 Technical Infrastructure**: Centralized network management and improved chain configuration
+- **✅ Contract Verification**: Successfully verified BatchTransferNative contract on Curtis ApeScan
+
 ### **NEW**: Enhanced Features (v0.4.7)
 - **Enhanced Wallet Integration**: Improved Glyph wallet connection with browser detection and popup guidance
 - **Browser Detection**: Intelligent browser detection with popup blocking resolution
@@ -426,6 +433,7 @@ Multi-tier NFT staking system with different APY rates and features.
 - **Enhanced Authentication**: Improved login flows and user experience across all authentication methods
 - **New UI Components**: Alert components and enhanced user interface elements
 - **Improved Wallet Service**: Enhanced wallet connection handling with better error recovery
+- **✅ Contract Verification**: Successfully verified BatchTransferNative contract on Curtis ApeScan
 
 ### **NEW**: Enhanced Features (Previous)
 - **Error Handling**: Comprehensive error boundaries in `components/ErrorBoundary.tsx`
@@ -446,6 +454,13 @@ Multi-tier NFT staking system with different APY rates and features.
 - **Batch Transfer System**: Efficient APE token distribution with CSV upload and multiple transfer modes
 
 ## Batch Transfer System
+
+### ✅ **Verified Smart Contract**
+
+**Contract Address**: `0x2245a8160b5965E47Cb46A33637886e2e5d93710`  
+**Network**: Curtis Testnet (Chain ID: 33111)  
+**Explorer**: https://curtis.apescan.io/address/0x2245a8160b5965e47cb46a33637886e2e5d93710  
+**Status**: ✅ **VERIFIED** - Contract source code is publicly available and verified
 
 ### How Batch Transfers Work
 
@@ -587,12 +602,14 @@ Connect using your preferred browser wallet:
 - **Rainbow**: Beautiful, user-friendly wallet
 - **Glyph**: Secure, non-custodial wallet with enhanced integration
 
-#### Enhanced Wallet Features (v0.4.7)
+#### Enhanced Wallet Features (v0.4.7+)
 - **🦁 Browser Detection**: Intelligent detection of Chrome, Brave, Firefox, Safari, and Edge
 - **🚫 Popup Guidance**: Smart popup blocking detection with browser-specific resolution instructions
 - **🛡️ Error Handling**: Enhanced error handling and user feedback for wallet connection issues
 - **🔄 Safe Rendering**: Client-side rendering protection for wallet components
 - **📱 Mobile Support**: Enhanced mobile browser compatibility
+- **🔗 Multi-Wallet Integration**: Unified support for ThirdWeb and Glyph wallets
+- **⚡ Unified Transaction Service**: Seamless transaction execution across different wallet types
 
 #### Mobile Wallets
 - **WalletConnect**: Connect any mobile wallet (Coinbase, Trust, etc.)
@@ -1022,6 +1039,180 @@ See `TESTING.md` for detailed testing documentation, best practices, and trouble
 - **Custom Development**: Hire us for custom features
 - **Consulting**: Get help with integration and deployment
 
+## 🔗 **Glyph Wallet Integration & WalletTransactionService**
+
+### **How We Made Glyph Wallet Work**
+
+The integration of Glyph wallet with our batch transfer system required solving several complex challenges. Here's how we successfully implemented a unified wallet transaction service that works seamlessly with both ThirdWeb and Glyph wallets.
+
+#### **The Challenge**
+- **Different Transaction Formats**: ThirdWeb and Glyph wallets use different transaction formats and APIs
+- **Contract Interaction**: Each wallet type requires different methods for contract interaction
+- **Error Handling**: Different error types and handling mechanisms
+- **State Management**: Different wallet state management approaches
+
+#### **The Solution: WalletTransactionService**
+
+We created a unified `WalletTransactionService` class that abstracts away the differences between wallet types:
+
+```typescript
+export interface WalletInfo {
+  type: 'thirdweb' | 'glyph'
+  account?: any
+  address?: string
+  signer?: any
+  sendTransaction?: (transaction: {
+    to: string
+    data: string
+    value: string
+    chainId: number
+  }) => Promise<string>
+}
+```
+
+#### **Key Implementation Details**
+
+##### **1. Unified Transaction Execution**
+```typescript
+async executeTransaction(
+  walletInfo: WalletInfo,
+  contractMethod: string,
+  params: any[],
+  value?: bigint
+): Promise<{ transactionHash: string }>
+```
+
+The service automatically detects the wallet type and uses the appropriate transaction method:
+- **ThirdWeb**: Uses `prepareContractCall` and `sendTransaction`
+- **Glyph**: Uses `encodeFunctionData` and `sendTransaction` with custom format
+
+##### **2. Dynamic Gas Price Calculation**
+```typescript
+// Get current gas price for Curtis testnet (APE)
+let gasPrice = BigInt(1000000000) // Default 1 Gwei fallback
+try {
+  const { createPublicClient, http } = await import("viem")
+  const { curtis } = await import("./chains")
+  const client = createPublicClient({
+    chain: curtis,
+    transport: http(process.env.NEXT_PUBLIC_RPC_URL || "https://curtis.rpc.caldera.xyz/http")
+  })
+  const networkGasPrice = await client.getGasPrice()
+  gasPrice = networkGasPrice
+} catch (error) {
+  console.log("🔍 Could not fetch gas price, using default:", gasPrice.toString())
+}
+```
+
+##### **3. Contract Method Encoding**
+For Glyph wallets, we manually encode contract method calls:
+```typescript
+// Encode the function call data using the full contract ABI
+const { encodeFunctionData } = await import("viem")
+const data = encodeFunctionData({
+  abi: contractABI,
+  functionName: contractMethod,
+  args: params
+})
+```
+
+##### **4. Transaction Format Adaptation**
+```typescript
+// Create the transaction object in the format expected by Glyph
+const transaction = {
+  to: contractAddress,
+  data: data,
+  value: value?.toString() || "0",
+  chainId: curtisChainId
+}
+
+// Use Glyph's sendTransaction with the correct format
+const txHash = await walletInfo.signer.sendTransaction({ transaction })
+```
+
+#### **Token Approval Handling**
+
+For ERC20 tokens, we implemented automatic approval checking and execution:
+
+```typescript
+async checkAndApproveTokens(
+  walletInfo: WalletInfo, 
+  amount: string, 
+  tokenAddress?: Address
+): Promise<void>
+```
+
+The service:
+1. Checks current allowance for the token
+2. Compares with required amount
+3. Automatically requests approval if needed
+4. Handles the approval transaction
+
+#### **Error Handling & Validation**
+
+Comprehensive error handling ensures robust operation:
+
+```typescript
+// Validate transaction before sending
+if (!transaction.to || transaction.to === "0x0000000000000000000000000000000000000000") {
+  throw new Error("Invalid contract address")
+}
+
+if (!transaction.data || transaction.data === "0x" || transaction.data.length < 10) {
+  throw new Error("Invalid transaction data")
+}
+```
+
+#### **Benefits of This Approach**
+
+1. **Unified Interface**: Single API for all wallet types
+2. **Type Safety**: Full TypeScript support with proper types
+3. **Error Resilience**: Comprehensive error handling and validation
+4. **Maintainability**: Easy to add new wallet types
+5. **Performance**: Optimized for each wallet's specific requirements
+
+#### **Usage in Components**
+
+Components can now use the unified service without worrying about wallet types:
+
+```typescript
+const walletInfo = getWalletInfo() // Automatically detects wallet type
+
+// Execute transaction using unified service
+const receipt = await walletTransactionService.executeTransaction(
+  walletInfo,
+  "batchTransferEqual",
+  [recipients, BigInt(amountPerRecipient)],
+  totalWithFee
+)
+```
+
+#### **Testing & Debugging**
+
+The service includes comprehensive logging for debugging:
+
+```typescript
+console.log("🔍 executeTransaction called with:", { 
+  walletType: walletInfo.type, 
+  method: contractMethod, 
+  params, 
+  value 
+})
+```
+
+This makes it easy to debug issues and monitor transaction execution across different wallet types.
+
+### **Result**
+
+The `WalletTransactionService` successfully enables:
+- ✅ **Seamless Glyph Integration**: Full support for Glyph wallet transactions
+- ✅ **Backward Compatibility**: Existing ThirdWeb functionality remains unchanged
+- ✅ **Enhanced User Experience**: Users can choose their preferred wallet
+- ✅ **Robust Error Handling**: Comprehensive error handling and user feedback
+- ✅ **Future-Proof Architecture**: Easy to add support for additional wallet types
+
+This implementation demonstrates how to create a unified wallet abstraction layer that handles the complexities of different wallet APIs while providing a clean, consistent interface for the application.
+
 ## 🏗️ Project Architecture
 
 ### 📁 **Project Structure**
@@ -1375,8 +1566,16 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.5.0
+### Current Version: v0.5.2
 **Latest Release**: January 27, 2025
+
+**Key Features in v0.5.2:**
+- 🌐 **Network Context System**: Dynamic network switching with automatic detection based on page routes
+- 📊 **Enhanced Dashboard Analytics**: Real-time user statistics, global metrics, and fee rate display
+- 🏆 **Leaderboard Service**: Dedicated service for managing leaderboard data and user statistics
+- 💰 **Enhanced Batch Transfer System**: Total amount distribution options and improved form validation
+- 🎯 **User Interface Improvements**: Updated feature badges and enhanced visual hierarchy
+- 🔧 **Technical Infrastructure**: Centralized network management and improved chain configuration
 
 **Key Features in v0.5.0:**
 - 🚀 **Enhanced Batch Transfer System**: Complete overhaul with secure smart contract implementation
@@ -1560,7 +1759,7 @@ docs/
 - **Security**: ✅ Comprehensive security audit completed
 
 ### 📈 **Version Information**
-- **Current Version**: v0.5.0
+- **Current Version**: v0.5.2
 - **Release Date**: January 27, 2025
 - **Next.js Version**: 14.2.16
 - **TypeScript**: Latest with strict mode
@@ -1568,9 +1767,11 @@ docs/
 - **Coverage**: 70% minimum threshold
 - **Music Engine**: LoFi Hip Hop generation with blockchain data
 - **Multi-chain Support**: 6 supported networks
-- **Batch Transfer**: Complete APE token batch transfer system
+- **Batch Transfer**: Complete APE token batch transfer system with enhanced distribution options
 - **Staking System**: Multi-tier staking with NFT grid and pool creation
 - **Snapshot Tool**: Professional token holder capture with export functionality
+- **Network Context**: Dynamic network switching with automatic detection
+- **Dashboard Analytics**: Real-time statistics and leaderboard integration
 
 ### 🎯 **Feature Status**
 - ✅ **Core Features**: All implemented and tested
@@ -1769,4 +1970,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
 
-**Version**: v0.5.0 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
+**Version**: v0.5.2 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready

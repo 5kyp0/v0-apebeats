@@ -17,7 +17,7 @@ import {
   Medal,
   Award
 } from "lucide-react"
-import { useBatchTransferService } from "@/lib/batchTransferService"
+import { useLeaderboardService } from "@/lib/leaderboardService"
 import { toast } from "sonner"
 
 interface LeaderboardEntry {
@@ -36,7 +36,7 @@ function LeaderboardContent() {
   const account = useActiveAccount()
   const { address: wagmiAddress } = useAccount()
   const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
-  const batchService = useBatchTransferService()
+  const leaderboardService = useLeaderboardService()
   
   // Check for any wallet connection
   const isGlyphConnected = !!(glyphReady && glyphAuthenticated && glyphUser?.evmWallet)
@@ -58,12 +58,12 @@ function LeaderboardContent() {
     setIsLoading(true)
     try {
       // Load global stats
-      const global = await batchService.getGlobalStats()
+      const global = await leaderboardService.getGlobalStats()
       setGlobalStats(global)
 
       // Load user stats if connected
       if (account?.address) {
-        const user = await batchService.getUserStats(account.address)
+        const user = await leaderboardService.getUserStats(account.address)
         setUserStats(user)
       }
 
@@ -106,7 +106,7 @@ function LeaderboardContent() {
       if (account?.address && userStats.totalTransferred !== "0") {
         const userEntry: LeaderboardEntry = {
           address: account.address,
-          totalTransferred: batchService.formatAmount(userStats.totalTransferred),
+          totalTransferred: leaderboardService.formatAmount(userStats.totalTransferred),
           transferCount: userStats.transferCount,
           rank: 0 // Will be calculated
         }

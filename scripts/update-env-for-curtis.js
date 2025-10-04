@@ -20,7 +20,7 @@ const curtisConfig = `
 # ===========================================
 NEXT_PUBLIC_CHAIN_ID=33111
 NEXT_PUBLIC_RPC_URL=https://curtis.rpc.caldera.xyz/http
-NEXT_PUBLIC_EXPLORER_URL=https://explorer.curtis.apechain.xyz
+NEXT_PUBLIC_EXPLORER_URL=https://curtis.apescan.io
 
 # Keep existing Alchemy API key for blockchain data
 NEXT_PUBLIC_ALCHEMY_API_KEY=qMIdjkmmX8yFcLvr6Ku2BnL-M9A2lFSd

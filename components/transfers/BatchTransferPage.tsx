@@ -27,20 +27,14 @@ import Link from "next/link"
 import { toast } from "sonner"
 
 export function BatchTransferPage() {
-  const [isClient, setIsClient] = useState(false)
-  const [isHydrated, setIsHydrated] = useState(false)
   const account = useActiveAccount()
   const { address: wagmiAddress } = useAccount()
   const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
   const [lastReceipt, setLastReceipt] = useState<any>(null)
+  const [isClient, setIsClient] = useState(false)
   
   useEffect(() => {
     setIsClient(true)
-    // Add a small delay to ensure proper hydration
-    const timer = setTimeout(() => {
-      setIsHydrated(true)
-    }, 100)
-    return () => clearTimeout(timer)
   }, [])
   
   // Check for any wallet connection
@@ -63,12 +57,7 @@ export function BatchTransferPage() {
       showFooter={false}
     >
       <div className="max-w-4xl mx-auto">
-        {!isClient || !isHydrated ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <>
+        <>
             {/* Header */}
             <div className="text-center mb-12">
               <div className="flex items-center justify-center mb-6">
@@ -109,7 +98,7 @@ export function BatchTransferPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const explorerUrl = `https://explorer.apechain.com/tx/${lastReceipt.transactionHash}`
+                      const explorerUrl = `https://curtis.apescan.io/tx/${lastReceipt.transactionHash}`
                       window.open(explorerUrl, '_blank')
                     }}
                   >
@@ -123,7 +112,7 @@ export function BatchTransferPage() {
         )}
 
         {/* Wallet Connection Status */}
-        {!hasWallet && (
+        {isClient && !hasWallet && (
           <Card className="mb-6 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
@@ -227,8 +216,7 @@ export function BatchTransferPage() {
                 </Link>
               </Button>
             </div>
-          </>
-        )}
+        </>
       </div>
     </CommonPageLayout>
   )

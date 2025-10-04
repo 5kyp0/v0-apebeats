@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useActiveAccount } from "thirdweb/react"
 import { useAccount } from "wagmi"
 import { useSafeGlyph } from "@/hooks/useSafeGlyph"
-import { ClientOnly } from "@/components/ClientOnly"
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,7 +25,9 @@ import {
   Equal,
   Edit3
 } from "lucide-react"
-import { useBatchTransferService, type BatchTransferRecipient, type BatchTransferOptions } from "@/lib/batchTransferService"
+import { useSimpleBatchTransferService, type BatchTransferRecipient, type BatchTransferOptions } from "@/lib/simpleBatchService"
+import { type WalletInfo } from "@/lib/walletTransactionService"
+import { useApeCoinBalance } from "@/hooks/useApeCoinBalance"
 import { TokenSelector } from "./TokenSelector"
 import { APE_TOKEN_ADDRESS } from "@/lib/thirdweb"
 import { toast } from "sonner"
@@ -38,13 +39,42 @@ interface BatchTransferFormProps {
 function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps) {
   const account = useActiveAccount()
   const { address: wagmiAddress } = useAccount()
-  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
-  const batchService = useBatchTransferService()
+  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated, sendTransaction: glyphSendTransaction } = useSafeGlyph()
+  const batchService = useSimpleBatchTransferService()
+  const { balance: apeBalance, rawBalance: apeRawBalance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useApeCoinBalance()
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
   
   // Check for any wallet connection
   const isGlyphConnected = !!(glyphReady && glyphAuthenticated && glyphUser?.evmWallet)
   const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
   const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
+  
+  // Create wallet info object for transaction service
+  const getWalletInfo = (): WalletInfo | null => {
+    if (account) {
+      return {
+        type: 'thirdweb',
+        account: account,
+        address: account.address
+      }
+    } else if (glyphUser?.evmWallet && glyphReady && glyphAuthenticated) {
+      return {
+        type: 'glyph',
+        address: glyphUser.evmWallet,
+        signer: { 
+          sendTransaction: glyphSendTransaction
+        },
+        sendTransaction: glyphSendTransaction
+      }
+    }
+    return null
+  }
+  
+  const walletInfo = getWalletInfo()
   
   
   
@@ -52,53 +82,46 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   const [mode, setMode] = useState<'equal' | 'custom' | 'random'>('equal')
   const [recipients, setRecipients] = useState<BatchTransferRecipient[]>([])
   const [equalAmount, setEqualAmount] = useState("")
+  const [equalTotalAmount, setEqualTotalAmount] = useState("") // New: total amount for equal distribution
   const [randomMin, setRandomMin] = useState("")
   const [randomMax, setRandomMax] = useState("")
+  const [randomTotalAmount, setRandomTotalAmount] = useState("") // New: total amount for random distribution
   const [csvInput, setCsvInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [balance, setBalance] = useState("0")
   const [estimate, setEstimate] = useState<any>(null)
   const [feeBps, setFeeBps] = useState(50)
-  const [selectedToken, setSelectedToken] = useState<string>(APE_TOKEN_ADDRESS)
+  const [selectedToken, setSelectedToken] = useState<string | undefined>(undefined) // Native APE by default
 
-  // Load user balance and fee rate
+  // Load fee rate
   useEffect(() => {
     if (currentAddress) {
-      loadUserData()
+      loadFeeData()
     }
   }, [currentAddress, selectedToken])
 
-  // Add client-side hydration guard
-  const [isClient, setIsClient] = useState(false)
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   // Update estimate when inputs change
   useEffect(() => {
     if (recipients.length > 0) {
       updateEstimate()
     }
-  }, [recipients, equalAmount, randomMin, randomMax, mode, selectedToken])
+  }, [recipients, equalAmount, equalTotalAmount, randomMin, randomMax, randomTotalAmount, mode, selectedToken])
 
-  const loadUserData = async () => {
+  const loadFeeData = async () => {
     if (!currentAddress) return
     
     try {
-      const [userBalance, currentFeeBps] = await Promise.all([
-        batchService.getBalance(currentAddress, selectedToken as any),
-        batchService.getFeeBps(selectedToken as any)
-      ])
-      setBalance(userBalance)
+      const currentFeeBps = await batchService.getFeeBps(selectedToken as any)
       setFeeBps(currentFeeBps)
     } catch (error) {
+      console.error("Error loading fee data:", error)
       // Set default values if contract is not configured
-      setBalance("0")
       setFeeBps(50)
     }
   }
 
   const updateEstimate = async () => {
+    console.log("🔍 updateEstimate called with recipients:", recipients.length)
     if (recipients.length === 0) {
       setEstimate(null)
       return
@@ -108,23 +131,51 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       const options: BatchTransferOptions = {
         recipients,
         mode,
-        equalAmount: mode === 'equal' ? equalAmount : undefined,
+        equalAmount: mode === 'equal' ? (equalTotalAmount ? undefined : equalAmount) : undefined,
+        equalTotalAmount: mode === 'equal' ? equalTotalAmount : undefined,
         randomMin: mode === 'random' ? randomMin : undefined,
         randomMax: mode === 'random' ? randomMax : undefined,
+        randomTotalAmount: mode === 'random' ? randomTotalAmount : undefined,
         tokenAddress: selectedToken as any,
       }
       
+      console.log("🔍 Calling batchService.estimateTransfer with options:", options)
       const estimateResult = await batchService.estimateTransfer(options)
+      console.log("🔍 Got estimate result:", estimateResult)
       setEstimate(estimateResult)
     } catch (error) {
-      // Handle error silently
-      // Set a fallback estimate if contract is not configured
+      console.error("Error updating estimate:", error)
+      // Handle error gracefully with fallback calculation
       let totalAmount = BigInt(0)
-      if (mode === 'equal' && equalAmount) {
-        totalAmount = BigInt(equalAmount) * BigInt(recipients.length)
+      
+      if (mode === 'equal') {
+        if (equalTotalAmount && !isNaN(parseFloat(equalTotalAmount))) {
+          // Use total amount and divide by recipients
+          const totalInWei = BigInt(Math.floor(parseFloat(equalTotalAmount) * 1e18))
+          totalAmount = totalInWei
+        } else if (equalAmount && !isNaN(parseFloat(equalAmount))) {
+          // Use per-recipient amount
+          const amountInWei = BigInt(Math.floor(parseFloat(equalAmount) * 1e18))
+          totalAmount = amountInWei * BigInt(recipients.length)
+        }
       } else if (mode === 'custom') {
         for (const recipient of recipients) {
-          totalAmount += BigInt(recipient.amount || "0")
+          if (recipient.amount && !isNaN(parseFloat(recipient.amount))) {
+            const amountInWei = BigInt(Math.floor(parseFloat(recipient.amount) * 1e18))
+            totalAmount += amountInWei
+          }
+        }
+      } else if (mode === 'random') {
+        if (randomTotalAmount && !isNaN(parseFloat(randomTotalAmount))) {
+          // Use total amount for random distribution
+          const totalInWei = BigInt(Math.floor(parseFloat(randomTotalAmount) * 1e18))
+          totalAmount = totalInWei
+        } else if (randomMin && randomMax && !isNaN(parseFloat(randomMin)) && !isNaN(parseFloat(randomMax))) {
+          // Use min/max range
+          const minInWei = BigInt(Math.floor(parseFloat(randomMin) * 1e18))
+          const maxInWei = BigInt(Math.floor(parseFloat(randomMax) * 1e18))
+          const avgAmount = (minInWei + maxInWei) / BigInt(2)
+          totalAmount = avgAmount * BigInt(recipients.length)
         }
       }
       
@@ -132,7 +183,9 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       setEstimate({
         totalAmount: totalAmount.toString(),
         fee: fee.toString(),
-        totalRequired: (totalAmount + fee).toString()
+        totalRequired: (totalAmount + fee).toString(),
+        tokenSymbol: "APE",
+        tokenDecimals: 18
       })
     }
   }
@@ -197,13 +250,37 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   }
 
   const executeTransfer = async () => {
-    if (!currentAddress || recipients.length === 0) {
-      toast.error("Please connect wallet and add recipients")
+    console.log("🔍 executeTransfer called")
+    console.log("🔍 Wallet info:", {
+      type: walletInfo?.type,
+      address: walletInfo?.address || walletInfo?.account?.address,
+      hasAccount: !!walletInfo?.account,
+      hasSigner: !!walletInfo?.signer,
+      isGlyphConnected,
+      glyphReady,
+      glyphAuthenticated
+    })
+    
+    if (!walletInfo || recipients.length === 0) {
+      if (!walletInfo) {
+        toast.error("Please connect a wallet (ThirdWeb or Glyph) to execute transactions")
+      } else {
+        toast.error("Please add recipients")
+      }
+      return
+    }
+
+    // Check for duplicate recipients
+    const recipientAddresses = recipients.map(r => r.address.toLowerCase())
+    const uniqueAddresses = new Set(recipientAddresses)
+    if (recipientAddresses.length !== uniqueAddresses.size) {
+      toast.error("Duplicate recipient addresses detected. Please use unique addresses for each recipient.")
       return
     }
 
     // Check if contract is configured
     const contractAddress = process.env.NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS
+    console.log("🔍 Contract address:", contractAddress)
     if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
       toast.error("Batch transfer contract not configured. Please set up your environment variables.")
       return
@@ -215,15 +292,19 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       const options: BatchTransferOptions = {
         recipients,
         mode,
-        equalAmount: mode === 'equal' ? equalAmount : undefined,
+        equalAmount: mode === 'equal' ? (equalTotalAmount ? undefined : equalAmount) : undefined,
+        equalTotalAmount: mode === 'equal' ? equalTotalAmount : undefined,
         randomMin: mode === 'random' ? randomMin : undefined,
         randomMax: mode === 'random' ? randomMax : undefined,
+        randomTotalAmount: mode === 'random' ? randomTotalAmount : undefined,
         randomSeed: mode === 'random' ? Math.floor(Math.random() * 1000000) : undefined,
-        tokenAddress: selectedToken as any,
+        tokenAddress: selectedToken as any, // Use ERC20 APE token
       }
 
+      console.log("🔍 Executing transfer with options:", options)
       toast.loading("Executing batch transfer...")
-      const receipt = await batchService.executeBatchTransfer(account.address, options)
+      const receipt = await batchService.executeBatchTransfer(walletInfo, options)
+      console.log("🔍 Transfer completed with receipt:", receipt)
       
       toast.success("Batch transfer completed successfully!")
       onTransferComplete?.(receipt)
@@ -231,12 +312,16 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       // Reset form
       setRecipients([])
       setEqualAmount("")
+      setEqualTotalAmount("")
       setRandomMin("")
       setRandomMax("")
+      setRandomTotalAmount("")
       setEstimate(null)
       
     } catch (error: any) {
-      console.error("Transfer error:", error)
+      console.error("🔍 Transfer error:", error)
+      console.error("🔍 Error message:", error.message)
+      console.error("🔍 Error stack:", error.stack)
       toast.error(error.message || "Transfer failed")
     } finally {
       setIsLoading(false)
@@ -244,25 +329,19 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   }
 
   const formatBalance = (balance: string) => {
-    return batchService.formatAmount(balance)
+    // Balance is already formatted from useApeCoinBalance hook
+    return balance
   }
 
-  const formatEstimate = (amount: string) => {
-    return batchService.formatAmount(amount)
+  const formatEstimate = (amount: string, isFee: boolean = false) => {
+    // Use 5 decimal places for fees to show minimum fee details, 3 for other amounts
+    return batchService.formatAmount(amount, 18, isFee ? 5 : 3)
   }
 
-  if (!isClient) {
-    return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+
       {/* Token Selector - Temporarily disabled */}
       {/* <TokenSelector
         selectedToken={selectedToken}
@@ -278,7 +357,10 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             Token Selection
           </CardTitle>
           <CardDescription>
-            APE token is currently selected for batch transfer
+            {isGlyphConnected 
+              ? "ERC20 APE token is selected for Glyph wallet batch transfer" 
+              : "Native APE token is selected for ThirdWeb wallet batch transfer"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -306,7 +388,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-primary">
-            {formatBalance(balance)} {estimate?.tokenSymbol || "APE"}
+            {apeBalance} {estimate?.tokenSymbol || "APE"}
           </div>
           <div className="text-sm text-muted-foreground">
             Fee rate: {feeBps / 100}% per transaction
@@ -340,42 +422,137 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             </TabsList>
 
             <TabsContent value="equal" className="space-y-4">
-              <div>
-                <Label htmlFor="equalAmount">Amount per recipient (APE)</Label>
-                <Input
-                  id="equalAmount"
-                  type="number"
-                  step="0.000001"
-                  placeholder="1.0"
-                  value={equalAmount}
-                  onChange={(e) => setEqualAmount(e.target.value)}
-                />
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="equalTotalAmount">Total amount to distribute (APE)</Label>
+                  <Input
+                    id="equalTotalAmount"
+                    type="number"
+                    step="0.000001"
+                    placeholder="10.0"
+                    value={equalTotalAmount}
+                    onChange={(e) => {
+                      setEqualTotalAmount(e.target.value)
+                      if (e.target.value) {
+                        setEqualAmount("") // Clear per-recipient amount when total is set
+                      }
+                    }}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This amount will be divided equally among all recipients
+                  </p>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">OR</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="equalAmount">Amount per recipient (APE)</Label>
+                  <Input
+                    id="equalAmount"
+                    type="number"
+                    step="0.000001"
+                    placeholder="1.0"
+                    value={equalAmount}
+                    onChange={(e) => {
+                      setEqualAmount(e.target.value)
+                      if (e.target.value) {
+                        setEqualTotalAmount("") // Clear total amount when per-recipient is set
+                      }
+                    }}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Each recipient will receive this exact amount
+                  </p>
+                </div>
               </div>
             </TabsContent>
 
             <TabsContent value="random" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="randomMin">Minimum amount (APE)</Label>
-                  <Input
-                    id="randomMin"
-                    type="number"
-                    step="0.000001"
-                    placeholder="0.1"
-                    value={randomMin}
-                    onChange={(e) => setRandomMin(e.target.value)}
-                  />
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2 text-yellow-800">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="font-medium">Feature Under Development</span>
                 </div>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Random batch transfers are currently disabled while we work on improving the feature. 
+                  Please use Equal or Custom distribution for now.
+                </p>
+              </div>
+              
+              <div className="space-y-4 opacity-50 pointer-events-none">
                 <div>
-                  <Label htmlFor="randomMax">Maximum amount (APE)</Label>
+                  <Label htmlFor="randomTotalAmount">Total amount to distribute (APE)</Label>
                   <Input
-                    id="randomMax"
+                    id="randomTotalAmount"
                     type="number"
                     step="0.000001"
                     placeholder="10.0"
-                    value={randomMax}
-                    onChange={(e) => setRandomMax(e.target.value)}
+                    value={randomTotalAmount}
+                    onChange={(e) => {
+                      setRandomTotalAmount(e.target.value)
+                      if (e.target.value) {
+                        setRandomMin("")
+                        setRandomMax("")
+                      }
+                    }}
+                    disabled
                   />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This amount will be distributed randomly among all recipients
+                  </p>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">OR</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="randomMin">Minimum amount (APE)</Label>
+                    <Input
+                      id="randomMin"
+                      type="number"
+                      step="0.000001"
+                      placeholder="0.1"
+                      value={randomMin}
+                      onChange={(e) => {
+                        setRandomMin(e.target.value)
+                        if (e.target.value) {
+                          setRandomTotalAmount("")
+                        }
+                      }}
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="randomMax">Maximum amount (APE)</Label>
+                    <Input
+                      id="randomMax"
+                      type="number"
+                      step="0.000001"
+                      placeholder="10.0"
+                      value={randomMax}
+                      onChange={(e) => {
+                        setRandomMax(e.target.value)
+                        if (e.target.value) {
+                          setRandomTotalAmount("")
+                        }
+                      }}
+                      disabled
+                    />
+                  </div>
                 </div>
               </div>
             </TabsContent>
@@ -471,14 +648,14 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             </div>
             <div className="flex justify-between">
               <span>Fee ({feeBps / 100}%):</span>
-              <span className="font-mono text-orange-500">{formatEstimate(estimate.fee)} {estimate.tokenSymbol || "APE"}</span>
+              <span className="font-mono text-orange-500">{formatEstimate(estimate.fee, true)} {estimate.tokenSymbol || "APE"}</span>
             </div>
             <div className="flex justify-between font-bold border-t pt-2">
               <span>Total required:</span>
-              <span className="font-mono">{formatEstimate(estimate.totalRequired)} {estimate.tokenSymbol || "APE"}</span>
+              <span className="font-mono">{formatEstimate(estimate.totalRequired, true)} {estimate.tokenSymbol || "APE"}</span>
             </div>
             
-            {BigInt(balance) < BigInt(estimate.totalRequired) && (
+            {BigInt(apeRawBalance) < BigInt(estimate.totalRequired) && (
               <div className="flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 <span>Insufficient balance</span>
@@ -493,7 +670,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
         <CardContent className="pt-6">
           <Button
             onClick={executeTransfer}
-            disabled={!currentAddress || recipients.length === 0 || isLoading || !estimate}
+            disabled={!walletInfo || recipients.length === 0 || isLoading || !estimate}
             className="w-full"
             size="lg"
           >
@@ -510,7 +687,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             )}
           </Button>
           
-          {!hasWallet && (
+          {isClient && !hasWallet && (
             <p className="text-sm text-muted-foreground text-center mt-2">
               Please connect your wallet to continue
             </p>
@@ -523,21 +700,15 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
 
 export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps) {
   return (
-    <ClientOnly fallback={
+    <ErrorBoundary fallback={
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-red-500 mb-2">Component Error</h3>
+          <p className="text-sm text-muted-foreground">There was an error loading the batch transfer form.</p>
+        </div>
       </div>
     }>
-      <ErrorBoundary fallback={
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-red-500 mb-2">Component Error</h3>
-            <p className="text-sm text-muted-foreground">There was an error loading the batch transfer form.</p>
-          </div>
-        </div>
-      }>
-        <BatchTransferFormContent onTransferComplete={onTransferComplete} />
-      </ErrorBoundary>
-    </ClientOnly>
+      <BatchTransferFormContent onTransferComplete={onTransferComplete} />
+    </ErrorBoundary>
   )
 }

@@ -69,6 +69,154 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Accessibility**: Enhanced ARIA labels and keyboard navigation
 - **Documentation**: Complete with setup guides and troubleshooting
 
+## [Unreleased]
+
+### 🚀 **Major Features Added**
+
+#### 🔗 **Enhanced Multi-Wallet Support**
+- **Glyph Wallet Integration**: Complete integration with Glyph wallet for seamless batch transfers
+- **Unified Wallet Transaction Service**: New `WalletTransactionService` class supporting both ThirdWeb and Glyph wallets
+- **Smart Wallet Detection**: Automatic detection and handling of different wallet types
+- **Enhanced Error Handling**: Comprehensive error handling for wallet connection issues
+
+#### 💰 **Advanced Batch Transfer System**
+- **New BatchTransferNative Contract**: Secure smart contract implementation with role-based access control
+- **Multi-Wallet Support**: Works with both ThirdWeb and Glyph wallets seamlessly
+- **Enhanced Security**: Reentrancy protection, input validation, and comprehensive error handling
+- **Gas Optimization**: Dynamic gas price calculation for Curtis testnet (APE)
+- **Token Approval System**: Automatic ERC20 token approval handling for Glyph wallets
+
+#### 🛠️ **Technical Infrastructure Improvements**
+- **Simplified Batch Service**: New `SimpleBatchTransferService` replacing complex batch transfer logic
+- **Enhanced Contract Integration**: Updated ABI handling with proper contract method signatures
+- **Improved Balance Management**: Real-time APE balance display with proper formatting
+- **Better State Management**: Enhanced wallet state detection and management
+
+#### 🎯 **User Experience Enhancements**
+- **Unified Wallet Interface**: Consistent experience across all wallet types
+- **Enhanced Form Validation**: Better input validation and error messages
+- **Improved Transaction Flow**: Streamlined transaction execution with better feedback
+- **Real-time Updates**: Live balance and fee calculations
+
+## [v0.5.2] - 2025-01-27
+
+### 🚀 **Major Features Added**
+
+#### 🌐 **Network Context System**
+- **Dynamic Network Switching**: New `NetworkProvider` context for automatic network detection
+- **Context-Aware Chain Selection**: Automatic switching between Curtis testnet (batch operations) and ApeChain mainnet (general use)
+- **Route-Based Network Detection**: Smart detection based on current page route (`/batch`, `/transfers`, `/dashboard`, `/stake`)
+- **Unified Chain Management**: Centralized chain configuration with `useCurrentChain()` and `useCurrentThirdwebChain()` hooks
+
+#### 📊 **Enhanced Dashboard Analytics**
+- **Real-time User Statistics**: Live display of user transfer count and total transferred amounts
+- **Global Statistics Integration**: Real-time global volume and transfer count from smart contract
+- **Fee Rate Display**: Current fee rate (0.5%) with basis points breakdown
+- **Loading States**: Proper loading indicators for all statistics
+- **Enhanced User Experience**: Better visual feedback and data presentation
+
+#### 🏆 **Leaderboard Service**
+- **Dedicated Leaderboard Service**: New `LeaderboardService` class for managing leaderboard data
+- **Contract Integration**: Direct integration with batch transfer contract for real-time statistics
+- **User Statistics**: Individual user transfer count and total transferred amounts
+- **Global Metrics**: Platform-wide volume and transfer statistics
+- **Mock Data Support**: Fallback mock data for demonstration purposes
+
+#### 💰 **Enhanced Batch Transfer System**
+- **Total Amount Distribution**: New option to distribute total amount equally among recipients
+- **Random Distribution Improvements**: Enhanced random distribution with total amount option
+- **Better Form Validation**: Improved input validation and user guidance
+- **Feature Status Indicators**: Clear indication of feature development status
+- **Enhanced User Interface**: Better form layout with OR separators and help text
+
+#### 🎯 **User Interface Improvements**
+- **Menu Badge Updates**: Updated feature badges (Music Engine: BETA → ALPHA, Batch Operations: Coming soon → TESTNET)
+- **Enhanced Badge Styling**: New badge colors for ALPHA (purple) and TESTNET (green) status
+- **Better Visual Hierarchy**: Improved menu organization and visual presentation
+- **Status Clarity**: Clear indication of feature maturity and availability
+
+#### 🔧 **Technical Infrastructure**
+- **Network Context Integration**: Root layout now includes `NetworkProvider` for global network management
+- **Enhanced Thirdweb Configuration**: Support for both Curtis testnet and ApeChain mainnet configurations
+- **Improved Chain Detection**: Better chain ID and name management across different contexts
+- **Wagmi Configuration Updates**: Default chain updated to ApeChain mainnet for general use
+
+### 🛠️ **Technical Improvements**
+
+#### 📁 **New Files Added**
+- `lib/networkContext.tsx`: Network context provider and hooks for dynamic network switching
+- `lib/leaderboardService.ts`: Dedicated service for leaderboard and statistics management
+
+#### 🔄 **Files Modified**
+- `app/layout.tsx`: Added NetworkProvider wrapper for global network context
+- `components/dashboard/UserDashboard.tsx`: Enhanced with real-time statistics and fee display
+- `components/features/MenuDropdown.tsx`: Updated badges and styling for feature status
+- `components/transfers/BatchTransferForm.tsx`: Enhanced with total amount distribution options
+- `components/transfers/Leaderboard.tsx`: Updated to use new LeaderboardService
+- `lib/simpleBatchService.ts`: Enhanced with total amount distribution support
+- `lib/thirdweb.ts`: Updated chain configuration and contract handling
+- `lib/wagmi.ts`: Updated default chain to ApeChain mainnet
+
+### 🎯 **User Experience Enhancements**
+- **Intuitive Network Switching**: Automatic network detection based on page context
+- **Real-time Data**: Live statistics and fee information in dashboard
+- **Better Form UX**: Enhanced batch transfer form with clearer options and guidance
+- **Status Transparency**: Clear feature status indicators throughout the application
+- **Improved Navigation**: Better menu organization with updated feature badges
+
+### 🔧 **Developer Experience**
+- **Centralized Network Management**: Single source of truth for network configuration
+- **Reusable Hooks**: `useNetworkContext()`, `useCurrentChain()`, `useCurrentThirdwebChain()`
+- **Service Architecture**: Dedicated services for different feature areas
+- **Type Safety**: Enhanced TypeScript support with proper type definitions
+- **Better Code Organization**: Clear separation of concerns with dedicated service classes
+
+### 🔧 **Technical Changes**
+
+#### **New Files Added**
+- `lib/walletTransactionService.ts` - Unified wallet transaction service
+- `lib/simpleBatchService.ts` - Simplified batch transfer service
+- `contracts/BatchTransferNative.sol` - New secure batch transfer contract
+- `lib/batchTransferNativeABI.json` - Contract ABI for native batch transfers
+- `scripts/deploy-batch-transfer-native.js` - Native batch transfer deployment script
+- `scripts/extract-native-batch-abi.js` - ABI extraction script
+- `scripts/add-batch-contract-env.js` - Environment variable setup script
+
+#### **Files Modified**
+- `components/transfers/BatchTransferForm.tsx` - Enhanced with multi-wallet support
+- `components/transfers/TeamManagement.tsx` - Updated for new wallet service
+- `components/dashboard/UserDashboard.tsx` - Improved balance display
+- `lib/thirdweb.ts` - Simplified and updated contract configuration
+- `lib/chains.ts` - Enhanced chain configuration
+- `hooks/useApeCoinBalance.ts` - Improved balance hook
+- `lib/batchTransferService.ts` - Updated service implementation
+
+#### **Files Removed**
+- Multiple debug artifact files (`.dbg.json`) for cleaner repository
+
+### 🐛 **Bug Fixes**
+- **Wallet Connection Issues**: Fixed Glyph wallet connection problems
+- **Transaction Execution**: Resolved transaction execution issues with different wallet types
+- **Balance Display**: Fixed APE balance formatting and display
+- **Contract Integration**: Resolved contract method calling issues
+- **Error Handling**: Improved error messages and user feedback
+
+### 🔒 **Security Improvements**
+- **Input Validation**: Enhanced validation for all user inputs
+- **Contract Security**: New secure contract implementation with proper access controls
+- **Error Handling**: Comprehensive error handling to prevent information leakage
+- **Transaction Validation**: Better validation of transaction parameters
+
+### 📚 **Documentation Updates**
+- **README.md**: Updated with comprehensive Glyph wallet integration details
+- **CHANGELOG.md**: Detailed documentation of all changes
+- **Code Comments**: Enhanced code documentation and comments
+
+### 🧪 **Testing & Quality**
+- **Enhanced Testing**: Improved test coverage for new wallet integration
+- **Code Quality**: Better TypeScript types and error handling
+- **Performance**: Optimized transaction execution and state management
+
 ## 🛠️ Installation & Setup Guide
 
 ### Prerequisites
@@ -1314,6 +1462,46 @@ This release includes significant improvements to wallet integration:
 - **Cross-chain Support**: Expansion to additional blockchain networks
 - **API Integration**: Third-party developer API for ApeBeats services
 - **Advanced NFT Features**: Dynamic NFTs with evolving metadata
+
+## [v0.5.1] - 2025-01-27
+
+### 🔧 **Network Configuration & Development Improvements**
+
+#### Changed
+- **Network Configuration**: Switched from ApeChain mainnet to Curtis Testnet for development and testing
+  - Updated chain ID from 33139 to 33111
+  - Changed RPC URL to Curtis Testnet endpoint (`https://curtis.rpc.caldera.xyz/http`)
+  - Updated block explorer to Curtis Explorer (`https://curtis.apescan.io`)
+  - Set testnet flag to true for proper network identification
+
+#### Fixed
+- **Batch Transfer Contract**: Enhanced error handling and parameter naming consistency
+  - Fixed parameter naming in `addSupportedToken` function for better clarity (`feeBps` → `tokenFeeRate`)
+  - Improved error handling in deprecated functions with proper parameter commenting
+  - Enhanced fee calculation variable naming for consistency (`tokenFeeBps` → `tokenFeeRate`)
+
+#### Improved
+- **UI/UX Enhancements**: Better error handling and user experience improvements
+  - Enhanced error handling in batch transfer service to prevent UI crashes
+  - Improved client-side rendering with better hydration handling
+  - Fixed wallet connection status display logic
+  - Enhanced error boundaries and fallback mechanisms
+  - Improved balance and allowance error handling with graceful fallbacks
+  - Better transfer estimate calculations with fallback mechanisms
+
+#### Technical
+- **Artifact Updates**: Updated OpenZeppelin contract artifacts and debug information
+  - Updated various OpenZeppelin contract debug JSON files
+  - Enhanced contract compilation artifacts
+  - Improved development tooling support
+
+#### Development
+- **Code Quality**: Improved code maintainability and error handling
+  - Better error logging and debugging information
+  - Enhanced fallback calculations for transfer estimates
+  - Improved client-side state management
+  - Better separation of concerns in UI components
+  - Removed unnecessary ClientOnly wrapper in favor of direct error boundary usage
 
 ## [v0.4.10] - 2025-01-27
 
