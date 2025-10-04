@@ -34,6 +34,37 @@ function UserDashboardContent() {
   const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
   const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
 
+  const [userStats, setUserStats] = useState<{totalTransferred: string, transferCount: number}>({ totalTransferred: "0", transferCount: 0 })
+  const [globalStats, setGlobalStats] = useState<{totalVolume: string, totalTransfers: number}>({ totalVolume: "0", totalTransfers: 0 })
+  const [feeBps, setFeeBps] = useState(50)
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
+
+  // Load user and global stats
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!currentAddress) return
+      
+      setIsLoadingStats(true)
+      try {
+        const [user, global, fee] = await Promise.all([
+          batchService.getUserStats(currentAddress as any),
+          batchService.getGlobalStats(),
+          batchService.getFeeBps()
+        ])
+        
+        setUserStats(user)
+        setGlobalStats(global)
+        setFeeBps(fee)
+      } catch (error) {
+        console.error("Error loading dashboard stats:", error)
+      } finally {
+        setIsLoadingStats(false)
+      }
+    }
+
+    loadStats()
+  }, [currentAddress])
+
   const formatBalance = (balance: string) => {
     return batchService.formatAmount(balance)
   }
@@ -87,7 +118,7 @@ function UserDashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              0
+              {isLoadingStats ? "..." : userStats.transferCount}
             </div>
             <div className="text-sm text-muted-foreground">
               Batch transfers completed
@@ -99,19 +130,45 @@ function UserDashboardContent() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Recipients
+              Total Sent
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              0
+              {isLoadingStats ? "..." : formatBalance(userStats.totalTransferred)} APE
             </div>
             <div className="text-sm text-muted-foreground">
-              Total addresses sent to
+              Total amount transferred
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Fee Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5" />
+            Current Fee Rate
+          </CardTitle>
+          <CardDescription>
+            The current fee rate for batch transfers
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-primary">
+              {isLoadingStats ? "..." : `${feeBps / 100}%`}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {isLoadingStats ? "Loading..." : `${feeBps} basis points`}
+            </div>
+            <div className="text-xs text-muted-foreground mt-2">
+              Fee is automatically calculated and deducted from each transfer
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Activity */}
       <Card>

@@ -9,6 +9,7 @@ import { ErrorBoundary, AsyncErrorBoundary } from "@/components/layout/ErrorBoun
 import { ThirdwebProvider } from "thirdweb/react"
 import { thirdwebClient } from "@/lib/thirdweb"
 import { getPageMetadata } from "@/lib/metadata"
+import { NetworkProvider } from "@/lib/networkContext"
 import "./globals.css"
 
 // Default metadata for the root layout - can be overridden by individual pages
@@ -113,14 +114,16 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <ErrorBoundary>
           <AsyncErrorBoundary>
-            <ThirdwebProvider>
-              <GlyphProvider>
-                <QueryProvider>
-                  <Suspense fallback={null}>{children}</Suspense>
-                  <Analytics />
-                </QueryProvider>
-              </GlyphProvider>
-            </ThirdwebProvider>
+            <NetworkProvider>
+              <ThirdwebProvider>
+                <GlyphProvider>
+                  <QueryProvider>
+                    <Suspense fallback={null}>{children}</Suspense>
+                    <Analytics />
+                  </QueryProvider>
+                </GlyphProvider>
+              </ThirdwebProvider>
+            </NetworkProvider>
           </AsyncErrorBoundary>
         </ErrorBoundary>
       </body>

@@ -417,6 +417,15 @@ Multi-tier NFT staking system with different APY rates and features.
 - Header short connect/disconnect in `components/HeaderUser.tsx`
 - Live ApeChain data in `app/page.tsx` powered by `fetchApeChainStats` from `lib/utils.ts`
 
+### **NEW**: Enhanced Features (v0.5.2)
+- **🌐 Network Context System**: Dynamic network switching with automatic detection based on page routes
+- **📊 Enhanced Dashboard Analytics**: Real-time user statistics, global metrics, and fee rate display
+- **🏆 Leaderboard Service**: Dedicated service for managing leaderboard data and user statistics
+- **💰 Enhanced Batch Transfer System**: Total amount distribution options and improved form validation
+- **🎯 User Interface Improvements**: Updated feature badges and enhanced visual hierarchy
+- **🔧 Technical Infrastructure**: Centralized network management and improved chain configuration
+- **✅ Contract Verification**: Successfully verified BatchTransferNative contract on Curtis ApeScan
+
 ### **NEW**: Enhanced Features (v0.4.7)
 - **Enhanced Wallet Integration**: Improved Glyph wallet connection with browser detection and popup guidance
 - **Browser Detection**: Intelligent browser detection with popup blocking resolution
@@ -1557,8 +1566,16 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.5.1
+### Current Version: v0.5.2
 **Latest Release**: January 27, 2025
+
+**Key Features in v0.5.2:**
+- 🌐 **Network Context System**: Dynamic network switching with automatic detection based on page routes
+- 📊 **Enhanced Dashboard Analytics**: Real-time user statistics, global metrics, and fee rate display
+- 🏆 **Leaderboard Service**: Dedicated service for managing leaderboard data and user statistics
+- 💰 **Enhanced Batch Transfer System**: Total amount distribution options and improved form validation
+- 🎯 **User Interface Improvements**: Updated feature badges and enhanced visual hierarchy
+- 🔧 **Technical Infrastructure**: Centralized network management and improved chain configuration
 
 **Key Features in v0.5.0:**
 - 🚀 **Enhanced Batch Transfer System**: Complete overhaul with secure smart contract implementation
@@ -1742,7 +1759,7 @@ docs/
 - **Security**: ✅ Comprehensive security audit completed
 
 ### 📈 **Version Information**
-- **Current Version**: v0.5.0
+- **Current Version**: v0.5.2
 - **Release Date**: January 27, 2025
 - **Next.js Version**: 14.2.16
 - **TypeScript**: Latest with strict mode
@@ -1750,9 +1767,11 @@ docs/
 - **Coverage**: 70% minimum threshold
 - **Music Engine**: LoFi Hip Hop generation with blockchain data
 - **Multi-chain Support**: 6 supported networks
-- **Batch Transfer**: Complete APE token batch transfer system
+- **Batch Transfer**: Complete APE token batch transfer system with enhanced distribution options
 - **Staking System**: Multi-tier staking with NFT grid and pool creation
 - **Snapshot Tool**: Professional token holder capture with export functionality
+- **Network Context**: Dynamic network switching with automatic detection
+- **Dashboard Analytics**: Real-time statistics and leaderboard integration
 
 ### 🎯 **Feature Status**
 - ✅ **Core Features**: All implemented and tested
@@ -1951,4 +1970,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
 
-**Version**: v0.5.1 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
+**Version**: v0.5.2 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready

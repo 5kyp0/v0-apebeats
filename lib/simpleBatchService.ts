@@ -25,8 +25,10 @@ export interface BatchTransferOptions {
   recipients: BatchTransferRecipient[]
   mode: 'equal' | 'custom' | 'random'
   equalAmount?: string
+  equalTotalAmount?: string
   randomMin?: string
   randomMax?: string
+  randomTotalAmount?: string
   randomSeed?: number
   tokenAddress?: Address
 }
@@ -170,20 +172,36 @@ export class SimpleBatchTransferService {
     const tokenAddress = options.tokenAddress
     let totalAmount = BigInt(0)
 
-    if (options.mode === 'equal' && options.equalAmount) {
-      const amountPerRecipient = this.parseAmountToWei(options.equalAmount)
-      console.log("🔍 Equal mode - amountPerRecipient:", amountPerRecipient, "recipients:", options.recipients.length)
-      totalAmount = BigInt(amountPerRecipient) * BigInt(options.recipients.length)
+    if (options.mode === 'equal') {
+      if (options.equalTotalAmount) {
+        // Use total amount for equal distribution
+        const totalInWei = this.parseAmountToWei(options.equalTotalAmount)
+        console.log("🔍 Equal mode - total amount:", totalInWei, "recipients:", options.recipients.length)
+        totalAmount = BigInt(totalInWei)
+      } else if (options.equalAmount) {
+        // Use per-recipient amount
+        const amountPerRecipient = this.parseAmountToWei(options.equalAmount)
+        console.log("🔍 Equal mode - amountPerRecipient:", amountPerRecipient, "recipients:", options.recipients.length)
+        totalAmount = BigInt(amountPerRecipient) * BigInt(options.recipients.length)
+      }
     } else if (options.mode === 'custom') {
       for (const recipient of options.recipients) {
         const amount = this.parseAmountToWei(recipient.amount)
         totalAmount += BigInt(amount)
       }
-    } else if (options.mode === 'random' && options.randomMin && options.randomMax) {
-      const minAmount = this.parseAmountToWei(options.randomMin)
-      const maxAmount = this.parseAmountToWei(options.randomMax)
-      const avgAmount = (BigInt(minAmount) + BigInt(maxAmount)) / BigInt(2)
-      totalAmount = avgAmount * BigInt(options.recipients.length)
+    } else if (options.mode === 'random') {
+      if (options.randomTotalAmount) {
+        // Use total amount for random distribution
+        const totalInWei = this.parseAmountToWei(options.randomTotalAmount)
+        console.log("🔍 Random mode - total amount:", totalInWei, "recipients:", options.recipients.length)
+        totalAmount = BigInt(totalInWei)
+      } else if (options.randomMin && options.randomMax) {
+        // Use min/max range
+        const minAmount = this.parseAmountToWei(options.randomMin)
+        const maxAmount = this.parseAmountToWei(options.randomMax)
+        const avgAmount = (BigInt(minAmount) + BigInt(maxAmount)) / BigInt(2)
+        totalAmount = avgAmount * BigInt(options.recipients.length)
+      }
     }
 
     console.log("🔍 Total amount calculated:", totalAmount.toString())
@@ -386,12 +404,25 @@ export class SimpleBatchTransferService {
       const contract = getBatchTransferContract()
       console.log("🔍 Contract obtained:", contract)
       
-      if (options.mode === 'equal' && options.equalAmount) {
-        const amountPerRecipient = this.parseAmountToWei(options.equalAmount)
+      if (options.mode === 'equal') {
         const recipients = options.recipients.map(r => r.address)
-        const totalAmount = (BigInt(amountPerRecipient) * BigInt(recipients.length)).toString()
+        let amountPerRecipient: string
+        let totalAmount: string
         
-        console.log("🔍 Equal transfer - amountPerRecipient:", amountPerRecipient, "recipients:", recipients, "totalAmount:", totalAmount)
+        if (options.equalTotalAmount) {
+          // Use total amount and calculate per-recipient amount
+          const totalInWei = this.parseAmountToWei(options.equalTotalAmount)
+          amountPerRecipient = (BigInt(totalInWei) / BigInt(recipients.length)).toString()
+          totalAmount = totalInWei
+          console.log("🔍 Equal transfer (total) - totalAmount:", totalAmount, "amountPerRecipient:", amountPerRecipient, "recipients:", recipients.length)
+        } else if (options.equalAmount) {
+          // Use per-recipient amount
+          amountPerRecipient = this.parseAmountToWei(options.equalAmount)
+          totalAmount = (BigInt(amountPerRecipient) * BigInt(recipients.length)).toString()
+          console.log("🔍 Equal transfer (per-recipient) - amountPerRecipient:", amountPerRecipient, "recipients:", recipients.length, "totalAmount:", totalAmount)
+        } else {
+          throw new Error("Either equalAmount or equalTotalAmount must be provided for equal mode")
+        }
         
         // Check if this is native APE or ERC20 token
         if (!options.tokenAddress) {

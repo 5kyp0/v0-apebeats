@@ -25,8 +25,8 @@ export function getWagmiConfig() {
         })
       ],
       ssr: true,
-      // Use ApeChain as the default chain
-      defaultChain: apeChain,
+      // Use ApeChain Mainnet as the default chain
+      defaultChain: apeChainMainnet,
     })
   }
   return _wagmiConfig

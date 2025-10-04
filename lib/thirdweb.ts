@@ -1,7 +1,7 @@
 // thirdweb client setup
 import { createThirdwebClient, getContract } from "thirdweb"
 import { createWallet, inAppWallet, walletConnect } from "thirdweb/wallets"
-import { apeChainThirdweb } from "./chains"
+import { apeChainThirdweb, apeChainMainnetThirdweb } from "./chains"
 
 export const thirdwebClient = createThirdwebClient({
   clientId: process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID || "demo-client-id",
@@ -59,18 +59,19 @@ export const getBatchTransferContract = () => {
     throw new Error("Batch transfer contract address not configured. Please set NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS in your environment variables.")
   }
   
+  // Always use Curtis testnet for batch transfer contract
   return getContract({
     client: thirdwebClient,
-    chain: apeChainThirdweb,
+    chain: apeChainThirdweb, // Curtis testnet
     address: contractAddress,
     abi: BATCH_TRANSFER_ABI,
   })
 }
 
-export const getApeTokenContract = () => {
+export const getApeTokenContract = (useMainnet: boolean = false) => {
   return getContract({
     client: thirdwebClient,
-    chain: apeChain,
+    chain: useMainnet ? apeChainMainnetThirdweb : apeChainThirdweb,
     address: APE_TOKEN_ADDRESS,
     abi: [
       {

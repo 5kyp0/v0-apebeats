@@ -98,6 +98,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Improved Transaction Flow**: Streamlined transaction execution with better feedback
 - **Real-time Updates**: Live balance and fee calculations
 
+## [v0.5.2] - 2025-01-27
+
+### 🚀 **Major Features Added**
+
+#### 🌐 **Network Context System**
+- **Dynamic Network Switching**: New `NetworkProvider` context for automatic network detection
+- **Context-Aware Chain Selection**: Automatic switching between Curtis testnet (batch operations) and ApeChain mainnet (general use)
+- **Route-Based Network Detection**: Smart detection based on current page route (`/batch`, `/transfers`, `/dashboard`, `/stake`)
+- **Unified Chain Management**: Centralized chain configuration with `useCurrentChain()` and `useCurrentThirdwebChain()` hooks
+
+#### 📊 **Enhanced Dashboard Analytics**
+- **Real-time User Statistics**: Live display of user transfer count and total transferred amounts
+- **Global Statistics Integration**: Real-time global volume and transfer count from smart contract
+- **Fee Rate Display**: Current fee rate (0.5%) with basis points breakdown
+- **Loading States**: Proper loading indicators for all statistics
+- **Enhanced User Experience**: Better visual feedback and data presentation
+
+#### 🏆 **Leaderboard Service**
+- **Dedicated Leaderboard Service**: New `LeaderboardService` class for managing leaderboard data
+- **Contract Integration**: Direct integration with batch transfer contract for real-time statistics
+- **User Statistics**: Individual user transfer count and total transferred amounts
+- **Global Metrics**: Platform-wide volume and transfer statistics
+- **Mock Data Support**: Fallback mock data for demonstration purposes
+
+#### 💰 **Enhanced Batch Transfer System**
+- **Total Amount Distribution**: New option to distribute total amount equally among recipients
+- **Random Distribution Improvements**: Enhanced random distribution with total amount option
+- **Better Form Validation**: Improved input validation and user guidance
+- **Feature Status Indicators**: Clear indication of feature development status
+- **Enhanced User Interface**: Better form layout with OR separators and help text
+
+#### 🎯 **User Interface Improvements**
+- **Menu Badge Updates**: Updated feature badges (Music Engine: BETA → ALPHA, Batch Operations: Coming soon → TESTNET)
+- **Enhanced Badge Styling**: New badge colors for ALPHA (purple) and TESTNET (green) status
+- **Better Visual Hierarchy**: Improved menu organization and visual presentation
+- **Status Clarity**: Clear indication of feature maturity and availability
+
+#### 🔧 **Technical Infrastructure**
+- **Network Context Integration**: Root layout now includes `NetworkProvider` for global network management
+- **Enhanced Thirdweb Configuration**: Support for both Curtis testnet and ApeChain mainnet configurations
+- **Improved Chain Detection**: Better chain ID and name management across different contexts
+- **Wagmi Configuration Updates**: Default chain updated to ApeChain mainnet for general use
+
+### 🛠️ **Technical Improvements**
+
+#### 📁 **New Files Added**
+- `lib/networkContext.tsx`: Network context provider and hooks for dynamic network switching
+- `lib/leaderboardService.ts`: Dedicated service for leaderboard and statistics management
+
+#### 🔄 **Files Modified**
+- `app/layout.tsx`: Added NetworkProvider wrapper for global network context
+- `components/dashboard/UserDashboard.tsx`: Enhanced with real-time statistics and fee display
+- `components/features/MenuDropdown.tsx`: Updated badges and styling for feature status
+- `components/transfers/BatchTransferForm.tsx`: Enhanced with total amount distribution options
+- `components/transfers/Leaderboard.tsx`: Updated to use new LeaderboardService
+- `lib/simpleBatchService.ts`: Enhanced with total amount distribution support
+- `lib/thirdweb.ts`: Updated chain configuration and contract handling
+- `lib/wagmi.ts`: Updated default chain to ApeChain mainnet
+
+### 🎯 **User Experience Enhancements**
+- **Intuitive Network Switching**: Automatic network detection based on page context
+- **Real-time Data**: Live statistics and fee information in dashboard
+- **Better Form UX**: Enhanced batch transfer form with clearer options and guidance
+- **Status Transparency**: Clear feature status indicators throughout the application
+- **Improved Navigation**: Better menu organization with updated feature badges
+
+### 🔧 **Developer Experience**
+- **Centralized Network Management**: Single source of truth for network configuration
+- **Reusable Hooks**: `useNetworkContext()`, `useCurrentChain()`, `useCurrentThirdwebChain()`
+- **Service Architecture**: Dedicated services for different feature areas
+- **Type Safety**: Enhanced TypeScript support with proper type definitions
+- **Better Code Organization**: Clear separation of concerns with dedicated service classes
+
 ### 🔧 **Technical Changes**
 
 #### **New Files Added**

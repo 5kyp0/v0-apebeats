@@ -82,8 +82,10 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   const [mode, setMode] = useState<'equal' | 'custom' | 'random'>('equal')
   const [recipients, setRecipients] = useState<BatchTransferRecipient[]>([])
   const [equalAmount, setEqualAmount] = useState("")
+  const [equalTotalAmount, setEqualTotalAmount] = useState("") // New: total amount for equal distribution
   const [randomMin, setRandomMin] = useState("")
   const [randomMax, setRandomMax] = useState("")
+  const [randomTotalAmount, setRandomTotalAmount] = useState("") // New: total amount for random distribution
   const [csvInput, setCsvInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [estimate, setEstimate] = useState<any>(null)
@@ -103,7 +105,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
     if (recipients.length > 0) {
       updateEstimate()
     }
-  }, [recipients, equalAmount, randomMin, randomMax, mode, selectedToken])
+  }, [recipients, equalAmount, equalTotalAmount, randomMin, randomMax, randomTotalAmount, mode, selectedToken])
 
   const loadFeeData = async () => {
     if (!currentAddress) return
@@ -129,9 +131,11 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       const options: BatchTransferOptions = {
         recipients,
         mode,
-        equalAmount: mode === 'equal' ? equalAmount : undefined,
+        equalAmount: mode === 'equal' ? (equalTotalAmount ? undefined : equalAmount) : undefined,
+        equalTotalAmount: mode === 'equal' ? equalTotalAmount : undefined,
         randomMin: mode === 'random' ? randomMin : undefined,
         randomMax: mode === 'random' ? randomMax : undefined,
+        randomTotalAmount: mode === 'random' ? randomTotalAmount : undefined,
         tokenAddress: selectedToken as any,
       }
       
@@ -144,9 +148,16 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       // Handle error gracefully with fallback calculation
       let totalAmount = BigInt(0)
       
-      if (mode === 'equal' && equalAmount && !isNaN(parseFloat(equalAmount))) {
-        const amountInWei = BigInt(Math.floor(parseFloat(equalAmount) * 1e18))
-        totalAmount = amountInWei * BigInt(recipients.length)
+      if (mode === 'equal') {
+        if (equalTotalAmount && !isNaN(parseFloat(equalTotalAmount))) {
+          // Use total amount and divide by recipients
+          const totalInWei = BigInt(Math.floor(parseFloat(equalTotalAmount) * 1e18))
+          totalAmount = totalInWei
+        } else if (equalAmount && !isNaN(parseFloat(equalAmount))) {
+          // Use per-recipient amount
+          const amountInWei = BigInt(Math.floor(parseFloat(equalAmount) * 1e18))
+          totalAmount = amountInWei * BigInt(recipients.length)
+        }
       } else if (mode === 'custom') {
         for (const recipient of recipients) {
           if (recipient.amount && !isNaN(parseFloat(recipient.amount))) {
@@ -154,11 +165,18 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             totalAmount += amountInWei
           }
         }
-      } else if (mode === 'random' && randomMin && randomMax && !isNaN(parseFloat(randomMin)) && !isNaN(parseFloat(randomMax))) {
-        const minInWei = BigInt(Math.floor(parseFloat(randomMin) * 1e18))
-        const maxInWei = BigInt(Math.floor(parseFloat(randomMax) * 1e18))
-        const avgAmount = (minInWei + maxInWei) / BigInt(2)
-        totalAmount = avgAmount * BigInt(recipients.length)
+      } else if (mode === 'random') {
+        if (randomTotalAmount && !isNaN(parseFloat(randomTotalAmount))) {
+          // Use total amount for random distribution
+          const totalInWei = BigInt(Math.floor(parseFloat(randomTotalAmount) * 1e18))
+          totalAmount = totalInWei
+        } else if (randomMin && randomMax && !isNaN(parseFloat(randomMin)) && !isNaN(parseFloat(randomMax))) {
+          // Use min/max range
+          const minInWei = BigInt(Math.floor(parseFloat(randomMin) * 1e18))
+          const maxInWei = BigInt(Math.floor(parseFloat(randomMax) * 1e18))
+          const avgAmount = (minInWei + maxInWei) / BigInt(2)
+          totalAmount = avgAmount * BigInt(recipients.length)
+        }
       }
       
       const fee = (totalAmount * BigInt(50)) / BigInt(10000) // 0.5% fee
@@ -274,9 +292,11 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       const options: BatchTransferOptions = {
         recipients,
         mode,
-        equalAmount: mode === 'equal' ? equalAmount : undefined,
+        equalAmount: mode === 'equal' ? (equalTotalAmount ? undefined : equalAmount) : undefined,
+        equalTotalAmount: mode === 'equal' ? equalTotalAmount : undefined,
         randomMin: mode === 'random' ? randomMin : undefined,
         randomMax: mode === 'random' ? randomMax : undefined,
+        randomTotalAmount: mode === 'random' ? randomTotalAmount : undefined,
         randomSeed: mode === 'random' ? Math.floor(Math.random() * 1000000) : undefined,
         tokenAddress: selectedToken as any, // Use ERC20 APE token
       }
@@ -292,8 +312,10 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       // Reset form
       setRecipients([])
       setEqualAmount("")
+      setEqualTotalAmount("")
       setRandomMin("")
       setRandomMax("")
+      setRandomTotalAmount("")
       setEstimate(null)
       
     } catch (error: any) {
@@ -400,42 +422,137 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             </TabsList>
 
             <TabsContent value="equal" className="space-y-4">
-              <div>
-                <Label htmlFor="equalAmount">Amount per recipient (APE)</Label>
-                <Input
-                  id="equalAmount"
-                  type="number"
-                  step="0.000001"
-                  placeholder="1.0"
-                  value={equalAmount}
-                  onChange={(e) => setEqualAmount(e.target.value)}
-                />
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="equalTotalAmount">Total amount to distribute (APE)</Label>
+                  <Input
+                    id="equalTotalAmount"
+                    type="number"
+                    step="0.000001"
+                    placeholder="10.0"
+                    value={equalTotalAmount}
+                    onChange={(e) => {
+                      setEqualTotalAmount(e.target.value)
+                      if (e.target.value) {
+                        setEqualAmount("") // Clear per-recipient amount when total is set
+                      }
+                    }}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This amount will be divided equally among all recipients
+                  </p>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">OR</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="equalAmount">Amount per recipient (APE)</Label>
+                  <Input
+                    id="equalAmount"
+                    type="number"
+                    step="0.000001"
+                    placeholder="1.0"
+                    value={equalAmount}
+                    onChange={(e) => {
+                      setEqualAmount(e.target.value)
+                      if (e.target.value) {
+                        setEqualTotalAmount("") // Clear total amount when per-recipient is set
+                      }
+                    }}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Each recipient will receive this exact amount
+                  </p>
+                </div>
               </div>
             </TabsContent>
 
             <TabsContent value="random" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="randomMin">Minimum amount (APE)</Label>
-                  <Input
-                    id="randomMin"
-                    type="number"
-                    step="0.000001"
-                    placeholder="0.1"
-                    value={randomMin}
-                    onChange={(e) => setRandomMin(e.target.value)}
-                  />
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2 text-yellow-800">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="font-medium">Feature Under Development</span>
                 </div>
+                <p className="text-sm text-yellow-700 mt-1">
+                  Random batch transfers are currently disabled while we work on improving the feature. 
+                  Please use Equal or Custom distribution for now.
+                </p>
+              </div>
+              
+              <div className="space-y-4 opacity-50 pointer-events-none">
                 <div>
-                  <Label htmlFor="randomMax">Maximum amount (APE)</Label>
+                  <Label htmlFor="randomTotalAmount">Total amount to distribute (APE)</Label>
                   <Input
-                    id="randomMax"
+                    id="randomTotalAmount"
                     type="number"
                     step="0.000001"
                     placeholder="10.0"
-                    value={randomMax}
-                    onChange={(e) => setRandomMax(e.target.value)}
+                    value={randomTotalAmount}
+                    onChange={(e) => {
+                      setRandomTotalAmount(e.target.value)
+                      if (e.target.value) {
+                        setRandomMin("")
+                        setRandomMax("")
+                      }
+                    }}
+                    disabled
                   />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    This amount will be distributed randomly among all recipients
+                  </p>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">OR</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="randomMin">Minimum amount (APE)</Label>
+                    <Input
+                      id="randomMin"
+                      type="number"
+                      step="0.000001"
+                      placeholder="0.1"
+                      value={randomMin}
+                      onChange={(e) => {
+                        setRandomMin(e.target.value)
+                        if (e.target.value) {
+                          setRandomTotalAmount("")
+                        }
+                      }}
+                      disabled
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="randomMax">Maximum amount (APE)</Label>
+                    <Input
+                      id="randomMax"
+                      type="number"
+                      step="0.000001"
+                      placeholder="10.0"
+                      value={randomMax}
+                      onChange={(e) => {
+                        setRandomMax(e.target.value)
+                        if (e.target.value) {
+                          setRandomTotalAmount("")
+                        }
+                      }}
+                      disabled
+                    />
+                  </div>
                 </div>
               </div>
             </TabsContent>
