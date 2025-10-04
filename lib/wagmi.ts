@@ -1,6 +1,6 @@
 import { createConfig, http } from "wagmi"
 import { glyphWalletConnector } from "@use-glyph/sdk-react"
-import { apeChain, mainnet, base, curtis } from "./chains"
+import { apeChain, apeChainMainnet, mainnet, base, curtis } from "./chains"
 
 // Create wagmi config lazily to avoid loading on non-wallet pages
 let _wagmiConfig: ReturnType<typeof createConfig> | null = null
@@ -8,16 +8,17 @@ let _wagmiConfig: ReturnType<typeof createConfig> | null = null
 export function getWagmiConfig() {
   if (!_wagmiConfig) {
     _wagmiConfig = createConfig({
-      chains: [apeChain, mainnet, base, curtis],
+      chains: [apeChain, apeChainMainnet, mainnet, base, curtis],
       transports: {
         [apeChain.id]: http(),
+        [apeChainMainnet.id]: http(),
         [mainnet.id]: http(),
         [base.id]: http(),
         [curtis.id]: http(),
       },
       connectors: [
         glyphWalletConnector({
-          chains: [apeChain, mainnet, base, curtis],
+          chains: [apeChain, apeChainMainnet, mainnet, base, curtis],
           options: {
             shimDisconnect: true,
           },

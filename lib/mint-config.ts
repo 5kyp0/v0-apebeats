@@ -9,7 +9,7 @@ export const CONTRACT_CONFIG = {
   chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || "33111"),
   chainName: process.env.NEXT_PUBLIC_CHAIN_NAME || "Curtis Testnet",
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.curtis.apechain.xyz",
-  explorerUrl: process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explorer.curtis.apechain.xyz",
+  explorerUrl: process.env.NEXT_PUBLIC_EXPLORER_URL || "https://curtis.apescan.io",
 } as const;
 
 // Mint configuration

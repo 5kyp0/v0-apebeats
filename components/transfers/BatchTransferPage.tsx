@@ -98,7 +98,7 @@ export function BatchTransferPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const explorerUrl = `https://explorer.apechain.com/tx/${lastReceipt.transactionHash}`
+                      const explorerUrl = `https://curtis.apescan.io/tx/${lastReceipt.transactionHash}`
                       window.open(explorerUrl, '_blank')
                     }}
                   >

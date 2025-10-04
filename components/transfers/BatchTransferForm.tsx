@@ -25,7 +25,9 @@ import {
   Equal,
   Edit3
 } from "lucide-react"
-import { useBatchTransferService, type BatchTransferRecipient, type BatchTransferOptions } from "@/lib/batchTransferService"
+import { useSimpleBatchTransferService, type BatchTransferRecipient, type BatchTransferOptions } from "@/lib/simpleBatchService"
+import { type WalletInfo } from "@/lib/walletTransactionService"
+import { useApeCoinBalance } from "@/hooks/useApeCoinBalance"
 import { TokenSelector } from "./TokenSelector"
 import { APE_TOKEN_ADDRESS } from "@/lib/thirdweb"
 import { toast } from "sonner"
@@ -37,8 +39,9 @@ interface BatchTransferFormProps {
 function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps) {
   const account = useActiveAccount()
   const { address: wagmiAddress } = useAccount()
-  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
-  const batchService = useBatchTransferService()
+  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated, sendTransaction: glyphSendTransaction } = useSafeGlyph()
+  const batchService = useSimpleBatchTransferService()
+  const { balance: apeBalance, rawBalance: apeRawBalance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useApeCoinBalance()
   const [isClient, setIsClient] = useState(false)
   
   useEffect(() => {
@@ -50,6 +53,29 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
   const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
   
+  // Create wallet info object for transaction service
+  const getWalletInfo = (): WalletInfo | null => {
+    if (account) {
+      return {
+        type: 'thirdweb',
+        account: account,
+        address: account.address
+      }
+    } else if (glyphUser?.evmWallet && glyphReady && glyphAuthenticated) {
+      return {
+        type: 'glyph',
+        address: glyphUser.evmWallet,
+        signer: { 
+          sendTransaction: glyphSendTransaction
+        },
+        sendTransaction: glyphSendTransaction
+      }
+    }
+    return null
+  }
+  
+  const walletInfo = getWalletInfo()
+  
   
   
   
@@ -60,15 +86,14 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   const [randomMax, setRandomMax] = useState("")
   const [csvInput, setCsvInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [balance, setBalance] = useState("0")
   const [estimate, setEstimate] = useState<any>(null)
   const [feeBps, setFeeBps] = useState(50)
-  const [selectedToken, setSelectedToken] = useState<string>(APE_TOKEN_ADDRESS)
+  const [selectedToken, setSelectedToken] = useState<string | undefined>(undefined) // Native APE by default
 
-  // Load user balance and fee rate
+  // Load fee rate
   useEffect(() => {
     if (currentAddress) {
-      loadUserData()
+      loadFeeData()
     }
   }, [currentAddress, selectedToken])
 
@@ -80,25 +105,21 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
     }
   }, [recipients, equalAmount, randomMin, randomMax, mode, selectedToken])
 
-  const loadUserData = async () => {
+  const loadFeeData = async () => {
     if (!currentAddress) return
     
     try {
-      const [userBalance, currentFeeBps] = await Promise.all([
-        batchService.getBalance(currentAddress, selectedToken as any),
-        batchService.getFeeBps(selectedToken as any)
-      ])
-      setBalance(userBalance)
+      const currentFeeBps = await batchService.getFeeBps(selectedToken as any)
       setFeeBps(currentFeeBps)
     } catch (error) {
-      console.error("Error loading user data:", error)
+      console.error("Error loading fee data:", error)
       // Set default values if contract is not configured
-      setBalance("0")
       setFeeBps(50)
     }
   }
 
   const updateEstimate = async () => {
+    console.log("🔍 updateEstimate called with recipients:", recipients.length)
     if (recipients.length === 0) {
       setEstimate(null)
       return
@@ -114,7 +135,9 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
         tokenAddress: selectedToken as any,
       }
       
+      console.log("🔍 Calling batchService.estimateTransfer with options:", options)
       const estimateResult = await batchService.estimateTransfer(options)
+      console.log("🔍 Got estimate result:", estimateResult)
       setEstimate(estimateResult)
     } catch (error) {
       console.error("Error updating estimate:", error)
@@ -209,13 +232,37 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   }
 
   const executeTransfer = async () => {
-    if (!currentAddress || recipients.length === 0) {
-      toast.error("Please connect wallet and add recipients")
+    console.log("🔍 executeTransfer called")
+    console.log("🔍 Wallet info:", {
+      type: walletInfo?.type,
+      address: walletInfo?.address || walletInfo?.account?.address,
+      hasAccount: !!walletInfo?.account,
+      hasSigner: !!walletInfo?.signer,
+      isGlyphConnected,
+      glyphReady,
+      glyphAuthenticated
+    })
+    
+    if (!walletInfo || recipients.length === 0) {
+      if (!walletInfo) {
+        toast.error("Please connect a wallet (ThirdWeb or Glyph) to execute transactions")
+      } else {
+        toast.error("Please add recipients")
+      }
+      return
+    }
+
+    // Check for duplicate recipients
+    const recipientAddresses = recipients.map(r => r.address.toLowerCase())
+    const uniqueAddresses = new Set(recipientAddresses)
+    if (recipientAddresses.length !== uniqueAddresses.size) {
+      toast.error("Duplicate recipient addresses detected. Please use unique addresses for each recipient.")
       return
     }
 
     // Check if contract is configured
     const contractAddress = process.env.NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS
+    console.log("🔍 Contract address:", contractAddress)
     if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
       toast.error("Batch transfer contract not configured. Please set up your environment variables.")
       return
@@ -231,11 +278,13 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
         randomMin: mode === 'random' ? randomMin : undefined,
         randomMax: mode === 'random' ? randomMax : undefined,
         randomSeed: mode === 'random' ? Math.floor(Math.random() * 1000000) : undefined,
-        tokenAddress: selectedToken as any,
+        tokenAddress: selectedToken as any, // Use ERC20 APE token
       }
 
+      console.log("🔍 Executing transfer with options:", options)
       toast.loading("Executing batch transfer...")
-      const receipt = await batchService.executeBatchTransfer(currentAddress, options)
+      const receipt = await batchService.executeBatchTransfer(walletInfo, options)
+      console.log("🔍 Transfer completed with receipt:", receipt)
       
       toast.success("Batch transfer completed successfully!")
       onTransferComplete?.(receipt)
@@ -248,7 +297,9 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       setEstimate(null)
       
     } catch (error: any) {
-      console.error("Transfer error:", error)
+      console.error("🔍 Transfer error:", error)
+      console.error("🔍 Error message:", error.message)
+      console.error("🔍 Error stack:", error.stack)
       toast.error(error.message || "Transfer failed")
     } finally {
       setIsLoading(false)
@@ -256,11 +307,13 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   }
 
   const formatBalance = (balance: string) => {
-    return batchService.formatAmount(balance)
+    // Balance is already formatted from useApeCoinBalance hook
+    return balance
   }
 
-  const formatEstimate = (amount: string) => {
-    return batchService.formatAmount(amount)
+  const formatEstimate = (amount: string, isFee: boolean = false) => {
+    // Use 5 decimal places for fees to show minimum fee details, 3 for other amounts
+    return batchService.formatAmount(amount, 18, isFee ? 5 : 3)
   }
 
 
@@ -282,7 +335,10 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             Token Selection
           </CardTitle>
           <CardDescription>
-            APE token is currently selected for batch transfer
+            {isGlyphConnected 
+              ? "ERC20 APE token is selected for Glyph wallet batch transfer" 
+              : "Native APE token is selected for ThirdWeb wallet batch transfer"
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -310,7 +366,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-primary">
-            {formatBalance(balance)} {estimate?.tokenSymbol || "APE"}
+            {apeBalance} {estimate?.tokenSymbol || "APE"}
           </div>
           <div className="text-sm text-muted-foreground">
             Fee rate: {feeBps / 100}% per transaction
@@ -475,14 +531,14 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             </div>
             <div className="flex justify-between">
               <span>Fee ({feeBps / 100}%):</span>
-              <span className="font-mono text-orange-500">{formatEstimate(estimate.fee)} {estimate.tokenSymbol || "APE"}</span>
+              <span className="font-mono text-orange-500">{formatEstimate(estimate.fee, true)} {estimate.tokenSymbol || "APE"}</span>
             </div>
             <div className="flex justify-between font-bold border-t pt-2">
               <span>Total required:</span>
-              <span className="font-mono">{formatEstimate(estimate.totalRequired)} {estimate.tokenSymbol || "APE"}</span>
+              <span className="font-mono">{formatEstimate(estimate.totalRequired, true)} {estimate.tokenSymbol || "APE"}</span>
             </div>
             
-            {BigInt(balance) < BigInt(estimate.totalRequired) && (
+            {BigInt(apeRawBalance) < BigInt(estimate.totalRequired) && (
               <div className="flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 <span>Insufficient balance</span>
@@ -497,7 +553,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
         <CardContent className="pt-6">
           <Button
             onClick={executeTransfer}
-            disabled={!currentAddress || recipients.length === 0 || isLoading || !estimate}
+            disabled={!walletInfo || recipients.length === 0 || isLoading || !estimate}
             className="w-full"
             size="lg"
           >

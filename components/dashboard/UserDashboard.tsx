@@ -18,49 +18,27 @@ import {
   Coins,
   Users
 } from "lucide-react"
-import { useBatchTransferService } from "@/lib/batchTransferService"
+import { useSimpleBatchTransferService } from "@/lib/simpleBatchService"
+import { useApeCoinBalance } from "@/hooks/useApeCoinBalance"
 import Link from "next/link"
 
 function UserDashboardContent() {
   const account = useActiveAccount()
   const { address: wagmiAddress } = useAccount()
   const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
-  const batchService = useBatchTransferService()
+  const batchService = useSimpleBatchTransferService()
+  const { balance: apeBalance, rawBalance: apeRawBalance, loading: balanceLoading, error: balanceError } = useApeCoinBalance()
   
   // Check for any wallet connection
   const isGlyphConnected = !!(glyphReady && glyphAuthenticated && glyphUser?.evmWallet)
   const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
   const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
-  
-  
-  
-  const [balance, setBalance] = useState("0")
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (currentAddress) {
-      loadUserData()
-    }
-  }, [currentAddress])
-
-  const loadUserData = async () => {
-    if (!currentAddress) return
-    
-    try {
-      const userBalance = await batchService.getBalance(currentAddress)
-      setBalance(userBalance)
-    } catch (error) {
-      setBalance("0")
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const formatBalance = (balance: string) => {
     return batchService.formatAmount(balance)
   }
 
-  if (loading) {
+  if (balanceLoading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -92,7 +70,7 @@ function UserDashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">
-              {formatBalance(balance)} APE
+              {apeBalance} APE
             </div>
             <div className="text-sm text-muted-foreground">
               Available for transfers

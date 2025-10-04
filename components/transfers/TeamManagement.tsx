@@ -20,7 +20,8 @@ import {
   CheckCircle,
   Loader2
 } from "lucide-react"
-import { useBatchTransferService } from "@/lib/batchTransferService"
+import { useSimpleBatchTransferService } from "@/lib/simpleBatchService"
+import { type WalletInfo } from "@/lib/walletTransactionService"
 import { toast } from "sonner"
 
 interface TeamMember {
@@ -33,13 +34,47 @@ interface TeamMember {
 function TeamManagementContent() {
   const account = useActiveAccount()
   const { address: wagmiAddress } = useAccount()
-  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
-  const batchService = useBatchTransferService()
+  const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated, sendTransaction: glyphSendTransaction } = useSafeGlyph()
+  const batchService = useSimpleBatchTransferService()
   
   // Check for any wallet connection
   const isGlyphConnected = !!(glyphReady && glyphAuthenticated && glyphUser?.evmWallet)
   const hasWallet = !!(account?.address || wagmiAddress || isGlyphConnected)
   const currentAddress = account?.address || wagmiAddress || glyphUser?.evmWallet
+  
+  // Create wallet info object for transaction service
+  const getWalletInfo = (): WalletInfo | null => {
+    if (account) {
+      return {
+        type: 'thirdweb',
+        account: account,
+        address: account.address
+      }
+    } else if (glyphUser?.evmWallet && glyphReady && glyphAuthenticated) {
+      return {
+        type: 'glyph',
+        address: glyphUser.evmWallet,
+        signer: { 
+          sendTransaction: glyphSendTransaction
+        }
+      }
+    }
+    return null
+  }
+  
+  const walletInfo = getWalletInfo()
+
+  // Debug logging
+  console.log("🔍 TeamManagement wallet detection:", {
+    accountAddress: account?.address,
+    wagmiAddress,
+    glyphReady,
+    glyphAuthenticated,
+    glyphUserEvmWallet: glyphUser?.evmWallet,
+    currentAddress,
+    hasWallet,
+    walletInfo
+  })
   
   const [newAddress, setNewAddress] = useState("")
   const [selectedRole, setSelectedRole] = useState<'team' | 'fee_manager'>('team')
@@ -48,11 +83,30 @@ function TeamManagementContent() {
   const [feeBps, setFeeBps] = useState(50)
   const [newFeeBps, setNewFeeBps] = useState("")
 
-  // Mock team members data (in real implementation, this would come from contract events)
+  // Load initial data
   useEffect(() => {
+    const loadInitialData = async () => {
+      // Load current fee rate from contract
+      try {
+        const currentFeeBps = await batchService.getCurrentFeeBps()
+        setFeeBps(currentFeeBps)
+      } catch (error) {
+        console.error("Error loading current fee BPS:", error)
+      }
+    }
+
+    loadInitialData()
+
+    // Mock team members data (in real implementation, this would come from contract events)
     const mockTeamMembers: TeamMember[] = [
       {
-        address: "0x1234567890123456789012345678901234567890",
+        address: "0x6481Ed1233f0d03B4d97364fE184B165FaC393e0", // Original deployer
+        role: 'admin',
+        addedBy: "0x0000000000000000000000000000000000000000",
+        addedAt: 1700000000000 - 86400000
+      },
+      {
+        address: "0x32cDaA9429365153Cf7BE048f42152945d99399d", // Current user
         role: 'admin',
         addedBy: "0x0000000000000000000000000000000000000000",
         addedAt: 1700000000000 - 86400000
@@ -74,8 +128,12 @@ function TeamManagementContent() {
   }, [])
 
   const addTeamMember = async () => {
-    if (!newAddress || !account?.address) {
-      toast.error("Please enter a valid address")
+    if (!newAddress || !walletInfo) {
+      if (!walletInfo) {
+        toast.error("Please connect a wallet (ThirdWeb or Glyph) to manage team members")
+      } else {
+        toast.error("Please enter a valid address")
+      }
       return
     }
 
@@ -86,48 +144,57 @@ function TeamManagementContent() {
 
     setIsLoading(true)
     try {
-      // In a real implementation, you would call the contract function here
-      // await batchService.grantTeamRole(newAddress)
+      // Call the real contract function
+      const receipt = await batchService.grantTeamRole(walletInfo, newAddress)
+      console.log("🔍 Team role granted with receipt:", receipt)
       
       const newMember: TeamMember = {
         address: newAddress,
         role: selectedRole,
-        addedBy: account.address,
+        addedBy: currentAddress,
         addedAt: Date.now()
       }
       
       setTeamMembers([...teamMembers, newMember])
       setNewAddress("")
-      toast.success(`${selectedRole === 'team' ? 'Team' : 'Fee Manager'} role granted successfully`)
+      toast.success(`${selectedRole === 'team' ? 'Team' : 'Fee Manager'} role granted successfully! Transaction: ${receipt.transactionHash.slice(0, 10)}...`)
     } catch (error) {
       console.error("Error adding team member:", error)
-      toast.error("Failed to add team member")
+      toast.error(`Failed to add team member: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
   }
 
   const removeTeamMember = async (address: string, role: 'team' | 'fee_manager') => {
-    if (!account?.address) return
+    if (!walletInfo) {
+      toast.error("Please connect a wallet (ThirdWeb or Glyph) to manage team members")
+      return
+    }
 
     setIsLoading(true)
     try {
-      // In a real implementation, you would call the contract function here
-      // await batchService.revokeTeamRole(address)
+      // Call the real contract function
+      const receipt = await batchService.revokeTeamRole(walletInfo, address)
+      console.log("🔍 Team role revoked with receipt:", receipt)
       
       setTeamMembers(teamMembers.filter(member => member.address !== address))
-      toast.success(`${role === 'team' ? 'Team' : 'Fee Manager'} role revoked successfully`)
+      toast.success(`${role === 'team' ? 'Team' : 'Fee Manager'} role revoked successfully! Transaction: ${receipt.transactionHash.slice(0, 10)}...`)
     } catch (error) {
       console.error("Error removing team member:", error)
-      toast.error("Failed to remove team member")
+      toast.error(`Failed to remove team member: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
   }
 
   const updateFeeBps = async () => {
-    if (!newFeeBps || !account?.address) {
-      toast.error("Please enter a valid fee rate")
+    if (!newFeeBps || !walletInfo) {
+      if (!walletInfo) {
+        toast.error("Please connect a wallet (ThirdWeb or Glyph) to update fees")
+      } else {
+        toast.error("Please enter a valid fee rate")
+      }
       return
     }
 
@@ -139,15 +206,18 @@ function TeamManagementContent() {
 
     setIsLoading(true)
     try {
-      // In a real implementation, you would call the contract function here
-      // await batchService.setFeeBps(fee)
+      // Call the real contract function
+      const receipt = await batchService.setFeeBps(walletInfo, fee)
+      console.log("🔍 Fee BPS updated with receipt:", receipt)
       
-      setFeeBps(fee)
+      // Refresh the fee rate from the contract to ensure accuracy
+      const currentFeeBps = await batchService.getCurrentFeeBps()
+      setFeeBps(currentFeeBps)
       setNewFeeBps("")
-      toast.success(`Fee rate updated to ${fee / 100}%`)
+      toast.success(`Fee rate updated to ${currentFeeBps / 100}%! Transaction: ${receipt.transactionHash.slice(0, 10)}...`)
     } catch (error) {
       console.error("Error updating fee:", error)
-      toast.error("Failed to update fee rate")
+      toast.error(`Failed to update fee rate: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -171,16 +241,24 @@ function TeamManagementContent() {
   }
 
   const isCurrentUser = (address: string) => {
-    return address === account?.address
+    return address.toLowerCase() === currentAddress?.toLowerCase()
   }
 
-  const canManageTeam = account?.address && teamMembers.some(member => 
-    member.address === account.address && (member.role === 'admin' || member.role === 'team')
+  const canManageTeam = currentAddress && teamMembers.some(member => 
+    member.address.toLowerCase() === currentAddress.toLowerCase() && (member.role === 'admin' || member.role === 'team')
   )
 
-  const canManageFees = account?.address && teamMembers.some(member => 
-    member.address === account.address && (member.role === 'admin' || member.role === 'fee_manager')
+  const canManageFees = currentAddress && teamMembers.some(member => 
+    member.address.toLowerCase() === currentAddress.toLowerCase() && (member.role === 'admin' || member.role === 'fee_manager')
   )
+  
+  // Debug permission check
+  console.log("🔍 TeamManagement permission check:", {
+    currentAddress,
+    teamMembers: teamMembers.map(m => ({ address: m.address, role: m.role })),
+    canManageTeam,
+    canManageFees
+  })
 
   if (!canManageTeam && !canManageFees) {
     return (

@@ -15,7 +15,7 @@ const CURTIS_TESTNET = {
   chainId: 33111,
   name: 'Curtis Testnet',
   rpcUrl: 'https://curtis.rpc.caldera.xyz/http',
-  explorerUrl: 'https://explorer.curtis.apechain.xyz'
+  explorerUrl: 'https://curtis.apescan.io'
 };
 
 // Delegate.xyz registry address (matching original)
@@ -184,7 +184,7 @@ async function main() {
 NEXT_PUBLIC_CHAIN_ID=33111
 NEXT_PUBLIC_CHAIN_NAME=Curtis Testnet
 NEXT_PUBLIC_RPC_URL=https://rpc.curtis.apechain.xyz
-NEXT_PUBLIC_EXPLORER_URL=https://explorer.curtis.apechain.xyz
+NEXT_PUBLIC_EXPLORER_URL=https://curtis.apescan.io
 
 # Contract Addresses
 NEXT_PUBLIC_APEBEATS_GENESIS_ADDRESS=${genesisAddress}

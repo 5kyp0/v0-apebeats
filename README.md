@@ -239,7 +239,7 @@ This application is configured to use **Curtis Testnet** as the default network 
 // Chain ID: 33111 (Curtis Testnet)
 // RPC URL: https://curtis.rpc.caldera.xyz/http
 // Native Currency: APE (18 decimals)
-// Block Explorer: https://explorer.curtis.apechain.xyz
+// Block Explorer: https://curtis.apescan.io
 ```
 
 See `NETWORK_SETUP.md` for detailed network configuration and troubleshooting.
@@ -335,7 +335,7 @@ Professional-grade utility for capturing token holders across multiple blockchai
 - **Status**: Available after Genesis launch
 
 ### 💰 **Batch Transfer System**
-Efficiently distribute APE tokens to multiple recipients with significant gas savings.
+Efficiently distribute APE tokens to multiple recipients with significant gas savings and multi-wallet support.
 
 #### Transfer Modes
 1. **Equal Amounts**: Perfect for airdrops and equal distribution
@@ -343,18 +343,21 @@ Efficiently distribute APE tokens to multiple recipients with significant gas sa
 3. **Random Amounts**: Great for gamification and surprise distributions
 
 #### Features
+- **Multi-Wallet Support**: Works seamlessly with ThirdWeb and Glyph wallets
 - **CSV Upload**: Bulk recipient management via CSV files
 - **Real-time Validation**: Live balance checking and gas estimation
 - **Gas Optimization**: Up to 70% savings compared to individual transfers
 - **Transaction Tracking**: Complete history and status monitoring
 - **Error Handling**: Comprehensive validation and user-friendly messages
+- **Smart Contract Integration**: Secure BatchTransferNative contract with role-based access control
 
 #### Getting Started
 1. Navigate to `/transfers`
-2. Choose your transfer mode
-3. Add recipients manually or upload CSV
-4. Review estimates and execute transfer
-5. Monitor progress in the dashboard
+2. Connect your wallet (ThirdWeb or Glyph)
+3. Choose your transfer mode
+4. Add recipients manually or upload CSV
+5. Review estimates and execute transfer
+6. Monitor progress in the dashboard
 
 ### 🏆 **ApeStake Integration**
 Multi-tier NFT staking system with different APY rates and features.
@@ -421,6 +424,7 @@ Multi-tier NFT staking system with different APY rates and features.
 - **Enhanced Authentication**: Improved login flows and user experience across all authentication methods
 - **New UI Components**: Alert components and enhanced user interface elements
 - **Improved Wallet Service**: Enhanced wallet connection handling with better error recovery
+- **✅ Contract Verification**: Successfully verified BatchTransferNative contract on Curtis ApeScan
 
 ### **NEW**: Enhanced Features (Previous)
 - **Error Handling**: Comprehensive error boundaries in `components/ErrorBoundary.tsx`
@@ -441,6 +445,13 @@ Multi-tier NFT staking system with different APY rates and features.
 - **Batch Transfer System**: Efficient APE token distribution with CSV upload and multiple transfer modes
 
 ## Batch Transfer System
+
+### ✅ **Verified Smart Contract**
+
+**Contract Address**: `0x2245a8160b5965E47Cb46A33637886e2e5d93710`  
+**Network**: Curtis Testnet (Chain ID: 33111)  
+**Explorer**: https://curtis.apescan.io/address/0x2245a8160b5965e47cb46a33637886e2e5d93710  
+**Status**: ✅ **VERIFIED** - Contract source code is publicly available and verified
 
 ### How Batch Transfers Work
 
@@ -582,12 +593,14 @@ Connect using your preferred browser wallet:
 - **Rainbow**: Beautiful, user-friendly wallet
 - **Glyph**: Secure, non-custodial wallet with enhanced integration
 
-#### Enhanced Wallet Features (v0.4.7)
+#### Enhanced Wallet Features (v0.4.7+)
 - **🦁 Browser Detection**: Intelligent detection of Chrome, Brave, Firefox, Safari, and Edge
 - **🚫 Popup Guidance**: Smart popup blocking detection with browser-specific resolution instructions
 - **🛡️ Error Handling**: Enhanced error handling and user feedback for wallet connection issues
 - **🔄 Safe Rendering**: Client-side rendering protection for wallet components
 - **📱 Mobile Support**: Enhanced mobile browser compatibility
+- **🔗 Multi-Wallet Integration**: Unified support for ThirdWeb and Glyph wallets
+- **⚡ Unified Transaction Service**: Seamless transaction execution across different wallet types
 
 #### Mobile Wallets
 - **WalletConnect**: Connect any mobile wallet (Coinbase, Trust, etc.)
@@ -1016,6 +1029,180 @@ See `TESTING.md` for detailed testing documentation, best practices, and trouble
 - **Enterprise Support**: Contact us for enterprise support
 - **Custom Development**: Hire us for custom features
 - **Consulting**: Get help with integration and deployment
+
+## 🔗 **Glyph Wallet Integration & WalletTransactionService**
+
+### **How We Made Glyph Wallet Work**
+
+The integration of Glyph wallet with our batch transfer system required solving several complex challenges. Here's how we successfully implemented a unified wallet transaction service that works seamlessly with both ThirdWeb and Glyph wallets.
+
+#### **The Challenge**
+- **Different Transaction Formats**: ThirdWeb and Glyph wallets use different transaction formats and APIs
+- **Contract Interaction**: Each wallet type requires different methods for contract interaction
+- **Error Handling**: Different error types and handling mechanisms
+- **State Management**: Different wallet state management approaches
+
+#### **The Solution: WalletTransactionService**
+
+We created a unified `WalletTransactionService` class that abstracts away the differences between wallet types:
+
+```typescript
+export interface WalletInfo {
+  type: 'thirdweb' | 'glyph'
+  account?: any
+  address?: string
+  signer?: any
+  sendTransaction?: (transaction: {
+    to: string
+    data: string
+    value: string
+    chainId: number
+  }) => Promise<string>
+}
+```
+
+#### **Key Implementation Details**
+
+##### **1. Unified Transaction Execution**
+```typescript
+async executeTransaction(
+  walletInfo: WalletInfo,
+  contractMethod: string,
+  params: any[],
+  value?: bigint
+): Promise<{ transactionHash: string }>
+```
+
+The service automatically detects the wallet type and uses the appropriate transaction method:
+- **ThirdWeb**: Uses `prepareContractCall` and `sendTransaction`
+- **Glyph**: Uses `encodeFunctionData` and `sendTransaction` with custom format
+
+##### **2. Dynamic Gas Price Calculation**
+```typescript
+// Get current gas price for Curtis testnet (APE)
+let gasPrice = BigInt(1000000000) // Default 1 Gwei fallback
+try {
+  const { createPublicClient, http } = await import("viem")
+  const { curtis } = await import("./chains")
+  const client = createPublicClient({
+    chain: curtis,
+    transport: http(process.env.NEXT_PUBLIC_RPC_URL || "https://curtis.rpc.caldera.xyz/http")
+  })
+  const networkGasPrice = await client.getGasPrice()
+  gasPrice = networkGasPrice
+} catch (error) {
+  console.log("🔍 Could not fetch gas price, using default:", gasPrice.toString())
+}
+```
+
+##### **3. Contract Method Encoding**
+For Glyph wallets, we manually encode contract method calls:
+```typescript
+// Encode the function call data using the full contract ABI
+const { encodeFunctionData } = await import("viem")
+const data = encodeFunctionData({
+  abi: contractABI,
+  functionName: contractMethod,
+  args: params
+})
+```
+
+##### **4. Transaction Format Adaptation**
+```typescript
+// Create the transaction object in the format expected by Glyph
+const transaction = {
+  to: contractAddress,
+  data: data,
+  value: value?.toString() || "0",
+  chainId: curtisChainId
+}
+
+// Use Glyph's sendTransaction with the correct format
+const txHash = await walletInfo.signer.sendTransaction({ transaction })
+```
+
+#### **Token Approval Handling**
+
+For ERC20 tokens, we implemented automatic approval checking and execution:
+
+```typescript
+async checkAndApproveTokens(
+  walletInfo: WalletInfo, 
+  amount: string, 
+  tokenAddress?: Address
+): Promise<void>
+```
+
+The service:
+1. Checks current allowance for the token
+2. Compares with required amount
+3. Automatically requests approval if needed
+4. Handles the approval transaction
+
+#### **Error Handling & Validation**
+
+Comprehensive error handling ensures robust operation:
+
+```typescript
+// Validate transaction before sending
+if (!transaction.to || transaction.to === "0x0000000000000000000000000000000000000000") {
+  throw new Error("Invalid contract address")
+}
+
+if (!transaction.data || transaction.data === "0x" || transaction.data.length < 10) {
+  throw new Error("Invalid transaction data")
+}
+```
+
+#### **Benefits of This Approach**
+
+1. **Unified Interface**: Single API for all wallet types
+2. **Type Safety**: Full TypeScript support with proper types
+3. **Error Resilience**: Comprehensive error handling and validation
+4. **Maintainability**: Easy to add new wallet types
+5. **Performance**: Optimized for each wallet's specific requirements
+
+#### **Usage in Components**
+
+Components can now use the unified service without worrying about wallet types:
+
+```typescript
+const walletInfo = getWalletInfo() // Automatically detects wallet type
+
+// Execute transaction using unified service
+const receipt = await walletTransactionService.executeTransaction(
+  walletInfo,
+  "batchTransferEqual",
+  [recipients, BigInt(amountPerRecipient)],
+  totalWithFee
+)
+```
+
+#### **Testing & Debugging**
+
+The service includes comprehensive logging for debugging:
+
+```typescript
+console.log("🔍 executeTransaction called with:", { 
+  walletType: walletInfo.type, 
+  method: contractMethod, 
+  params, 
+  value 
+})
+```
+
+This makes it easy to debug issues and monitor transaction execution across different wallet types.
+
+### **Result**
+
+The `WalletTransactionService` successfully enables:
+- ✅ **Seamless Glyph Integration**: Full support for Glyph wallet transactions
+- ✅ **Backward Compatibility**: Existing ThirdWeb functionality remains unchanged
+- ✅ **Enhanced User Experience**: Users can choose their preferred wallet
+- ✅ **Robust Error Handling**: Comprehensive error handling and user feedback
+- ✅ **Future-Proof Architecture**: Easy to add support for additional wallet types
+
+This implementation demonstrates how to create a unified wallet abstraction layer that handles the complexities of different wallet APIs while providing a clean, consistent interface for the application.
 
 ## 🏗️ Project Architecture
 

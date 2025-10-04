@@ -4,8 +4,7 @@ import { useState, useEffect } from "react"
 import { useActiveAccount } from "thirdweb/react"
 import { useAccount } from "wagmi"
 import { useSafeGlyph } from "@/hooks/useSafeGlyph"
-import { thirdwebClient, APE_TOKEN_ADDRESS } from "@/lib/thirdweb"
-import { apeChainThirdweb } from "@/lib/chains"
+import { thirdwebClient, APE_TOKEN_ADDRESS, apeChain } from "@/lib/thirdweb"
 import { getWalletBalance } from "thirdweb/wallets"
 
 /**
@@ -53,7 +52,7 @@ export function useApeCoinBalance() {
       try {
         balanceResult = await getWalletBalance({
           client: thirdwebClient,
-          chain: apeChainThirdweb,
+          chain: apeChain,
           address: currentAddress
           // No tokenAddress = native token
         })
@@ -61,7 +60,7 @@ export function useApeCoinBalance() {
         // Fallback to ERC20 APE token if native fails
         balanceResult = await getWalletBalance({
           client: thirdwebClient,
-          chain: apeChainThirdweb,
+          chain: apeChain,
           address: currentAddress,
           tokenAddress: APE_TOKEN_ADDRESS
         })

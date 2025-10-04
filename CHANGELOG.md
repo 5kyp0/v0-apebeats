@@ -69,6 +69,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Accessibility**: Enhanced ARIA labels and keyboard navigation
 - **Documentation**: Complete with setup guides and troubleshooting
 
+## [Unreleased]
+
+### 🚀 **Major Features Added**
+
+#### 🔗 **Enhanced Multi-Wallet Support**
+- **Glyph Wallet Integration**: Complete integration with Glyph wallet for seamless batch transfers
+- **Unified Wallet Transaction Service**: New `WalletTransactionService` class supporting both ThirdWeb and Glyph wallets
+- **Smart Wallet Detection**: Automatic detection and handling of different wallet types
+- **Enhanced Error Handling**: Comprehensive error handling for wallet connection issues
+
+#### 💰 **Advanced Batch Transfer System**
+- **New BatchTransferNative Contract**: Secure smart contract implementation with role-based access control
+- **Multi-Wallet Support**: Works with both ThirdWeb and Glyph wallets seamlessly
+- **Enhanced Security**: Reentrancy protection, input validation, and comprehensive error handling
+- **Gas Optimization**: Dynamic gas price calculation for Curtis testnet (APE)
+- **Token Approval System**: Automatic ERC20 token approval handling for Glyph wallets
+
+#### 🛠️ **Technical Infrastructure Improvements**
+- **Simplified Batch Service**: New `SimpleBatchTransferService` replacing complex batch transfer logic
+- **Enhanced Contract Integration**: Updated ABI handling with proper contract method signatures
+- **Improved Balance Management**: Real-time APE balance display with proper formatting
+- **Better State Management**: Enhanced wallet state detection and management
+
+#### 🎯 **User Experience Enhancements**
+- **Unified Wallet Interface**: Consistent experience across all wallet types
+- **Enhanced Form Validation**: Better input validation and error messages
+- **Improved Transaction Flow**: Streamlined transaction execution with better feedback
+- **Real-time Updates**: Live balance and fee calculations
+
+### 🔧 **Technical Changes**
+
+#### **New Files Added**
+- `lib/walletTransactionService.ts` - Unified wallet transaction service
+- `lib/simpleBatchService.ts` - Simplified batch transfer service
+- `contracts/BatchTransferNative.sol` - New secure batch transfer contract
+- `lib/batchTransferNativeABI.json` - Contract ABI for native batch transfers
+- `scripts/deploy-batch-transfer-native.js` - Native batch transfer deployment script
+- `scripts/extract-native-batch-abi.js` - ABI extraction script
+- `scripts/add-batch-contract-env.js` - Environment variable setup script
+
+#### **Files Modified**
+- `components/transfers/BatchTransferForm.tsx` - Enhanced with multi-wallet support
+- `components/transfers/TeamManagement.tsx` - Updated for new wallet service
+- `components/dashboard/UserDashboard.tsx` - Improved balance display
+- `lib/thirdweb.ts` - Simplified and updated contract configuration
+- `lib/chains.ts` - Enhanced chain configuration
+- `hooks/useApeCoinBalance.ts` - Improved balance hook
+- `lib/batchTransferService.ts` - Updated service implementation
+
+#### **Files Removed**
+- Multiple debug artifact files (`.dbg.json`) for cleaner repository
+
+### 🐛 **Bug Fixes**
+- **Wallet Connection Issues**: Fixed Glyph wallet connection problems
+- **Transaction Execution**: Resolved transaction execution issues with different wallet types
+- **Balance Display**: Fixed APE balance formatting and display
+- **Contract Integration**: Resolved contract method calling issues
+- **Error Handling**: Improved error messages and user feedback
+
+### 🔒 **Security Improvements**
+- **Input Validation**: Enhanced validation for all user inputs
+- **Contract Security**: New secure contract implementation with proper access controls
+- **Error Handling**: Comprehensive error handling to prevent information leakage
+- **Transaction Validation**: Better validation of transaction parameters
+
+### 📚 **Documentation Updates**
+- **README.md**: Updated with comprehensive Glyph wallet integration details
+- **CHANGELOG.md**: Detailed documentation of all changes
+- **Code Comments**: Enhanced code documentation and comments
+
+### 🧪 **Testing & Quality**
+- **Enhanced Testing**: Improved test coverage for new wallet integration
+- **Code Quality**: Better TypeScript types and error handling
+- **Performance**: Optimized transaction execution and state management
+
 ## 🛠️ Installation & Setup Guide
 
 ### Prerequisites
@@ -1323,7 +1398,7 @@ This release includes significant improvements to wallet integration:
 - **Network Configuration**: Switched from ApeChain mainnet to Curtis Testnet for development and testing
   - Updated chain ID from 33139 to 33111
   - Changed RPC URL to Curtis Testnet endpoint (`https://curtis.rpc.caldera.xyz/http`)
-  - Updated block explorer to Curtis Explorer (`https://explorer.curtis.apechain.xyz`)
+  - Updated block explorer to Curtis Explorer (`https://curtis.apescan.io`)
   - Set testnet flag to true for proper network identification
 
 #### Fixed
