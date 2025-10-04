@@ -1315,6 +1315,46 @@ This release includes significant improvements to wallet integration:
 - **API Integration**: Third-party developer API for ApeBeats services
 - **Advanced NFT Features**: Dynamic NFTs with evolving metadata
 
+## [v0.5.1] - 2025-01-27
+
+### 🔧 **Network Configuration & Development Improvements**
+
+#### Changed
+- **Network Configuration**: Switched from ApeChain mainnet to Curtis Testnet for development and testing
+  - Updated chain ID from 33139 to 33111
+  - Changed RPC URL to Curtis Testnet endpoint (`https://curtis.rpc.caldera.xyz/http`)
+  - Updated block explorer to Curtis Explorer (`https://explorer.curtis.apechain.xyz`)
+  - Set testnet flag to true for proper network identification
+
+#### Fixed
+- **Batch Transfer Contract**: Enhanced error handling and parameter naming consistency
+  - Fixed parameter naming in `addSupportedToken` function for better clarity (`feeBps` → `tokenFeeRate`)
+  - Improved error handling in deprecated functions with proper parameter commenting
+  - Enhanced fee calculation variable naming for consistency (`tokenFeeBps` → `tokenFeeRate`)
+
+#### Improved
+- **UI/UX Enhancements**: Better error handling and user experience improvements
+  - Enhanced error handling in batch transfer service to prevent UI crashes
+  - Improved client-side rendering with better hydration handling
+  - Fixed wallet connection status display logic
+  - Enhanced error boundaries and fallback mechanisms
+  - Improved balance and allowance error handling with graceful fallbacks
+  - Better transfer estimate calculations with fallback mechanisms
+
+#### Technical
+- **Artifact Updates**: Updated OpenZeppelin contract artifacts and debug information
+  - Updated various OpenZeppelin contract debug JSON files
+  - Enhanced contract compilation artifacts
+  - Improved development tooling support
+
+#### Development
+- **Code Quality**: Improved code maintainability and error handling
+  - Better error logging and debugging information
+  - Enhanced fallback calculations for transfer estimates
+  - Improved client-side state management
+  - Better separation of concerns in UI components
+  - Removed unnecessary ClientOnly wrapper in favor of direct error boundary usage
+
 ## [v0.4.10] - 2025-01-27
 
 ### 🧹 **Project Organization & Cleanup**

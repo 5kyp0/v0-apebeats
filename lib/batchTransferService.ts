@@ -77,7 +77,8 @@ export class BatchTransferService {
       return balance.toString()
     } catch (error) {
       console.error("Error getting balance:", error)
-      throw new Error("Failed to get balance")
+      // Return "0" instead of throwing to prevent UI crashes
+      return "0"
     }
   }
 
@@ -87,7 +88,7 @@ export class BatchTransferService {
   private getTokenContract(tokenAddress: Address) {
     return getContract({
       client: thirdwebClient,
-      chain: apeChain,
+      chain: apeChainThirdweb,
       address: tokenAddress,
       abi: [
         {
@@ -156,7 +157,8 @@ export class BatchTransferService {
       return allowance.toString()
     } catch (error) {
       console.error("Error getting allowance:", error)
-      throw new Error("Failed to get allowance")
+      // Return "0" instead of throwing to prevent UI crashes
+      return "0"
     }
   }
 

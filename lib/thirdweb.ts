@@ -244,7 +244,7 @@ export const BATCH_TRANSFER_ABI = [
     "name": "addSupportedToken",
     "inputs": [
       { "name": "token", "type": "address" },
-      { "name": "feeBps", "type": "uint256" }
+      { "name": "tokenFeeRate", "type": "uint256" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"

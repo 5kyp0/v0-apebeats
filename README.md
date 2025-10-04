@@ -80,9 +80,9 @@ Create a `.env.local` file in the project root:
 # Required - Thirdweb Configuration
 NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_thirdweb_client_id
 
-# Required - ApeChain RPC Access
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
-NEXT_PUBLIC_APECHAIN_CHAIN_ID=33139
+# Required - Curtis Testnet RPC Access
+NEXT_PUBLIC_RPC_URL=https://curtis.rpc.caldera.xyz/http
+NEXT_PUBLIC_CHAIN_ID=33111
 
 # Optional - Batch Transfer Contract
 NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS=0x...
@@ -103,12 +103,10 @@ NEXT_PUBLIC_APEBEATS_CONTRACT_ADDRESS=0x...
 3. Create a new "Client ID" (not secret key)
 4. Copy the client ID to your `.env.local`
 
-#### Alchemy API Key
-1. Go to [Alchemy Dashboard](https://dashboard.alchemy.com)
-2. Create a new app
-3. Select "ApeChain" network
-4. Copy the API key from app details
-5. Add to your `.env.local`
+#### Curtis Testnet RPC URL
+1. Use the public Curtis Testnet RPC URL: `https://curtis.rpc.caldera.xyz/http`
+2. Add to your `.env.local` as `NEXT_PUBLIC_RPC_URL`
+3. Set `NEXT_PUBLIC_CHAIN_ID=33111` for Curtis Testnet
 
 ### 4. Start Development
 ```bash
@@ -150,8 +148,8 @@ open public/social-preview-test.html
 Create a `.env.local` at the repo root with:
 ```bash
 NEXT_PUBLIC_THIRDWEB_CLIENT_ID=your_thirdweb_client_id
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_api_key
-NEXT_PUBLIC_APECHAIN_CHAIN_ID=33139
+NEXT_PUBLIC_RPC_URL=https://curtis.rpc.caldera.xyz/http
+NEXT_PUBLIC_CHAIN_ID=33111
 NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS=0x... # Optional: Batch transfer contract address
 NEXT_PUBLIC_STAKING_CONTRACT_ADDRESS=0x... # Optional: Staking contract address
 NEXT_PUBLIC_POOL_FACTORY_CONTRACT_ADDRESS=0x... # Optional: Pool factory contract address
@@ -170,20 +168,17 @@ NEXT_PUBLIC_APEBEATS_CONTRACT_ADDRESS=0x... # Optional: ApeBeats contract addres
 - **Used in**: `lib/thirdweb.ts` to initialize `createThirdwebClient`
 - **Example**: `NEXT_PUBLIC_THIRDWEB_CLIENT_ID=abc123def456...`
 
-#### NEXT_PUBLIC_ALCHEMY_API_KEY
-- **What**: Alchemy API key for ApeChain RPC access
-- **Where to get**:
-  1. Go to [Alchemy Dashboard](https://dashboard.alchemy.com)
-  2. Create a new app → Select "ApeChain" network
-  3. Copy the API key from the app details
-- **Used in**: Construct ApeChain RPC URL: `https://apechain-mainnet.g.alchemy.com/v2/{API_KEY}`
-- **Example**: `NEXT_PUBLIC_ALCHEMY_API_KEY=alcht_abc123...`
+#### NEXT_PUBLIC_RPC_URL
+- **What**: Curtis Testnet RPC URL for blockchain access
+- **Value**: `https://curtis.rpc.caldera.xyz/http` (Curtis Testnet)
+- **Used in**: `lib/chains.ts` for blockchain connection
+- **Example**: `NEXT_PUBLIC_RPC_URL=https://curtis.rpc.caldera.xyz/http`
 
-#### NEXT_PUBLIC_APECHAIN_CHAIN_ID
-- **What**: ApeChain mainnet chain ID
-- **Value**: `33139` (ApeChain mainnet)
-- **Used in**: `lib/thirdweb.ts` with `defineChain`
-- **Example**: `NEXT_PUBLIC_APECHAIN_CHAIN_ID=33139`
+#### NEXT_PUBLIC_CHAIN_ID
+- **What**: Curtis Testnet chain ID
+- **Value**: `33111` (Curtis Testnet)
+- **Used in**: `lib/chains.ts` with `defineChain`
+- **Example**: `NEXT_PUBLIC_CHAIN_ID=33111`
 
 #### NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS
 - **What**: Batch transfer smart contract address on ApeChain
@@ -231,20 +226,20 @@ NEXT_PUBLIC_APEBEATS_CONTRACT_ADDRESS=0x... # Optional: ApeBeats contract addres
 
 ## Network Setup
 
-This application is configured to use **ApeChain** as the default network. The app will automatically prompt users to switch to ApeChain if they're connected to a different network.
+This application is configured to use **Curtis Testnet** as the default network for development and testing. The app will automatically prompt users to switch to Curtis Testnet if they're connected to a different network.
 
 ### Network Features
 - 🔄 **Automatic Network Detection**: Detects when users are on the wrong network
-- 🚀 **One-Click Network Switching**: Users can switch to ApeChain with a single click
+- 🚀 **One-Click Network Switching**: Users can switch to Curtis Testnet with a single click
 - 📱 **Network Status Indicators**: Real-time network status updates
 - ✅ **Supported Wallets**: MetaMask, Rabby, Rainbow, WalletConnect, Glyph, and in-app wallets
 
-### ApeChain Configuration
+### Curtis Testnet Configuration
 ```typescript
-// Chain ID: 33139 (ApeChain Mainnet)
-// RPC URL: https://apechain-mainnet.g.alchemy.com/v2/{API_KEY}
+// Chain ID: 33111 (Curtis Testnet)
+// RPC URL: https://curtis.rpc.caldera.xyz/http
 // Native Currency: APE (18 decimals)
-// Block Explorer: https://explorer.apechain.com
+// Block Explorer: https://explorer.curtis.apechain.xyz
 ```
 
 See `NETWORK_SETUP.md` for detailed network configuration and troubleshooting.
@@ -1375,7 +1370,7 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.5.0
+### Current Version: v0.5.1
 **Latest Release**: January 27, 2025
 
 **Key Features in v0.5.0:**
@@ -1769,4 +1764,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
 
-**Version**: v0.5.0 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
+**Version**: v0.5.1 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useActiveAccount } from "thirdweb/react"
 import { useAccount } from "wagmi"
 import { useSafeGlyph } from "@/hooks/useSafeGlyph"
-import { ClientOnly } from "@/components/ClientOnly"
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -40,6 +39,11 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   const { address: wagmiAddress } = useAccount()
   const { user: glyphUser, ready: glyphReady, authenticated: glyphAuthenticated } = useSafeGlyph()
   const batchService = useBatchTransferService()
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
   
   // Check for any wallet connection
   const isGlyphConnected = !!(glyphReady && glyphAuthenticated && glyphUser?.evmWallet)
@@ -68,11 +72,6 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
     }
   }, [currentAddress, selectedToken])
 
-  // Add client-side hydration guard
-  const [isClient, setIsClient] = useState(false)
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   // Update estimate when inputs change
   useEffect(() => {
@@ -92,6 +91,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       setBalance(userBalance)
       setFeeBps(currentFeeBps)
     } catch (error) {
+      console.error("Error loading user data:", error)
       // Set default values if contract is not configured
       setBalance("0")
       setFeeBps(50)
@@ -117,22 +117,34 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       const estimateResult = await batchService.estimateTransfer(options)
       setEstimate(estimateResult)
     } catch (error) {
-      // Handle error silently
-      // Set a fallback estimate if contract is not configured
+      console.error("Error updating estimate:", error)
+      // Handle error gracefully with fallback calculation
       let totalAmount = BigInt(0)
-      if (mode === 'equal' && equalAmount) {
-        totalAmount = BigInt(equalAmount) * BigInt(recipients.length)
+      
+      if (mode === 'equal' && equalAmount && !isNaN(parseFloat(equalAmount))) {
+        const amountInWei = BigInt(Math.floor(parseFloat(equalAmount) * 1e18))
+        totalAmount = amountInWei * BigInt(recipients.length)
       } else if (mode === 'custom') {
         for (const recipient of recipients) {
-          totalAmount += BigInt(recipient.amount || "0")
+          if (recipient.amount && !isNaN(parseFloat(recipient.amount))) {
+            const amountInWei = BigInt(Math.floor(parseFloat(recipient.amount) * 1e18))
+            totalAmount += amountInWei
+          }
         }
+      } else if (mode === 'random' && randomMin && randomMax && !isNaN(parseFloat(randomMin)) && !isNaN(parseFloat(randomMax))) {
+        const minInWei = BigInt(Math.floor(parseFloat(randomMin) * 1e18))
+        const maxInWei = BigInt(Math.floor(parseFloat(randomMax) * 1e18))
+        const avgAmount = (minInWei + maxInWei) / BigInt(2)
+        totalAmount = avgAmount * BigInt(recipients.length)
       }
       
       const fee = (totalAmount * BigInt(50)) / BigInt(10000) // 0.5% fee
       setEstimate({
         totalAmount: totalAmount.toString(),
         fee: fee.toString(),
-        totalRequired: (totalAmount + fee).toString()
+        totalRequired: (totalAmount + fee).toString(),
+        tokenSymbol: "APE",
+        tokenDecimals: 18
       })
     }
   }
@@ -223,7 +235,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
       }
 
       toast.loading("Executing batch transfer...")
-      const receipt = await batchService.executeBatchTransfer(account.address, options)
+      const receipt = await batchService.executeBatchTransfer(currentAddress, options)
       
       toast.success("Batch transfer completed successfully!")
       onTransferComplete?.(receipt)
@@ -251,18 +263,10 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
     return batchService.formatAmount(amount)
   }
 
-  if (!isClient) {
-    return (
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+
       {/* Token Selector - Temporarily disabled */}
       {/* <TokenSelector
         selectedToken={selectedToken}
@@ -510,7 +514,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
             )}
           </Button>
           
-          {!hasWallet && (
+          {isClient && !hasWallet && (
             <p className="text-sm text-muted-foreground text-center mt-2">
               Please connect your wallet to continue
             </p>
@@ -523,21 +527,15 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
 
 export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps) {
   return (
-    <ClientOnly fallback={
+    <ErrorBoundary fallback={
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="text-center">
+          <h3 className="text-lg font-semibold text-red-500 mb-2">Component Error</h3>
+          <p className="text-sm text-muted-foreground">There was an error loading the batch transfer form.</p>
+        </div>
       </div>
     }>
-      <ErrorBoundary fallback={
-        <div className="flex items-center justify-center py-8">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-red-500 mb-2">Component Error</h3>
-            <p className="text-sm text-muted-foreground">There was an error loading the batch transfer form.</p>
-          </div>
-        </div>
-      }>
-        <BatchTransferFormContent onTransferComplete={onTransferComplete} />
-      </ErrorBoundary>
-    </ClientOnly>
+      <BatchTransferFormContent onTransferComplete={onTransferComplete} />
+    </ErrorBoundary>
   )
 }
