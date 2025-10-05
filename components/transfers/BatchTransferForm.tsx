@@ -179,7 +179,7 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
         }
       }
       
-      const fee = (totalAmount * BigInt(50)) / BigInt(10000) // 0.5% fee
+      const fee = (totalAmount * BigInt(feeBps)) / BigInt(10000) // Dynamic fee from contract
       setEstimate({
         totalAmount: totalAmount.toString(),
         fee: fee.toString(),
@@ -698,16 +698,18 @@ function BatchTransferFormContent({ onTransferComplete }: BatchTransferFormProps
   )
 }
 
+const ErrorFallback = () => (
+  <div className="flex items-center justify-center py-8">
+    <div className="text-center">
+      <h3 className="text-lg font-semibold text-red-500 mb-2">Component Error</h3>
+      <p className="text-sm text-muted-foreground">There was an error loading the batch transfer form.</p>
+    </div>
+  </div>
+)
+
 export function BatchTransferForm({ onTransferComplete }: BatchTransferFormProps) {
   return (
-    <ErrorBoundary fallback={
-      <div className="flex items-center justify-center py-8">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-red-500 mb-2">Component Error</h3>
-          <p className="text-sm text-muted-foreground">There was an error loading the batch transfer form.</p>
-        </div>
-      </div>
-    }>
+    <ErrorBoundary fallback={ErrorFallback}>
       <BatchTransferFormContent onTransferComplete={onTransferComplete} />
     </ErrorBoundary>
   )

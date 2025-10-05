@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useActiveAccount } from "thirdweb/react"
 import { useAccount } from "wagmi"
 import { useSafeGlyph } from "@/hooks/useSafeGlyph"
@@ -48,13 +48,9 @@ function LeaderboardContent() {
   const [userStats, setUserStats] = useState<{totalTransferred: string, transferCount: number}>({ totalTransferred: "0", transferCount: 0 })
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isUsingMockData, setIsUsingMockData] = useState(false)
 
-  // Load leaderboard data
-  useEffect(() => {
-    loadLeaderboardData()
-  }, [account?.address])
-
-  const loadLeaderboardData = async () => {
+  const loadLeaderboardData = useCallback(async () => {
     setIsLoading(true)
     try {
       // Load global stats
@@ -67,41 +63,11 @@ function LeaderboardContent() {
         setUserStats(user)
       }
 
-      // For now, we'll use mock data since we don't have a way to get all users
-      // In a real implementation, you'd need an indexer or events to track all users
-      const mockLeaderboard: LeaderboardEntry[] = [
-        {
-          address: "0x1234...5678",
-          totalTransferred: "1000.000",
-          transferCount: 25,
-          rank: 1
-        },
-        {
-          address: "0x2345...6789",
-          totalTransferred: "850.500",
-          transferCount: 18,
-          rank: 2
-        },
-        {
-          address: "0x3456...7890",
-          totalTransferred: "720.250",
-          transferCount: 15,
-          rank: 3
-        },
-        {
-          address: "0x4567...8901",
-          totalTransferred: "650.750",
-          transferCount: 12,
-          rank: 4
-        },
-        {
-          address: "0x5678...9012",
-          totalTransferred: "580.000",
-          transferCount: 10,
-          rank: 5
-        }
-      ]
-
+      // Get real leaderboard data from blockchain events
+      const realLeaderboard = await leaderboardService.getLeaderboard()
+      
+      console.log("🔍 Real leaderboard data received:", realLeaderboard)
+      
       // Add current user if they have stats and aren't already in the list
       if (account?.address && userStats.totalTransferred !== "0") {
         const userEntry: LeaderboardEntry = {
@@ -111,18 +77,25 @@ function LeaderboardContent() {
           rank: 0 // Will be calculated
         }
         
-        // Insert user into appropriate position
-        const allEntries = [...mockLeaderboard, userEntry]
-        allEntries.sort((a, b) => parseFloat(b.totalTransferred) - parseFloat(a.totalTransferred))
+        // Check if user is already in the leaderboard
+        const userExists = realLeaderboard.some(entry => entry.address.toLowerCase() === account.address.toLowerCase())
         
-        // Update ranks
-        allEntries.forEach((entry, index) => {
-          entry.rank = index + 1
-        })
-        
-        setLeaderboard(allEntries.slice(0, 10)) // Top 10
+        if (!userExists) {
+          // Insert user into appropriate position
+          const allEntries = [...realLeaderboard, userEntry]
+          allEntries.sort((a, b) => parseFloat(b.totalTransferred) - parseFloat(a.totalTransferred))
+          
+          // Update ranks
+          allEntries.forEach((entry, index) => {
+            entry.rank = index + 1
+          })
+          
+          setLeaderboard(allEntries.slice(0, 10)) // Top 10
+        } else {
+          setLeaderboard(realLeaderboard)
+        }
       } else {
-        setLeaderboard(mockLeaderboard)
+        setLeaderboard(realLeaderboard)
       }
     } catch (error) {
       console.error("Error loading leaderboard:", error)
@@ -130,13 +103,50 @@ function LeaderboardContent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [account?.address, leaderboardService])
+
+  // Load leaderboard data
+  useEffect(() => {
+    loadLeaderboardData()
+  }, [loadLeaderboardData])
+
+  // Update mock data flag when leaderboard changes
+  useEffect(() => {
+    const isMockData = leaderboard.some(entry => 
+      entry.address.includes("0x1234") || 
+      entry.address.includes("0x2345") || 
+      entry.address.includes("0x3456")
+    )
+    
+    const isAlternativeData = leaderboard.some(entry => 
+      entry.address === "0x0000000000000000000000000000000000000000"
+    )
+    
+    setIsUsingMockData(isMockData && !isAlternativeData)
+  }, [leaderboard])
 
   const refreshData = async () => {
     setIsRefreshing(true)
-    await loadLeaderboardData()
-    setIsRefreshing(false)
-    toast.success("Leaderboard refreshed")
+    try {
+      // Use the refresh method from leaderboard service to clear cache and get fresh data
+      const refreshedData = await leaderboardService.refreshLeaderboard()
+      
+      setGlobalStats(refreshedData.globalStats)
+      setLeaderboard(refreshedData.leaderboard)
+      
+      // Refresh user stats if connected
+      if (account?.address) {
+        const user = await leaderboardService.getUserStats(account.address)
+        setUserStats(user)
+      }
+      
+      toast.success("Leaderboard refreshed")
+    } catch (error) {
+      console.error("Error refreshing leaderboard:", error)
+      toast.error("Failed to refresh leaderboard")
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   const getRankIcon = (rank: number) => {
@@ -195,7 +205,7 @@ function LeaderboardContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">
-              {batchService.formatAmount(globalStats.totalVolume)} APE
+              {leaderboardService.formatAmount(globalStats.totalVolume)} APE
             </div>
             <p className="text-sm text-muted-foreground">
               Transferred through batch transfers
@@ -234,7 +244,7 @@ function LeaderboardContent() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-lg font-semibold">
-                  {batchService.formatAmount(userStats.totalTransferred)} APE
+                  {leaderboardService.formatAmount(userStats.totalTransferred)} APE
                 </div>
                 <p className="text-sm text-muted-foreground">Total Transferred</p>
               </div>
@@ -260,6 +270,16 @@ function LeaderboardContent() {
               </CardTitle>
               <CardDescription>
                 Users with the highest total volume transferred
+                {isUsingMockData && (
+                  <span className="ml-2 text-amber-600 font-medium">
+                    (Demo data - no transfers yet)
+                  </span>
+                )}
+                {!isUsingMockData && leaderboard.some(entry => entry.address === "0x0000000000000000000000000000000000000000") && (
+                  <span className="ml-2 text-blue-600 font-medium">
+                    (Aggregated data - individual users not available)
+                  </span>
+                )}
               </CardDescription>
             </div>
             <Button
@@ -288,7 +308,10 @@ function LeaderboardContent() {
                   {getRankIcon(entry.rank)}
                   <div>
                     <div className="font-medium">
-                      {formatAddress(entry.address)}
+                      {entry.address === "0x0000000000000000000000000000000000000000" 
+                        ? "All Users (Aggregated)" 
+                        : formatAddress(entry.address)
+                      }
                       {isCurrentUser(entry.address) && (
                         <Badge variant="secondary" className="ml-2">
                           You

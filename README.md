@@ -48,6 +48,33 @@
 - **NEW**: Generative Music Engine (Web Audio API)
 - **NEW**: LoFi Hip Hop Generator with blockchain data
 - **NEW**: Multi-chain Token Holder Snapshot Tool
+- **NEW**: Glyph Wallet Integration
+- **NEW**: Alchemy SDK for Enhanced Event Querying
+
+## 📚 Documentation
+
+### 🔗 [Integration Guides](./docs/integration/)
+- [**Glyph Wallet Integration**](./docs/integration/GLYPH_INTEGRATION_GUIDE.md) - Complete guide for integrating Glyph wallet functionality
+- [**Batch Transfer Setup**](./docs/integration/BATCH_TRANSFER_SETUP.md) - Setup and configuration for batch transfer functionality
+- [**VRF Implementation Guide**](./docs/integration/VRF_IMPLEMENTATION_GUIDE.md) - Chainlink VRF integration guide
+- [**Service Integrations**](./docs/integration/) - Thirdweb, Alchemy, IPFS integration guides
+
+### 📖 [Development Guides](./docs/guides/)
+- [**Glyph Quick Reference**](./docs/guides/GLYPH_QUICK_REFERENCE.md) - Essential patterns and common mistakes
+- [**Deployment Guide**](./docs/guides/DEPLOYMENT_GUIDE.md) - Complete deployment instructions
+- [**Deployment Instructions**](./docs/guides/DEPLOYMENT_INSTRUCTIONS.md) - Step-by-step deployment procedures
+- [**Component Patterns**](./docs/guides/) - UI/UX development guidelines
+
+### 🚨 [Troubleshooting](./docs/troubleshooting/)
+- [**Glyph Troubleshooting**](./docs/troubleshooting/GLYPH_TROUBLESHOOTING.md) - Solutions for common integration issues
+- [**Common Issues**](./docs/troubleshooting/) - Build errors, runtime errors, performance issues
+
+### 🏗️ [Architecture](./docs/architecture/)
+- [**Frontend Integration Summary**](./docs/architecture/FRONTEND_INTEGRATION_SUMMARY.md) - Overview of frontend components and services
+- [**Changelog**](./docs/architecture/CHANGELOG.md) - Detailed history of all changes and improvements
+- [**Audit Summary**](./docs/architecture/AUDIT_SUMMARY.md) - Security audit results and findings
+- [**Batch Transfer Improvements**](./docs/architecture/BATCH_TRANSFER_IMPROVEMENTS.md) - Improvements and enhancements
+- [**VRF Deployment Summary**](./docs/architecture/VRF_DEPLOYMENT_SUMMARY.md) - Chainlink VRF deployment documentation
 - **NEW**: Real-time Streaming Engine
 - **NEW**: NFT Creation & Video Visualization
 - **NEW**: Batch Transfer System with CSV upload and multiple transfer modes
@@ -416,6 +443,15 @@ Multi-tier NFT staking system with different APY rates and features.
   - Smart wallet deployment on first connect via `deploySmartAccount`
 - Header short connect/disconnect in `components/HeaderUser.tsx`
 - Live ApeChain data in `app/page.tsx` powered by `fetchApeChainStats` from `lib/utils.ts`
+
+### **NEW**: Enhanced Features (v0.5.3)
+- **📊 Real-time Dashboard Analytics**: Complete dashboard overhaul with live user statistics, global metrics, and transfer history
+- **🏆 Advanced Leaderboard System**: Real blockchain data integration with caching and event-based aggregation
+- **🔗 Alchemy Integration**: Enhanced blockchain event querying with `AlchemyEventService` for better data access
+- **💰 Dynamic Fee System**: Real-time fee fetching from smart contract instead of hardcoded values
+- **📚 Documentation Organization**: Complete reorganization into structured directories with comprehensive guides
+- **🔧 Enhanced Services**: Modular service architecture with improved error handling and performance optimization
+- **✅ Contract Verification**: Successfully verified BatchTransferNative contract on Curtis ApeScan
 
 ### **NEW**: Enhanced Features (v0.5.2)
 - **🌐 Network Context System**: Dynamic network switching with automatic detection based on page routes
@@ -1566,8 +1602,16 @@ pnpm test
 
 ## Changelog
 
-### Current Version: v0.5.2
+### Current Version: v0.5.3
 **Latest Release**: January 27, 2025
+
+**Key Features in v0.5.3:**
+- 📊 **Real-time Dashboard Analytics**: Complete dashboard overhaul with live user statistics, global metrics, and transfer history
+- 🏆 **Advanced Leaderboard System**: Real blockchain data integration with caching and event-based aggregation
+- 🔗 **Alchemy Integration**: Enhanced blockchain event querying with `AlchemyEventService` for better data access
+- 💰 **Dynamic Fee System**: Real-time fee fetching from smart contract instead of hardcoded values
+- 📚 **Documentation Organization**: Complete reorganization into structured directories with comprehensive guides
+- 🔧 **Enhanced Services**: Modular service architecture with improved error handling and performance optimization
 
 **Key Features in v0.5.2:**
 - 🌐 **Network Context System**: Dynamic network switching with automatic detection based on page routes
@@ -1970,4 +2014,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Built with ❤️ for the BAYC community and Web3 music lovers everywhere.**
 
-**Version**: v0.5.2 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready
+**Version**: v0.5.3 | **Last Updated**: January 27, 2025 | **Status**: ✅ Production Ready

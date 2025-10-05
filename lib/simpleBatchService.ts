@@ -5,6 +5,7 @@ import {
   prepareContractCall,
   sendTransaction,
   getContract,
+  getContractEvents,
   type Address
 } from "thirdweb"
 import { 
@@ -15,6 +16,7 @@ import {
   APE_TOKEN_ADDRESS 
 } from "./thirdweb"
 import { walletTransactionService, type WalletInfo } from "./walletTransactionService"
+import { alchemyEventService } from "./alchemyService"
 
 export interface BatchTransferRecipient {
   address: string
@@ -227,6 +229,17 @@ export class SimpleBatchTransferService {
   formatAmount(amount: string, decimals: number = 18, displayDecimals: number = 5): string {
     if (amount === "0") return "0." + "0".repeat(displayDecimals)
     
+    // Handle very small scientific notation amounts
+    if (amount.includes('e-')) {
+      const num = parseFloat(amount)
+      if (num < 1e-15) {
+        return "0." + "0".repeat(displayDecimals)
+      }
+      // Convert to BigInt representation
+      const amountBigInt = BigInt(Math.floor(num * Math.pow(10, decimals)))
+      return this.formatAmount(amountBigInt.toString(), decimals, displayDecimals)
+    }
+    
     // Handle decimal input (like "0.000")
     if (amount.includes('.')) {
       return amount
@@ -389,6 +402,129 @@ export class SimpleBatchTransferService {
     } catch (error) {
       console.error("Error getting current fee BPS:", error)
       return 50 // Default fallback
+    }
+  }
+
+  /**
+   * Get user statistics from the contract
+   */
+  async getUserStats(userAddress: Address): Promise<{totalTransferred: string, transferCount: number}> {
+    try {
+      console.log("🔍 Fetching user stats for:", userAddress)
+      const contract = getBatchTransferContract()
+      
+      const [totalTransferred, transferCount] = await Promise.all([
+        readContract({
+          contract,
+          method: "function userTotalTransferred(address user) view returns (uint256)",
+          params: [userAddress]
+        }),
+        readContract({
+          contract,
+          method: "function userTransferCount(address user) view returns (uint256)",
+          params: [userAddress]
+        })
+      ])
+
+      const stats = {
+        totalTransferred: totalTransferred.toString(),
+        transferCount: Number(transferCount)
+      }
+
+      console.log("🔍 User stats fetched:", stats)
+      return stats
+    } catch (error) {
+      console.error("Error getting user stats:", error)
+      return { totalTransferred: "0", transferCount: 0 }
+    }
+  }
+
+  /**
+   * Get global statistics from the contract
+   */
+  async getGlobalStats(): Promise<{totalVolume: string, totalTransfers: number}> {
+    try {
+      console.log("🔍 Fetching global stats...")
+      const contract = getBatchTransferContract()
+      
+      const [totalVolume, totalTransfers] = await Promise.all([
+        readContract({
+          contract,
+          method: "function totalVolumeTransferred() view returns (uint256)",
+          params: []
+        }),
+        readContract({
+          contract,
+          method: "function totalTransfersExecuted() view returns (uint256)",
+          params: []
+        })
+      ])
+
+      const stats = {
+        totalVolume: totalVolume.toString(),
+        totalTransfers: Number(totalTransfers)
+      }
+
+      console.log("🔍 Global stats fetched:", stats)
+      return stats
+    } catch (error) {
+      console.error("Error getting global stats:", error)
+      return { totalVolume: "0", totalTransfers: 0 }
+    }
+  }
+
+  /**
+   * Get recent transfer history for a user using Alchemy API
+   */
+  async getUserTransferHistory(userAddress: Address, limit: number = 10): Promise<Array<{
+    transactionHash: string
+    totalAmount: string
+    fee: string
+    recipientCount: number
+    batchId: string
+    timestamp: number
+    blockNumber: number
+  }>> {
+    try {
+      console.log("🔍 Fetching transfer history for user using Alchemy:", userAddress)
+      
+      // Use Alchemy to get batch transfer events
+      const events = await alchemyEventService.getBatchTransferEvents()
+      console.log("🔍 Found events from Alchemy:", events.length)
+      
+      // Filter events by user address
+      const userEvents = events.filter((event: any) => 
+        event.sender?.toLowerCase() === userAddress.toLowerCase()
+      )
+      
+      console.log("🔍 Found user events:", userEvents.length)
+      
+      // Sort by block number (most recent first) and limit results
+      const sortedEvents = userEvents
+        .sort((a: any, b: any) => b.blockNumber - a.blockNumber)
+        .slice(0, limit)
+      
+      // Process events into transfer history format
+      const transferHistory = sortedEvents.map((event: any) => {
+        const totalAmount = (parseInt(event.totalAmount) / Math.pow(10, 18)).toString()
+        const fee = (parseInt(event.fee) / Math.pow(10, 18)).toString()
+        
+        return {
+          transactionHash: event.transactionHash,
+          totalAmount: totalAmount,
+          fee: fee,
+          recipientCount: event.recipientCount,
+          batchId: event.batchId,
+          timestamp: event.timestamp * 1000, // Convert to milliseconds
+          blockNumber: event.blockNumber
+        }
+      })
+      
+      console.log("🔍 Processed transfer history:", transferHistory.length, "transfers")
+      return transferHistory
+    } catch (error) {
+      console.error("Error getting user transfer history:", error)
+      return []
     }
   }
 

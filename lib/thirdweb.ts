@@ -44,15 +44,17 @@ export const BATCH_TRANSFER_ABI = batchTransferNativeABI as const
 
 // Contract definitions using getContract
 export const getBatchTransferContract = () => {
-  const contractAddress = process.env.NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS
+  // Use the deployed contract address from curtis.json deployment file
+  const contractAddress = process.env.NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS || "0x2245a8160b5965E47Cb46A33637886e2e5d93710"
   
   // Debug: Log environment variable loading
   console.log("🔍 Environment check:", {
     contractAddress,
     nodeEnv: process.env.NODE_ENV,
-    hasEnvVar: !!contractAddress,
+    hasEnvVar: !!process.env.NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS,
     allEnvVars: Object.keys(process.env).filter(key => key.includes('BATCH')),
-    fullContractAddress: contractAddress
+    fullContractAddress: contractAddress,
+    usingFallback: !process.env.NEXT_PUBLIC_BATCH_CONTRACT_ADDRESS
   })
   
   if (!contractAddress || contractAddress === "0x0000000000000000000000000000000000000000") {
