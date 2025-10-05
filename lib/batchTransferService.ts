@@ -6,12 +6,11 @@ import {
   sendTransaction, 
   getContract,
   getContractEvents,
-  type Address,
-  type TransactionReceipt
+  type Address
 } from "thirdweb"
 import { 
   thirdwebClient, 
-  apeChain, 
+  apeChainThirdweb, 
   getBatchTransferContract,
   getApeTokenContract,
   APE_TOKEN_ADDRESS 
@@ -77,7 +76,8 @@ export class BatchTransferService {
       return balance.toString()
     } catch (error) {
       console.error("Error getting balance:", error)
-      throw new Error("Failed to get balance")
+      // Return "0" instead of throwing to prevent UI crashes
+      return "0"
     }
   }
 
@@ -87,7 +87,7 @@ export class BatchTransferService {
   private getTokenContract(tokenAddress: Address) {
     return getContract({
       client: thirdwebClient,
-      chain: apeChain,
+      chain: apeChainThirdweb,
       address: tokenAddress,
       abi: [
         {
@@ -156,7 +156,8 @@ export class BatchTransferService {
       return allowance.toString()
     } catch (error) {
       console.error("Error getting allowance:", error)
-      throw new Error("Failed to get allowance")
+      // Return "0" instead of throwing to prevent UI crashes
+      return "0"
     }
   }
 
@@ -332,7 +333,7 @@ export class BatchTransferService {
   /**
    * Approve tokens for batch transfer
    */
-  async approveTokens(userAddress: Address, amount: string, tokenAddress?: Address): Promise<TransactionReceipt> {
+  async approveTokens(userAddress: Address, amount: string, tokenAddress?: Address): Promise<{ transactionHash: string }> {
     try {
       const tokenContract = tokenAddress ? this.getTokenContract(tokenAddress) : getApeTokenContract()
       const batchTransferContract = getBatchTransferContract()
@@ -349,7 +350,7 @@ export class BatchTransferService {
       })
 
       // Transaction sent successfully, return the hash
-      return { transactionHash } as TransactionReceipt
+      return { transactionHash }
     } catch (error) {
       console.error("Error approving tokens:", error)
       throw new Error("Failed to approve tokens")
@@ -363,7 +364,7 @@ export class BatchTransferService {
     userAddress: Address,
     recipients: string[],
     amountPerRecipient: string
-  ): Promise<TransactionReceipt> {
+  ): Promise<{ transactionHash: string }> {
     try {
       const contract = getBatchTransferContract()
       const transaction = prepareContractCall({
@@ -378,7 +379,7 @@ export class BatchTransferService {
       })
 
       // Transaction sent successfully, return the hash
-      return { transactionHash } as TransactionReceipt
+      return { transactionHash }
     } catch (error) {
       console.error("Error executing batch transfer equal:", error)
       throw new Error("Failed to execute batch transfer")
@@ -391,7 +392,7 @@ export class BatchTransferService {
   async batchTransferCustom(
     userAddress: Address,
     recipients: BatchTransferRecipient[]
-  ): Promise<TransactionReceipt> {
+  ): Promise<{ transactionHash: string }> {
     try {
       const contract = getBatchTransferContract()
       const addresses = recipients.map(r => r.address)
@@ -409,7 +410,7 @@ export class BatchTransferService {
       })
 
       // Transaction sent successfully, return the hash
-      return { transactionHash } as TransactionReceipt
+      return { transactionHash }
     } catch (error) {
       console.error("Error executing batch transfer custom:", error)
       throw new Error("Failed to execute batch transfer")
@@ -425,7 +426,7 @@ export class BatchTransferService {
     minAmount: string,
     maxAmount: string,
     seed: number
-  ): Promise<TransactionReceipt> {
+  ): Promise<{ transactionHash: string }> {
     try {
       const contract = getBatchTransferContract()
       const transaction = prepareContractCall({
@@ -440,7 +441,7 @@ export class BatchTransferService {
       })
 
       // Transaction sent successfully, return the hash
-      return { transactionHash } as TransactionReceipt
+      return { transactionHash }
     } catch (error) {
       console.error("Error executing batch transfer random:", error)
       throw new Error("Failed to execute batch transfer")
@@ -453,7 +454,7 @@ export class BatchTransferService {
   async executeBatchTransfer(
     userAddress: Address,
     options: BatchTransferOptions
-  ): Promise<TransactionReceipt> {
+  ): Promise<{ transactionHash: string }> {
     const tokenAddress = options.tokenAddress || (APE_TOKEN_ADDRESS as Address)
     
     // First, estimate the transfer

@@ -7,6 +7,7 @@ import { useSafeGlyph } from "@/hooks/useSafeGlyph"
 import { BatchTransferForm } from "./BatchTransferForm"
 import { Leaderboard } from "./Leaderboard"
 import { TeamManagement } from "./TeamManagement"
+import { LeaderboardService } from "@/lib/leaderboardService"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,21 +28,34 @@ import Link from "next/link"
 import { toast } from "sonner"
 
 export function BatchTransferPage() {
-  const [isClient, setIsClient] = useState(false)
-  const [isHydrated, setIsHydrated] = useState(false)
   const account = useActiveAccount()
   const { address: wagmiAddress } = useAccount()
   const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
   const [lastReceipt, setLastReceipt] = useState<any>(null)
+  const [isClient, setIsClient] = useState(false)
+  const [currentFee, setCurrentFee] = useState<string>("0.5") // Default fallback
   
   useEffect(() => {
     setIsClient(true)
-    // Add a small delay to ensure proper hydration
-    const timer = setTimeout(() => {
-      setIsHydrated(true)
-    }, 100)
-    return () => clearTimeout(timer)
   }, [])
+
+  // Fetch current fee from contract
+  useEffect(() => {
+    const fetchFee = async () => {
+      try {
+        const feeData = await LeaderboardService.getInstance().getCurrentFeePercentage()
+        setCurrentFee(feeData.feePercentage)
+        console.log("🔍 Current fee fetched:", feeData.feePercentage + "%")
+      } catch (error) {
+        console.error("🔍 Error fetching fee:", error)
+        // Keep default fallback
+      }
+    }
+
+    if (isClient) {
+      fetchFee()
+    }
+  }, [isClient])
   
   // Check for any wallet connection
   const isGlyphConnected = !!(glyphReady && glyphUser?.evmWallet)
@@ -63,12 +77,7 @@ export function BatchTransferPage() {
       showFooter={false}
     >
       <div className="max-w-4xl mx-auto">
-        {!isClient || !isHydrated ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <>
+        <>
             {/* Header */}
             <div className="text-center mb-12">
               <div className="flex items-center justify-center mb-6">
@@ -109,7 +118,7 @@ export function BatchTransferPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const explorerUrl = `https://explorer.apechain.com/tx/${lastReceipt.transactionHash}`
+                      const explorerUrl = `https://curtis.apescan.io/tx/${lastReceipt.transactionHash}`
                       window.open(explorerUrl, '_blank')
                     }}
                   >
@@ -123,7 +132,7 @@ export function BatchTransferPage() {
         )}
 
         {/* Wallet Connection Status */}
-        {!hasWallet && (
+        {isClient && !hasWallet && (
           <Card className="mb-6 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
@@ -178,7 +187,7 @@ export function BatchTransferPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Clear 0.5% fee structure with no hidden costs
+                Clear {currentFee}% fee structure with no hidden costs
               </p>
             </CardContent>
           </Card>
@@ -227,8 +236,7 @@ export function BatchTransferPage() {
                 </Link>
               </Button>
             </div>
-          </>
-        )}
+        </>
       </div>
     </CommonPageLayout>
   )

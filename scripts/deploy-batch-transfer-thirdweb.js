@@ -86,7 +86,7 @@ const CURTIS_CHAIN = {
   blockExplorers: [
     {
       name: "Curtis Explorer",
-      url: "https://explorer.curtis.apechain.xyz",
+      url: "https://curtis.apescan.io",
     },
   ],
   testnet: true,

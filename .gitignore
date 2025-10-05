@@ -119,3 +119,7 @@ yarn.lock
 *.env.old
 .env.*.local
 .env.*.backup
+
+# Additional temporary and system files
+.pnpm-reminder
+*.lint.log

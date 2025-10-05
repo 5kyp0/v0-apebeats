@@ -341,10 +341,10 @@ contract BatchTransferSecure is Ownable, AccessControl, ReentrancyGuard, Pausabl
      * @notice This function is deprecated. Use commitRandomTransfer() and revealAndExecuteRandomTransfer() instead.
      */
     function batchTransferRandom(
-        address[] calldata recipients,
-        uint256 minAmount,
-        uint256 maxAmount,
-        uint256 seed
+        address[] calldata /* recipients */,
+        uint256 /* minAmount */,
+        uint256 /* maxAmount */,
+        uint256 /* seed */
     ) external pure {
         revert("Function deprecated. Use commitRandomTransfer() and revealAndExecuteRandomTransfer() for secure randomness.");
     }
@@ -484,11 +484,11 @@ contract BatchTransferSecure is Ownable, AccessControl, ReentrancyGuard, Pausabl
      * @notice This function is deprecated. Use commitRandomTransfer() and revealAndExecuteRandomTransfer() instead.
      */
     function batchTransferTokenRandom(
-        address token,
-        address[] calldata recipients,
-        uint256 minAmount,
-        uint256 maxAmount,
-        uint256 seed
+        address /* token */,
+        address[] calldata /* recipients */,
+        uint256 /* minAmount */,
+        uint256 /* maxAmount */,
+        uint256 /* seed */
     ) external pure {
         revert("Function deprecated. Use commitRandomTransfer() and revealAndExecuteRandomTransfer() for secure randomness.");
     }
@@ -521,8 +521,8 @@ contract BatchTransferSecure is Ownable, AccessControl, ReentrancyGuard, Pausabl
      * @return Calculated fee amount
      */
     function _calculateTokenFeeWithMinimum(address token, uint256 totalAmount) internal view returns (uint256) {
-        uint256 tokenFeeBps = tokenFeeBps[token];
-        uint256 calculatedFee = (totalAmount * tokenFeeBps) / 10000;
+        uint256 tokenFeeRate = tokenFeeBps[token];
+        uint256 calculatedFee = (totalAmount * tokenFeeRate) / 10000;
         return calculatedFee > MIN_FEE ? calculatedFee : MIN_FEE;
     }
 
@@ -713,16 +713,16 @@ contract BatchTransferSecure is Ownable, AccessControl, ReentrancyGuard, Pausabl
     /**
      * @dev Add a supported token with custom fee
      * @param token Token address to add
-     * @param feeBps Fee in basis points for this token
+     * @param tokenFeeRate Fee in basis points for this token
      */
-    function addSupportedToken(address token, uint256 feeBps) external onlyRole(TEAM_ROLE) {
+    function addSupportedToken(address token, uint256 tokenFeeRate) external onlyRole(TEAM_ROLE) {
         if (token == address(0)) revert InvalidToken();
-        if (feeBps > MAX_FEE_BPS) revert FeeTooHigh();
+        if (tokenFeeRate > MAX_FEE_BPS) revert FeeTooHigh();
         
         supportedTokens[token] = true;
-        tokenFeeBps[token] = feeBps;
+        tokenFeeBps[token] = tokenFeeRate;
         
-        emit TokenAdded(token, feeBps, msg.sender);
+        emit TokenAdded(token, tokenFeeRate, msg.sender);
     }
 
     /**

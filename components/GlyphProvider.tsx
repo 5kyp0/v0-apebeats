@@ -5,7 +5,7 @@ import { WagmiProvider } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { GlyphProvider as GlyphSDKProvider, StrategyType, WalletClientType } from "@use-glyph/sdk-react"
 import { wagmiConfig } from "@/lib/wagmi"
-import { apeChain, mainnet, base, curtis } from "@/lib/chains"
+import { apeChain, apeChainMainnet, mainnet, base, curtis } from "@/lib/chains"
 
 // Import Glyph styles only when needed to prevent layout conflicts
 // import "@use-glyph/sdk-react/style.css"
