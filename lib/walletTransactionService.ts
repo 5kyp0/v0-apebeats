@@ -18,12 +18,7 @@ export interface WalletInfo {
   account?: any
   address?: string
   signer?: any
-  sendTransaction?: (transaction: {
-    to: string
-    data: string
-    value: string
-    chainId: number
-  }) => Promise<string>
+  sendTransaction?: any // Made flexible to accommodate different wallet signatures
 }
 
 export class WalletTransactionService {

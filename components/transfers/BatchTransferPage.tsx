@@ -7,6 +7,7 @@ import { useSafeGlyph } from "@/hooks/useSafeGlyph"
 import { BatchTransferForm } from "./BatchTransferForm"
 import { Leaderboard } from "./Leaderboard"
 import { TeamManagement } from "./TeamManagement"
+import { LeaderboardService } from "@/lib/leaderboardService"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,10 +33,29 @@ export function BatchTransferPage() {
   const { user: glyphUser, ready: glyphReady } = useSafeGlyph()
   const [lastReceipt, setLastReceipt] = useState<any>(null)
   const [isClient, setIsClient] = useState(false)
+  const [currentFee, setCurrentFee] = useState<string>("0.5") // Default fallback
   
   useEffect(() => {
     setIsClient(true)
   }, [])
+
+  // Fetch current fee from contract
+  useEffect(() => {
+    const fetchFee = async () => {
+      try {
+        const feeData = await LeaderboardService.getInstance().getCurrentFeePercentage()
+        setCurrentFee(feeData.feePercentage)
+        console.log("🔍 Current fee fetched:", feeData.feePercentage + "%")
+      } catch (error) {
+        console.error("🔍 Error fetching fee:", error)
+        // Keep default fallback
+      }
+    }
+
+    if (isClient) {
+      fetchFee()
+    }
+  }, [isClient])
   
   // Check for any wallet connection
   const isGlyphConnected = !!(glyphReady && glyphUser?.evmWallet)
@@ -167,7 +187,7 @@ export function BatchTransferPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Clear 0.5% fee structure with no hidden costs
+                Clear {currentFee}% fee structure with no hidden costs
               </p>
             </CardContent>
           </Card>

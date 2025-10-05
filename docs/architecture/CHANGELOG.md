@@ -71,6 +71,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2025-01-27
+
+### 🚀 **Major Features Added**
+
+#### 📊 **Enhanced Dashboard & Leaderboard System**
+- **Real-time Dashboard Analytics**: Complete dashboard overhaul with live user statistics, global metrics, and transfer history
+- **Advanced Leaderboard Service**: New dedicated `LeaderboardService` with caching, real-time data, and blockchain event integration
+- **Alchemy Integration**: New `AlchemyEventService` for enhanced blockchain event querying and leaderboard data
+- **Transfer History**: User transfer history with transaction details, block numbers, and explorer links
+- **Dynamic Fee Display**: Real-time fee percentage display from smart contract
+
+#### 🏆 **Leaderboard Enhancements**
+- **Real Blockchain Data**: Leaderboard now uses actual transfer events instead of mock data
+- **Event-based Aggregation**: Aggregates user statistics from `BatchTransferExecuted` events
+- **Caching System**: 5-minute cache for improved performance and reduced API calls
+- **Fallback Mechanisms**: Multiple fallback strategies for data retrieval (Alchemy → Thirdweb → Mock)
+- **User Statistics**: Individual user stats with total transferred amounts and transfer counts
+
+#### 💰 **Batch Transfer Improvements**
+- **Dynamic Fee Integration**: Real-time fee fetching from smart contract instead of hardcoded values
+- **Enhanced Form Validation**: Improved error handling and user feedback
+- **Better State Management**: Enhanced loading states and error recovery
+- **Transaction History**: Complete transfer history with detailed transaction information
+
+#### 🔧 **Technical Infrastructure**
+- **Alchemy SDK Integration**: Added `alchemy-sdk` dependency for enhanced blockchain data access
+- **Event Querying**: Advanced blockchain event querying with proper error handling
+- **Service Architecture**: Modular service architecture with proper separation of concerns
+- **Performance Optimization**: Caching and optimized data fetching strategies
+
+#### 📚 **Documentation Organization**
+- **Structured Documentation**: Complete reorganization of documentation into logical directories
+- **Integration Guides**: Comprehensive guides for wallet integration, batch transfers, and VRF
+- **Development Guides**: Quick reference guides and deployment instructions
+- **Troubleshooting**: Dedicated troubleshooting guides for common issues
+- **Architecture Documentation**: Detailed system design and change history
+
+### 🔧 **Technical Improvements**
+- **Enhanced Error Handling**: Comprehensive error handling throughout the application
+- **Better Logging**: Improved debug logging for troubleshooting and monitoring
+- **Type Safety**: Enhanced TypeScript types and interfaces
+- **Code Organization**: Better code structure and separation of concerns
+
+### 🐛 **Bug Fixes**
+- **Leaderboard Data**: Fixed leaderboard to show real data instead of mock data
+- **Fee Display**: Fixed hardcoded fee display to use dynamic contract values
+- **Dashboard Stats**: Fixed dashboard statistics loading and display
+- **Transfer History**: Fixed transfer history display and transaction links
+
+### 📦 **Dependencies**
+- **Added**: `alchemy-sdk@^3.6.5` for enhanced blockchain data access
+
+### 🗂️ **File Changes**
+- **Modified**: `components/dashboard/UserDashboard.tsx` - Enhanced with real-time stats and transfer history
+- **Modified**: `components/transfers/Leaderboard.tsx` - Real blockchain data integration
+- **Modified**: `components/transfers/BatchTransferForm.tsx` - Dynamic fee integration
+- **Modified**: `components/transfers/BatchTransferPage.tsx` - Real-time fee display
+- **Modified**: `lib/leaderboardService.ts` - Complete rewrite with caching and real data
+- **Modified**: `lib/simpleBatchService.ts` - Enhanced with user stats and transfer history
+- **Modified**: `lib/thirdweb.ts` - Improved contract configuration
+- **Modified**: `lib/walletTransactionService.ts` - Enhanced error handling
+- **Added**: `lib/alchemyService.ts` - New Alchemy integration service
+- **Added**: `docs/README.md` - Main documentation index
+- **Added**: `docs/STRUCTURE.md` - Documentation structure overview
+- **Added**: `docs/architecture/` - Architecture documentation directory
+- **Added**: `docs/guides/` - Development guides directory
+- **Added**: `docs/integration/` - Integration guides directory
+- **Added**: `docs/troubleshooting/` - Troubleshooting guides directory
+
 ### 🚀 **Major Features Added**
 
 #### 🔗 **Enhanced Multi-Wallet Support**
